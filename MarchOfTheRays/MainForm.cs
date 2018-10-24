@@ -34,42 +34,27 @@ namespace MarchOfTheRays
 
                     var menuNew = new ToolStripMenuItem("&New", null, (s, e) =>
                     {
-                        elements.Clear();
-                        canvas.Clear();
-
-                        AddNode(PointF.Empty, new Core.InputNode() { OutputType = Core.NodeType.Float3 });
-                        outputNode = new Core.OutputNode();
-                        AddNode(new PointF(100, 0), outputNode);
+                        var res = MessageBox.Show("Save changes to the file?", "March of the Rays", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                        if (res == DialogResult.Yes)
+                        {
+                            if (Save()) NewDocument();
+                        }
+                        else if (res == DialogResult.No)
+                        {
+                            NewDocument();
+                        }
                     });
                     menuNew.ShortcutKeys = Keys.Control | Keys.N;
 
                     var menuOpen = new ToolStripMenuItem("&Open", null, (s, e) =>
                     {
-                        var openFileDialog = new OpenFileDialog();
-                        openFileDialog.Filter = "March of the Rays file|*.mtr";
-                        openFileDialog.Multiselect = false;
-                        if (openFileDialog.ShowDialog() == DialogResult.OK)
-                        {
-                            using (var stream = File.OpenRead(openFileDialog.FileName))
-                            {
-                                Deserialize(stream);
-                            }
-                        }
+                        Open();
                     });
                     menuOpen.ShortcutKeys = Keys.Control | Keys.O;
 
                     var menuSave = new ToolStripMenuItem("&Save", null, (s, e) =>
                     {
-                        var saveFileDialog = new SaveFileDialog();
-                        saveFileDialog.Filter = "March of the Rays file|*.mtr";
-                        if (saveFileDialog.ShowDialog() == DialogResult.OK)
-                        {
-                            var nodes = canvas.Elements.Select(x => (x.Tag as Core.INode, x.Location)).ToList();
-                            using (var stream = File.Open(saveFileDialog.FileName, FileMode.Create))
-                            {
-                                Serialize(stream, nodes);
-                            }
-                        }
+
                     });
                     menuSave.ShortcutKeys = Keys.Control | Keys.S;
 
@@ -91,11 +76,17 @@ namespace MarchOfTheRays
                 {
                     var editMenu = new ToolStripMenuItem("&Edit");
 
-                    var undo = new ToolStripMenuItem("&Undo", null, (s, e) => { });
+                    var undo = new ToolStripMenuItem("&Undo", null, (s, e) =>
+                    {
+                        canvas.Undo();
+                    });
                     undo.ShortcutKeys = Keys.Control | Keys.Z;
                     editMenu.DropDownItems.Add(undo);
 
-                    var redo = new ToolStripMenuItem("&Redo", null, (s, e) => { });
+                    var redo = new ToolStripMenuItem("&Redo", null, (s, e) =>
+                    {
+                        canvas.Redo();
+                    });
                     redo.ShortcutKeys = Keys.Control | Keys.Y;
                     editMenu.DropDownItems.Add(redo);
 
@@ -321,17 +312,62 @@ namespace MarchOfTheRays
                 }
             };
 
-            AddNode(PointF.Empty, new Core.InputNode() { OutputType = Core.NodeType.Float3 });
-
-            outputNode = new Core.OutputNode();
-            AddNode(new PointF(200, 0), outputNode);
-
             MainMenuStrip = mainMenu;
             Controls.Add(mainMenu);
             Controls.Add(statusStrip);
 
             ResumeLayout();
             splitContainerV.SplitterDistance = 500;
+
+            NewDocument();
+        }
+
+        public MainForm(string[] args) : this()
+        {
+            if (args.Length == 0) return;
+
+            using(var stream = File.OpenRead(args[0]))
+            {
+                Deserialize(stream);
+            }
+        }
+
+        bool Save()
+        {
+            var saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "March of the Rays file|*.mtr";
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                var nodes = canvas.Elements.Select(x => (x.Tag as Core.INode, x.Location)).ToList();
+                using (var stream = File.Open(saveFileDialog.FileName, FileMode.Create))
+                {
+                    Serialize(stream, nodes);
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        bool Open()
+        {
+            var openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = "March of the Rays file|*.mtr";
+            openFileDialog.Multiselect = false;
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                using (var stream = File.OpenRead(openFileDialog.FileName))
+                {
+                    Deserialize(stream);
+                }
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         Editor.NodeElement AddNode(PointF location, Core.INode node)
@@ -629,6 +665,18 @@ namespace MarchOfTheRays
             }
 
             canvas.FitToView();
+            canvas.ResetHistory();
+        }
+
+        void NewDocument()
+        {
+            elements.Clear();
+            canvas.Clear();
+            AddNode(PointF.Empty, new Core.InputNode() { OutputType = Core.NodeType.Float3 });
+
+            outputNode = new Core.OutputNode();
+            AddNode(new PointF(200, 0), outputNode);
+            canvas.ResetHistory();
         }
     }
 }

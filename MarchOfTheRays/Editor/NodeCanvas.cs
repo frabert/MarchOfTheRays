@@ -9,27 +9,153 @@ namespace MarchOfTheRays.Editor
 {
     class EdgeModifiedEventArgs : EventArgs
     {
-        public EdgeModifiedEventArgs() { }
+        public EdgeModifiedEventArgs(NodeElement source, NodeElement destination, int index)
+        {
+            Source = source;
+            Destination = destination;
+            DestinationIndex = index;
+        }
 
-        public NodeElement Source { get; set; }
-        public NodeElement Destination { get; set; }
-        public int DestinationIndex { get; set; }
-    }
-
-    class PreviewEdgeAddedEventArgs : EventArgs
-    {
-        public PreviewEdgeAddedEventArgs() { }
-
-        public NodeElement Source { get; set; }
-        public NodeElement Destination { get; set; }
-        public int DestinationIndex { get; set; }
-        public bool Allow { get; set; }
+        public NodeElement Source { get; private set; }
+        public NodeElement Destination { get; private set; }
+        public int DestinationIndex { get; private set; }
     }
 
     class NodeCanvas : UserControl
     {
+        #region Commands
+        class AddElementsCommand : ICommand
+        {
+            private NodeCanvas canvas;
+            private IList<NodeElement> elems;
+
+            public AddElementsCommand(NodeCanvas canvas, IList<NodeElement> elems)
+            {
+                this.canvas = canvas;
+                this.elems = elems;
+            }
+
+            public void Execute()
+            {
+                foreach (var elem in elems)
+                {
+                    elem.NeedsRepaint += canvas.element_NeedsRepaint;
+                    canvas.elements.Add(elem);
+                }
+                canvas.Invalidate();
+            }
+
+            public void Undo()
+            {
+                foreach (var elem in elems)
+                {
+                    canvas.elements.Remove(elem);
+                }
+                canvas.Invalidate();
+            }
+        }
+
+        class AddEdgeCommand : ICommand
+        {
+            private NodeCanvas canvas;
+            private NodeElement source;
+            private NodeElement destination;
+            private int index;
+
+            public AddEdgeCommand(NodeCanvas canvas, NodeElement source, NodeElement destination, int index)
+            {
+                this.canvas = canvas;
+                this.source = source;
+                this.destination = destination;
+                this.index = index;
+            }
+
+            public void Execute()
+            {
+                canvas.edgeDictionary.Add((destination, index), source);
+                canvas.OnEdgeAdded(new EdgeModifiedEventArgs(source, destination, index));
+            }
+
+            public void Undo()
+            {
+                canvas.edgeDictionary.Remove((destination, index));
+                canvas.OnEdgeRemoved(new EdgeModifiedEventArgs(source, destination, index));
+            }
+        }
+
+        class SelectCommand : ICommand
+        {
+            private NodeCanvas canvas;
+            private IList<NodeElement> elems;
+            private Dictionary<NodeElement, bool> selectionState;
+
+            public SelectCommand(NodeCanvas canvas, IList<NodeElement> elems)
+            {
+                this.canvas = canvas;
+                this.elems = elems;
+                this.selectionState = new Dictionary<NodeElement, bool>();
+                foreach (var elem in canvas.elements)
+                {
+                    selectionState.Add(elem, elem.Selected);
+                }
+            }
+
+            public void Execute()
+            {
+                foreach (var elem in canvas.elements)
+                {
+                    elem.Selected = false;
+                }
+
+                foreach (var elem in elems)
+                {
+                    elem.Selected = true;
+                }
+                canvas.OnSelectionChanged();
+            }
+
+            public void Undo()
+            {
+                foreach (var elem in canvas.elements)
+                {
+                    elem.Selected = selectionState[elem];
+                }
+                canvas.OnSelectionChanged();
+            }
+        }
+
+        class MoveElementsCommand : ICommand
+        {
+            private IList<NodeElement> elems;
+            private SizeF amount;
+
+            public MoveElementsCommand(IList<NodeElement> elems, SizeF amount)
+            {
+                this.elems = elems;
+                this.amount = amount;
+            }
+
+            public void Execute()
+            {
+                foreach (var elem in elems)
+                {
+                    elem.Location += amount;
+                }
+            }
+
+            public void Undo()
+            {
+                foreach (var elem in elems)
+                {
+                    elem.Location -= amount;
+                }
+            }
+        }
+        #endregion
+
         List<NodeElement> elements = new List<NodeElement>();
         Dictionary<(NodeElement, int), NodeElement> edgeDictionary = new Dictionary<(NodeElement, int), NodeElement>();
+        CommandList commands = new CommandList();
 
         WorldViewMatrix wvMatrix = new WorldViewMatrix();
         float currentScale = 1.0f;
@@ -37,6 +163,7 @@ namespace MarchOfTheRays.Editor
         bool dragging = false;
         bool draggingEdge = false;
         bool selecting = false;
+        SizeF moveDistance = SizeF.Empty;
         NodeElement draggedElem;
         PointF mouseCoords;
         PointF startMouseCoords;
@@ -76,42 +203,38 @@ namespace MarchOfTheRays.Editor
         {
             elements.Clear();
             edgeDictionary.Clear();
+            commands.Clear();
             Invalidate();
         }
 
         public void AddElement(NodeElement e)
         {
-            e.NeedsRepaint += element_NeedsRepaint;
-            elements.Add(e);
+            var cmd = new AddElementsCommand(this, new List<NodeElement>() { e });
+            cmd.Execute();
+            commands.Add(cmd);
         }
 
         public void RemoveElement(NodeElement e)
         {
-            elements.Remove(e);
-            Invalidate();
+            var cmd = new InverseCommand(new AddElementsCommand(this, new List<NodeElement>() { e }));
+            cmd.Execute();
+            commands.Add(cmd);
         }
 
         public void AddEdge(NodeElement source, NodeElement destination, int index)
         {
-            edgeDictionary.Add((destination, index), source);
-            OnEdgeAdded(new EdgeModifiedEventArgs()
-            {
-                Destination = destination,
-                DestinationIndex = index,
-                Source = source
-            });
+            if (edgeDictionary.ContainsKey((destination, index))) return;
+            var cmd = new AddEdgeCommand(this, source, destination, index);
+            cmd.Execute();
+            commands.Add(cmd);
         }
 
         public void RemoveEdge(NodeElement destination, int index)
         {
             var e = edgeDictionary[(destination, index)];
-            edgeDictionary.Remove((destination, index));
-            OnEdgeRemoved(new EdgeModifiedEventArgs()
-            {
-                Destination = destination,
-                DestinationIndex = index,
-                Source = e
-            });
+            var cmd = new InverseCommand(new AddEdgeCommand(this, e, destination, index));
+            cmd.Execute();
+            commands.Add(cmd);
         }
 
         public IReadOnlyList<NodeElement> Elements => elements;
@@ -149,13 +272,7 @@ namespace MarchOfTheRays.Editor
                         var source = edgeDictionary[(elem, inputHandle)];
                         draggedElem = source;
                         draggingEdge = true;
-                        edgeDictionary.Remove((elem, inputHandle));
-                        OnEdgeRemoved(new EdgeModifiedEventArgs()
-                        {
-                            Destination = elem,
-                            DestinationIndex = inputHandle,
-                            Source = source
-                        });
+                        RemoveEdge(elem, inputHandle);
                         break;
                     }
 
@@ -163,16 +280,13 @@ namespace MarchOfTheRays.Editor
                     {
                         if (!elem.Selected)
                         {
-                            foreach (var elem_ in elements)
-                            {
-                                elem_.Selected = false;
-                            }
+                            var cmd = new SelectCommand(this, new[] { elem });
+                            cmd.Execute();
+                            commands.Add(cmd);
                         }
                         selecting = false;
                         dragging = true;
                         draggedElem = elem;
-                        elem.Selected = true;
-                        OnSelectionChanged();
                         break;
                     }
                 }
@@ -185,15 +299,9 @@ namespace MarchOfTheRays.Editor
             base.OnMouseDown(e);
         }
 
-        public event EventHandler<PreviewEdgeAddedEventArgs> PreviewEdgeAdded;
         public event EventHandler<EdgeModifiedEventArgs> EdgeAdded;
         public event EventHandler<EdgeModifiedEventArgs> EdgeRemoved;
         public event EventHandler SelectionChanged;
-
-        protected virtual void OnPreviewEdgeAdded(PreviewEdgeAddedEventArgs e)
-        {
-            PreviewEdgeAdded?.Invoke(this, e);
-        }
 
         protected virtual void OnEdgeAdded(EdgeModifiedEventArgs e)
         {
@@ -223,52 +331,33 @@ namespace MarchOfTheRays.Editor
                     var i = elem.IsOverInputHandle(localCoords);
                     if (i >= 0)
                     {
-                        var args = new PreviewEdgeAddedEventArgs()
-                        {
-                            Allow = true,
-                            Destination = elem,
-                            DestinationIndex = i,
-                            Source = draggedElem
-                        };
-                        OnPreviewEdgeAdded(args);
-
-                        if (args.Allow && !edgeDictionary.ContainsKey((args.Destination, args.DestinationIndex)))
-                        {
-                            edgeDictionary.Add((args.Destination, args.DestinationIndex), args.Source);
-
-
-                            var args2 = new EdgeModifiedEventArgs()
-                            {
-                                Destination = args.Destination,
-                                DestinationIndex = args.DestinationIndex,
-                                Source = args.Source
-                            };
-                            OnEdgeAdded(args2);
-                        }
-                        else
-                        {
-                            System.Media.SystemSounds.Beep.Play();
-                            var toolTip = new ToolTip();
-                            toolTip.Show("Cannot insert edge", this);
-                        }
-
-                        break;
+                        AddEdge(draggedElem, elem, i);
                     }
+                }
+            }
+
+            if(dragging)
+            {
+                if(moveDistance.Width > 0 || moveDistance.Height > 0)
+                {
+                    var cmd = new MoveElementsCommand(SelectedElements.ToList(), moveDistance);
+                    commands.Add(cmd);
                 }
             }
 
             if (selecting)
             {
-                foreach (var elem in elements)
+                var selection = elements.Where(x =>
                 {
                     var origin = wvMatrix.TransformVW(startMouseCoords);
                     var end = wvMatrix.TransformVW(mouseCoords);
 
                     var rect = RectFromPoints(origin, end);
-
-                    elem.Selected = elem.ClipRegion.IntersectsWith(rect);
-                }
-                OnSelectionChanged();
+                    return x.ClipRegion.IntersectsWith(rect);
+                }).ToList();
+                var cmd = new SelectCommand(this, selection);
+                cmd.Execute();
+                commands.Add(cmd);
             }
 
 
@@ -277,6 +366,7 @@ namespace MarchOfTheRays.Editor
             draggedElem = null;
             draggingEdge = false;
             selecting = false;
+            moveDistance = SizeF.Empty;
             base.OnMouseUp(e);
         }
 
@@ -328,20 +418,16 @@ namespace MarchOfTheRays.Editor
                 var a = wvMatrix.TransformVW(mouseCoords);
                 var b = wvMatrix.TransformVW(e.Location);
 
-                if (draggedElem == null) wvMatrix.TranslateW(b.X - a.X, b.Y - a.Y);
+                if (draggedElem == null)
+                    wvMatrix.TranslateW(b.X - a.X, b.Y - a.Y);
                 else if (!draggingEdge)
                 {
-                    foreach (var elem in elements)
+                    var delta = new SizeF(b.X - a.X, b.Y - a.Y);
+                    foreach(var elem in SelectedElements)
                     {
-                        if (elem.Selected)
-                        {
-                            var newLoc = elem.Location;
-
-                            newLoc.X += b.X - a.X;
-                            newLoc.Y += b.Y - a.Y;
-                            elem.Location = newLoc;
-                        }
+                        elem.Location += delta;
                     }
+                    moveDistance += delta;
                 }
             }
             mouseCoords = e.Location;
@@ -438,7 +524,8 @@ namespace MarchOfTheRays.Editor
 
             foreach (var edge in edgeDictionary)
             {
-                DrawCurve(g, edge.Value, edge.Key.Item1, edge.Key.Item2);
+                if (elements.Contains(edge.Value) && elements.Contains(edge.Key.Item1))
+                    DrawCurve(g, edge.Value, edge.Key.Item1, edge.Key.Item2);
             }
 
             if (draggingEdge)
@@ -594,16 +681,33 @@ namespace MarchOfTheRays.Editor
             Center(center);
         }
 
-        public void SelectElements(Predicate<NodeElement> filter)
+        public void SelectElements(Func<NodeElement, bool> filter)
         {
-            elements.ForEach(x => x.Selected = filter(x));
-            OnSelectionChanged();
+            var cmd = new SelectCommand(this, elements.Where(filter).ToList());
+            cmd.Execute();
+            commands.Add(cmd);
         }
 
-        public void DeleteElements(Predicate<NodeElement> filter)
+        public void DeleteElements(Func<NodeElement, bool> filter)
         {
-            elements.RemoveAll(filter);
-            Invalidate();
+            var cmd = new InverseCommand(new AddElementsCommand(this, elements.Where(filter).ToList()));
+            cmd.Execute();
+            commands.Add(cmd);
+        }
+
+        public void Undo()
+        {
+            commands.Undo();
+        }
+
+        public void Redo()
+        {
+            commands.Redo();
+        }
+
+        public void ResetHistory()
+        {
+            commands.Clear();
         }
     }
 }

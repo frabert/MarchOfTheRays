@@ -50,6 +50,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Editor\Commands.cs" />
     <Compile Include="Editor\NodeCanvas.cs" />
     <Compile Include="Editor\NodeElement.cs" />
     <Compile Include="Editor\WorldViewMatrix.cs" />
