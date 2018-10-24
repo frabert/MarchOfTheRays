@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq.Expressions;
 using System.Numerics;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace MarchOfTheRays.CpuRenderer
 {
@@ -65,6 +67,7 @@ namespace MarchOfTheRays.CpuRenderer
             {
                 case Core.InputNode n: return pos;
                 case Core.Float3ConstantNode n: return new Vector3(n.X, n.Y, n.Z);
+                case Core.FloatConstantNode n: return new Vector3(n.Value);
                 case Core.AbsNode n:
                     {
                         var input = evalNodeVector3(pos, n.Input);
@@ -72,15 +75,19 @@ namespace MarchOfTheRays.CpuRenderer
                     }
                 case Core.MinMaxNode n:
                     {
-                        var left = evalNodeVector3(pos, n.Left);
-                        var right = evalNodeVector3(pos, n.Right);
+                        Vector3 left, right;
+
+                        if (n.Left.OutputType == Core.NodeType.Float3) left = evalNodeVector3(pos, n.Left);
+                        else left = new Vector3(evalNodeFloat(pos, n.Left));
+
+                        if (n.Right.OutputType == Core.NodeType.Float3) right = evalNodeVector3(pos, n.Right);
+                        else right = new Vector3(evalNodeFloat(pos, n.Right));
+
                         return n.IsMin ? Map(Math.Min, left, right) : Map(Math.Max, left, right);
                     }
                 case Core.ArithmeticNode n:
                     {
-                        var left = new Vector3();
-                        var right = new Vector3();
-                        if (n.Left.OutputType == Core.NodeType.Float && n.Right.OutputType == Core.NodeType.Float) throw new NotImplementedException();
+                        Vector3 left, right;
                         if (n.Left.OutputType == Core.NodeType.Float3)
                         {
                             left = evalNodeVector3(pos, n.Left);
@@ -163,7 +170,223 @@ namespace MarchOfTheRays.CpuRenderer
             }
         }
 
-        void MainRender(float x, float y, float width, float height, out Vector3 outColor, Core.INode node)
+        Expression toExpr<T>(Expression<Func<T, T>> f)
+        {
+            return f;
+        }
+
+        Expression toExpr<T>(Expression<Func<T, T, T>> f)
+        {
+            return f;
+        }
+
+        Expression mapExpr(Expression<Func<float, float>> f, Expression inp)
+        {
+            var vec3ctor = typeof(Vector3).GetConstructor(new Type[] { typeof(float), typeof(float), typeof(float) });
+            var x = Expression.Field(inp, "X");
+            var y = Expression.Field(inp, "Y");
+            var z = Expression.Field(inp, "Z");
+            return Expression.New(vec3ctor, Expression.Invoke(f, x), Expression.Invoke(f, y), Expression.Invoke(f, z));
+        }
+
+        Expression mapExpr(Expression<Func<float, float, float>> f, Expression l, Expression r)
+        {
+            var vec3ctor = typeof(Vector3).GetConstructor(new Type[] { typeof(float), typeof(float), typeof(float) });
+            var lx = Expression.Field(l, "X");
+            var ly = Expression.Field(l, "Y");
+            var lz = Expression.Field(l, "Z");
+
+            var rx = Expression.Field(r, "X");
+            var ry = Expression.Field(r, "Y");
+            var rz = Expression.Field(r, "Z");
+            return Expression.New(vec3ctor, Expression.Invoke(f, lx, rx), Expression.Invoke(f, ly, ry), Expression.Invoke(f, lz, rz));
+        }
+
+        Expression compileToVec3(ParameterExpression input, Core.INode node, Dictionary<Core.INode, Expression> nodes)
+        {
+            if (nodes.TryGetValue(node, out var val)) return val;
+
+            var vec3ctor = typeof(Vector3).GetConstructor(new Type[] { typeof(float) });
+            var cross = typeof(Vector3).GetMethod("Cross");
+
+            switch (node)
+            {
+                case Core.InputNode n:
+                    nodes.Add(node, input);
+                    return input;
+                case Core.Float3ConstantNode n:
+                    var exp = Expression.Constant(new Vector3(n.X, n.Y, n.Z));
+                    nodes.Add(node, exp);
+                    return exp;
+                case Core.FloatConstantNode n:
+                    exp = Expression.Constant(new Vector3(n.Value));
+                    nodes.Add(node, exp);
+                    return exp;
+                case Core.AbsNode n:
+                    {
+                        var i = compileToVec3(input, n.Input, nodes);
+                        var res = mapExpr(x => Math.Abs(x), i);
+                        nodes.Add(node, res);
+                        return res;
+                    }
+                case Core.MinMaxNode n:
+                    {
+                        Expression left, right;
+
+                        if (n.Left.OutputType == Core.NodeType.Float3) left = compileToVec3(input, n.Left, nodes);
+                        else
+                        {
+                            var fexpr = compileNodeFloat(input, n.Left, nodes);
+                            left = Expression.New(vec3ctor, fexpr);
+                        }
+
+                        if (n.Right.OutputType == Core.NodeType.Float3) right = compileToVec3(input, n.Right, nodes);
+                        else
+                        {
+                            var fexpr = compileNodeFloat(input, n.Right, nodes);
+                            right = Expression.New(vec3ctor, fexpr);
+                        }
+
+                        Func<float, float, float> max = Math.Max;
+                        Func<float, float, float> min = Math.Min;
+
+                        var res = n.IsMin ? mapExpr((x, y) => Math.Min(x, y), left, right) : mapExpr((x, y) => Math.Max(x, y), left, right);
+
+                        nodes.Add(node, res);
+                        return res;
+                    }
+                case Core.ArithmeticNode n:
+                    {
+                        Expression left, right;
+                        if (n.Left.OutputType == Core.NodeType.Float3)
+                        {
+                            left = compileToVec3(input, n.Left, nodes);
+                        }
+                        else
+                        {
+                            var fexpr = compileNodeFloat(input, n.Left, nodes);
+                            left = Expression.New(vec3ctor, fexpr);
+                        }
+
+                        if (n.Right.OutputType == Core.NodeType.Float3)
+                        {
+                            right = compileToVec3(input, n.Right, nodes);
+                        }
+                        else
+                        {
+                            var fexpr = compileNodeFloat(input, n.Right, nodes);
+                            right = Expression.New(vec3ctor, fexpr);
+                        }
+
+                        Expression res;
+
+                        switch (n.Operation)
+                        {
+                            case Core.ArithOp.Add: res = Expression.Add(left, right); break;
+                            case Core.ArithOp.Cross: res = Expression.Call(cross, left, right); break;
+                            case Core.ArithOp.Div: res = mapExpr((x, y) => x / y, left, right); break;
+                            case Core.ArithOp.Mod: res = mapExpr((x, y) => x - y * (float)Math.Floor(x / y), left, right); break;
+                            case Core.ArithOp.Mul: res = mapExpr((x, y) => x * y, left, right); break;
+                            case Core.ArithOp.Sub: res = Expression.Subtract(left, right); break;
+                            default: throw new NotImplementedException();
+                        }
+                        nodes.Add(node, res);
+                        return res;
+                    }
+                default: throw new NotImplementedException();
+            }
+        }
+
+        Expression compileNodeFloat(ParameterExpression input, Core.INode node, Dictionary<Core.INode, Expression> nodes)
+        {
+            var abs = typeof(Math).GetMethod("Abs", new Type[] { typeof(float) });
+            var min = typeof(Math).GetMethod("Min", new Type[] { typeof(float), typeof(float) });
+            var max = typeof(Math).GetMethod("Max", new Type[] { typeof(float), typeof(float) });
+            var dot = typeof(Vector3).GetMethod("Dot");
+            var length = typeof(Vector3).GetMethod("Length");
+            var mod = toExpr<float>((x, y) => x - y * (float)Math.Floor(x / y));
+            switch (node)
+            {
+                case Core.FloatConstantNode n: return Expression.Constant(n.Value);
+                case Core.AbsNode n:
+                    {
+                        if (n.OutputType != Core.NodeType.Float)
+                        {
+                            throw new InvalidOperationException();
+                        }
+                        var expr = compileNodeFloat(input, n.Input, nodes);
+                        var res = Expression.Call(abs, expr);
+                        nodes.Add(node, res);
+                        return res;
+                    }
+                case Core.LengthNode n:
+                    {
+                        switch (n.Input.OutputType)
+                        {
+                            case Core.NodeType.Float:
+                                {
+                                    var res = Expression.Call(abs, compileNodeFloat(input, n.Input, nodes));
+                                    nodes.Add(node, res);
+                                    return res;
+                                }
+                            case Core.NodeType.Float3:
+                                {
+                                    var inst = compileToVec3(input, n.Input, nodes);
+                                    var res = Expression.Call(inst, length);
+                                    nodes.Add(node, res);
+                                    return res;
+                                }
+                            default: throw new InvalidOperationException();
+                        }
+                    }
+                case Core.MinMaxNode n:
+                    {
+                        var left = compileNodeFloat(input, n.Left, nodes);
+                        var right = compileNodeFloat(input, n.Right, nodes);
+                        var res = Expression.Call(n.IsMin ? min : max, left, right);
+                        nodes.Add(node, res);
+                        return res;
+                    }
+                case Core.ArithmeticNode n:
+                    {
+                        if (n.Operation == Core.ArithOp.Dot)
+                        {
+                            var l = compileToVec3(input, n.Left, nodes);
+                            var r = compileToVec3(input, n.Right, nodes);
+                            var res = Expression.Call(dot, l, r);
+                            nodes.Add(node, res);
+                            return res;
+                        }
+
+                        var left = compileNodeFloat(input, n.Left, nodes);
+                        var right = compileNodeFloat(input, n.Right, nodes);
+                        Expression result;
+                        switch (n.Operation)
+                        {
+                            case Core.ArithOp.Add: result = Expression.Add(left, right); break;
+                            case Core.ArithOp.Div: result = Expression.Divide(left, right); break;
+                            case Core.ArithOp.Mul: result = Expression.Multiply(left, right); break;
+                            case Core.ArithOp.Sub: result = Expression.Subtract(left, right); break;
+                            case Core.ArithOp.Mod: result = Expression.Invoke(mod, left, right); break;
+                            default: throw new NotImplementedException();
+                        }
+                        nodes.Add(node, result);
+                        return result;
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        Func<Vector3, float> compileToFunc(Core.OutputNode node)
+        {
+            var input = Expression.Parameter(typeof(Vector3), "pos");
+            var body = compileNodeFloat(input, node.Input, new Dictionary<Core.INode, Expression>());
+            var lambda = Expression.Lambda<Func<Vector3, float>>(body, input);
+            return lambda.Compile();
+        }
+
+        void MainRender(float x, float y, float width, float height, out Vector3 outColor, Func<Vector3, float> distFunc)
         {
             var cameraDir = Vector3.Normalize(cameraTarget - cameraOrigin);
 
@@ -185,7 +408,7 @@ namespace MarchOfTheRays.CpuRenderer
                 if (dist < EPSILON || totalDist > MAX_DIST)
                     break; // If you use windows and the shader isn't working properly, change this to continue;
 
-                dist = evalNodeFloat(pos, node); // Evalulate the distance at the current point
+                dist = distFunc(pos); // Evalulate the distance at the current point
                 totalDist += dist;
                 pos += dist * rayDir; // Advance the point forwards in the ray direction by the distance
 
@@ -199,9 +422,9 @@ namespace MarchOfTheRays.CpuRenderer
                 var xxy = new Vector3(eps.X, eps.X, eps.Y);
 
                 var normal = Vector3.Normalize(new Vector3(
-                    evalNodeFloat(pos + yxx, node) - evalNodeFloat(pos - yxx, node),
-                    evalNodeFloat(pos + xyx, node) - evalNodeFloat(pos - xyx, node),
-                    evalNodeFloat(pos + xxy, node) - evalNodeFloat(pos - xxy, node)));
+                    distFunc(pos + yxx) - distFunc(pos - yxx),
+                    distFunc(pos + xyx) - distFunc(pos - xyx),
+                    distFunc(pos + xxy) - distFunc(pos - xxy)));
 
                 float diffuse = Math.Max(0.0f, Vector3.Dot(-rayDir, normal));
                 float specular = (float)Math.Pow(diffuse, 64.0f);
@@ -213,65 +436,7 @@ namespace MarchOfTheRays.CpuRenderer
             }
         }
 
-        unsafe void RenderChunk(byte* rawBytes, int xoff, int width, int totalWidth, int totalHeight, Core.INode node)
-        {
-            for (int i = 0; i < width * totalHeight; i++)
-            {
-                int x = i % width;
-                int y = (i - x) / width;
-                Vector3 color;
-                MainRender(x + xoff, y, totalWidth, totalHeight, out color, node);
-                int idx = (x + xoff + y * totalWidth) * 3;
-                rawBytes[idx + 0] = (byte)(Math.Min(color.X, 1.0f) * 255);
-                rawBytes[idx + 1] = (byte)(Math.Min(color.Y, 1.0f) * 255);
-                rawBytes[idx + 2] = (byte)(Math.Min(color.Z, 1.0f) * 255);
-            }
-        }
-
-        public Image RenderImage(int width, int height, int nthreads, Core.INode node)
-        {
-            var img = new Bitmap(width, height);
-
-            var data = img.LockBits(new Rectangle(Point.Empty, new Size(width, height)), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
-            var threads = new Thread[nthreads];
-            int slice = width / nthreads;
-
-            int start = 0;
-            bool ok = true;
-
-            unsafe
-            {
-                for (int i = 0; i < nthreads; i++)
-                {
-                    var xoff = start;
-                    var w = Math.Min(width - start, slice);
-                    start += slice + 1;
-                    threads[i] = new Thread((d) =>
-                    {
-                        try
-                        {
-                            RenderChunk((byte*)(IntPtr)d, xoff, w, width, height, node);
-                        }
-                        catch (NotImplementedException)
-                        {
-                            ok = false;
-                        }
-                    });
-                    threads[i].Start(data.Scan0);
-                }
-            }
-
-            for (int i = 0; i < nthreads; i++)
-            {
-                threads[i].Join();
-            }
-
-            img.UnlockBits(data);
-
-            return ok ? img : null;
-        }
-
-        public Image RenderImage(int width, int height, Core.INode node)
+        public Image RenderImage(int width, int height, Core.OutputNode node, Func<Vector3, float> func)
         {
             var img = new Bitmap(width, height);
 
@@ -280,23 +445,35 @@ namespace MarchOfTheRays.CpuRenderer
             unsafe
             {
                 byte* rawBytes = (byte*)data.Scan0;
-                for (int i = 0; i < width * height; i++)
+                int ptr = 0;
+                int additional = (data.Stride - width * 3);
+                for (int y = 0; y < height; y++)
                 {
-                    var x = i % width;
-                    var y = (i - x) / width;
-
-                    Vector3 color;
-                    MainRender(x, y, width, height, out color, node);
-                    int idx = i * 3;
-                    rawBytes[idx + 0] = (byte)(Math.Min(color.X, 1.0f) * 255);
-                    rawBytes[idx + 1] = (byte)(Math.Min(color.Y, 1.0f) * 255);
-                    rawBytes[idx + 2] = (byte)(Math.Min(color.Z, 1.0f) * 255);
+                    for (int x = 0; x < width; x++)
+                    {
+                        Vector3 color;
+                        MainRender(x, y, width, height, out color, func);
+                        rawBytes[ptr++] = (byte)(Math.Min(color.X, 1.0f) * 255);
+                        rawBytes[ptr++] = (byte)(Math.Min(color.Y, 1.0f) * 255);
+                        rawBytes[ptr++] = (byte)(Math.Min(color.Z, 1.0f) * 255);
+                    }
+                    ptr += additional;
                 }
             }
 
             img.UnlockBits(data);
 
             return img;
+        }
+
+        public Task<Image> RenderImageAsync(int width, int height, Core.OutputNode node)
+        {
+            return Task<Image>.Factory.StartNew(() => RenderImage(width, height, node, compileToFunc(node)));
+        }
+
+        public Task<Image> RenderImageSlowAsync(int width, int height, Core.OutputNode node)
+        {
+            return Task<Image>.Factory.StartNew(() => RenderImage(width, height, node, x => evalNodeFloat(x, node)));
         }
     }
 }

@@ -284,6 +284,9 @@ namespace MarchOfTheRays.Core
         {
             get
             {
+                if (Operation == ArithOp.Cross) return NodeType.Float3;
+                if (Operation == ArithOp.Dot) return NodeType.Float;
+
                 if (Left.OutputType == NodeType.Float4 || Right.OutputType == NodeType.Float4) return NodeType.Float4;
                 if (Left.OutputType == NodeType.Float3 || Right.OutputType == NodeType.Float3) return NodeType.Float3;
                 if (Left.OutputType == NodeType.Float2 || Right.OutputType == NodeType.Float2) return NodeType.Float2;

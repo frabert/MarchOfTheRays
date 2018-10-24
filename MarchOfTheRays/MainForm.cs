@@ -54,7 +54,7 @@ namespace MarchOfTheRays
 
                     var menuSave = new ToolStripMenuItem("&Save", null, (s, e) =>
                     {
-
+                        Save();
                     });
                     menuSave.ShortcutKeys = Keys.Control | Keys.S;
 
@@ -119,6 +119,13 @@ namespace MarchOfTheRays
                     });
                     selectAll.ShortcutKeys = Keys.Control | Keys.A;
                     editMenu.DropDownItems.Add(selectAll);
+
+                    var deselect = new ToolStripMenuItem("&Deselect", null, (s, e) =>
+                    {
+                        canvas.SelectElements(x => false);
+                    });
+                    deselect.ShortcutKeys = Keys.Control | Keys.D;
+                    editMenu.DropDownItems.Add(deselect);
 
                     mainMenu.Items.Add(editMenu);
                 }
@@ -297,19 +304,15 @@ namespace MarchOfTheRays
             };
 
             var renderer = new CpuRenderer.Renderer();
-            renderBox.MouseClick += (s, e) =>
+            renderBox.MouseClick += async (s, e) =>
             {
                 if (e.Button != MouseButtons.Left) return;
-                //try
-                {
-                    var img = renderer.RenderImage(renderBox.Width, renderBox.Height, outputNode);
-                    if (img == null) MessageBox.Show("Invalid program");
-                    renderBox.Image = img;
-                }
-                //catch (NotImplementedException)
-                {
-                    //    MessageBox.Show("Invalid program");
-                }
+
+                var img = renderer.RenderImageAsync(renderBox.Width, renderBox.Height, outputNode);
+
+                renderBox.Cursor = Cursors.WaitCursor;
+                renderBox.Image = await img;
+                renderBox.Cursor = Cursors.Default;
             };
 
             MainMenuStrip = mainMenu;
@@ -326,7 +329,7 @@ namespace MarchOfTheRays
         {
             if (args.Length == 0) return;
 
-            using(var stream = File.OpenRead(args[0]))
+            using (var stream = File.OpenRead(args[0]))
             {
                 Deserialize(stream);
             }
