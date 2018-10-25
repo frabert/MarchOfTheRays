@@ -15,7 +15,7 @@ namespace MarchOfTheRays.Core
         None
     }
 
-    public interface INode
+    public interface INode : ICloneable
     {
         [Browsable(false)]
         NodeType OutputType { get; }
@@ -65,6 +65,14 @@ namespace MarchOfTheRays.Core
 
         [field: NonSerialized]
         public event EventHandler ValueChanged;
+
+        public object Clone()
+        {
+            return new FloatConstantNode()
+            {
+                m_Value = m_Value
+            };
+        }
     }
 
     [Serializable]
@@ -98,6 +106,15 @@ namespace MarchOfTheRays.Core
 
         [field: NonSerialized]
         public event EventHandler ValueChanged;
+
+        public object Clone()
+        {
+            return new Float2ConstantNode()
+            {
+                m_X = m_X,
+                m_Y = m_Y
+            };
+        }
     }
 
     [Serializable]
@@ -141,6 +158,16 @@ namespace MarchOfTheRays.Core
 
         [field: NonSerialized]
         public event EventHandler ValueChanged;
+
+        public object Clone()
+        {
+            return new Float3ConstantNode()
+            {
+                m_X = m_X,
+                m_Y = m_Y,
+                m_Z = m_Z
+            };
+        }
     }
 
     [Serializable]
@@ -194,6 +221,17 @@ namespace MarchOfTheRays.Core
 
         [field: NonSerialized]
         public event EventHandler ValueChanged;
+
+        public object Clone()
+        {
+            return new Float4ConstantNode()
+            {
+                m_X = m_X,
+                m_Y = m_Y,
+                m_Z = m_Z,
+                m_W = m_W
+            };
+        }
     }
 
     [Serializable]
@@ -209,6 +247,14 @@ namespace MarchOfTheRays.Core
 
         [Browsable(false)]
         public INode Input { get; set; }
+
+        public object Clone()
+        {
+            return new LengthNode()
+            {
+                Input = Input
+            };
+        }
     }
 
     [Serializable]
@@ -224,6 +270,14 @@ namespace MarchOfTheRays.Core
 
         [Browsable(false)]
         public INode Input { get; set; }
+
+        public object Clone()
+        {
+            return new AbsNode()
+            {
+                Input = Input
+            };
+        }
     }
 
     [Serializable]
@@ -271,6 +325,16 @@ namespace MarchOfTheRays.Core
 
         [field: NonSerialized]
         public event EventHandler IsMinChanged;
+
+        public object Clone()
+        {
+            return new MinMaxNode()
+            {
+                m_IsMin = m_IsMin,
+                Left = Left,
+                Right = Right
+            };
+        }
     }
 
     public enum ArithOp
@@ -332,6 +396,15 @@ namespace MarchOfTheRays.Core
         [Category("Type information")]
         [DisplayName("Right input type")]
         public NodeType RightInputType => Right == null ? NodeType.Indeterminate : Right.OutputType;
+
+        public object Clone()
+        {
+            return new ArithmeticNode()
+            {
+                Left = Left,
+                Right = Right
+            };
+        }
     }
 
     [Serializable]
@@ -340,6 +413,11 @@ namespace MarchOfTheRays.Core
         [Category("Type information")]
         [DisplayName("Output type")]
         public NodeType OutputType { get; set; }
+
+        public object Clone()
+        {
+            return new InputNode();
+        }
     }
 
     [Serializable]
@@ -355,5 +433,13 @@ namespace MarchOfTheRays.Core
         [Category("Type information")]
         [DisplayName("Input type")]
         public NodeType InputType => Input == null ? NodeType.Indeterminate : Input.OutputType;
+
+        public object Clone()
+        {
+            return new OutputNode()
+            {
+                Input = Input
+            };
+        }
     }
 }
