@@ -94,6 +94,37 @@ namespace MarchOfTheRays.Editor
             return rect.Contains(p);
         }
 
+        void AutoResize()
+        {
+            using(var g = Graphics.FromHwnd(IntPtr.Zero))
+            {
+                var textSize = g.MeasureString(Text, Font);
+                textSize += new SizeF(m_HandleSize * 4 + 2, 2);
+
+                var n_inputs = Math.Max(m_HasOutput ? 1 : 0, m_InputCount);
+                var min_height = Math.Max(textSize.Height, n_inputs * (m_HandleSize * 2.5f));
+                var min_width = textSize.Width;
+
+                Size = new SizeF(min_width, min_height);
+            }
+        }
+
+        #region AutoSize
+        bool m_AutoSize = true;
+        public bool AutoSize
+        {
+            get => m_AutoSize;
+            set
+            {
+                m_AutoSize = value;
+                if(m_AutoSize)
+                {
+                    AutoResize();
+                }
+            }
+        }
+        #endregion
+
         #region Text
         string m_Text;
         public string Text
@@ -111,6 +142,7 @@ namespace MarchOfTheRays.Editor
         protected virtual void OnTextChanged()
         {
             TextChanged?.Invoke(this, new EventArgs());
+            if (m_AutoSize) AutoResize();
             OnNeedsRepaint();
         }
         #endregion
@@ -132,6 +164,7 @@ namespace MarchOfTheRays.Editor
         protected virtual void OnFontChanged()
         {
             FontChanged?.Invoke(this, new EventArgs());
+            if (m_AutoSize) AutoResize();
             OnNeedsRepaint();
         }
         #endregion
@@ -216,6 +249,7 @@ namespace MarchOfTheRays.Editor
         protected virtual void OnHandleSizeChanged()
         {
             HandleSizeChanged?.Invoke(this, new EventArgs());
+            if (m_AutoSize) AutoResize();
             OnNeedsRepaint();
         }
         #endregion
@@ -237,6 +271,7 @@ namespace MarchOfTheRays.Editor
         protected virtual void OnInputCountChanged()
         {
             InputCountChanged?.Invoke(this, new EventArgs());
+            if (m_AutoSize) AutoResize();
             OnNeedsRepaint();
         }
         #endregion
@@ -258,6 +293,7 @@ namespace MarchOfTheRays.Editor
         protected virtual void OnHasOutputChanged()
         {
             HasOutputChanged?.Invoke(this, new EventArgs());
+            if (m_AutoSize) AutoResize();
             OnNeedsRepaint();
         }
         #endregion
