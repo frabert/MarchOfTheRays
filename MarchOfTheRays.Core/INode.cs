@@ -10,6 +10,8 @@ namespace MarchOfTheRays.Core
         Float3,
         Float4,
         Bool,
+        Indeterminate,
+        Invalid,
         None
     }
 
@@ -45,7 +47,8 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class FloatConstantNode : INode
     {
-        [Browsable(false)]
+        [Category("Type information")]
+        [DisplayName("Output type")]
         public NodeType OutputType => NodeType.Float;
 
         float m_Value;
@@ -67,7 +70,8 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class Float2ConstantNode : INode
     {
-        [Browsable(false)]
+        [Category("Type information")]
+        [DisplayName("Output type")]
         public NodeType OutputType => NodeType.Float2;
 
         float m_X, m_Y;
@@ -99,7 +103,8 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class Float3ConstantNode : INode
     {
-        [Browsable(false)]
+        [Category("Type information")]
+        [DisplayName("Output type")]
         public NodeType OutputType => NodeType.Float3;
 
         float m_X, m_Y, m_Z;
@@ -141,7 +146,8 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class Float4ConstantNode : INode
     {
-        [Browsable(false)]
+        [Category("Type information")]
+        [DisplayName("Output type")]
         public NodeType OutputType => NodeType.Float4;
 
         float m_X, m_Y, m_Z, m_W;
@@ -193,8 +199,13 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class LengthNode : IUnaryNode
     {
-        [Browsable(false)]
+        [Category("Type information")]
+        [DisplayName("Output type")]
         public NodeType OutputType => NodeType.Float;
+
+        [Category("Type information")]
+        [DisplayName("Input type")]
+        public NodeType InputType => Input == null ? NodeType.Indeterminate : Input.OutputType;
 
         [Browsable(false)]
         public INode Input { get; set; }
@@ -203,8 +214,13 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class AbsNode : IUnaryNode
     {
-        [Browsable(false)]
+        [Category("Type information")]
+        [DisplayName("Output type")]
         public NodeType OutputType => Input.OutputType;
+
+        [Category("Type information")]
+        [DisplayName("Input type")]
+        public NodeType InputType => Input == null ? NodeType.Indeterminate : Input.OutputType;
 
         [Browsable(false)]
         public INode Input { get; set; }
@@ -217,17 +233,29 @@ namespace MarchOfTheRays.Core
         public INode Left { get; set; }
         [Browsable(false)]
         public INode Right { get; set; }
-        [Browsable(false)]
+
+        [Category("Type information")]
+        [DisplayName("Output type")]
         public NodeType OutputType
         {
             get
             {
+                if (Left == null || Right == null) return NodeType.Indeterminate;
+
                 if (Left.OutputType == NodeType.Float4 || Right.OutputType == NodeType.Float4) return NodeType.Float4;
                 if (Left.OutputType == NodeType.Float3 || Right.OutputType == NodeType.Float3) return NodeType.Float3;
                 if (Left.OutputType == NodeType.Float2 || Right.OutputType == NodeType.Float2) return NodeType.Float2;
                 return NodeType.Float;
             }
         }
+
+        [Category("Type information")]
+        [DisplayName("Left input type")]
+        public NodeType LeftInputType => Left == null ? NodeType.Indeterminate : Left.OutputType;
+
+        [Category("Type information")]
+        [DisplayName("Right input type")]
+        public NodeType RightInputType => Right == null ? NodeType.Indeterminate : Right.OutputType;
 
         bool m_IsMin;
 
@@ -279,7 +307,8 @@ namespace MarchOfTheRays.Core
         [field: NonSerialized]
         public event EventHandler OperationChanged;
 
-        [Browsable(false)]
+        [Category("Type information")]
+        [DisplayName("Output type")]
         public NodeType OutputType
         {
             get
@@ -287,28 +316,44 @@ namespace MarchOfTheRays.Core
                 if (Operation == ArithOp.Cross) return NodeType.Float3;
                 if (Operation == ArithOp.Dot) return NodeType.Float;
 
+                if (Left == null || Right == null) return NodeType.Indeterminate;
+
                 if (Left.OutputType == NodeType.Float4 || Right.OutputType == NodeType.Float4) return NodeType.Float4;
                 if (Left.OutputType == NodeType.Float3 || Right.OutputType == NodeType.Float3) return NodeType.Float3;
                 if (Left.OutputType == NodeType.Float2 || Right.OutputType == NodeType.Float2) return NodeType.Float2;
                 return NodeType.Float;
             }
         }
+
+        [Category("Type information")]
+        [DisplayName("Left input type")]
+        public NodeType LeftInputType => Left == null ? NodeType.Indeterminate : Left.OutputType;
+
+        [Category("Type information")]
+        [DisplayName("Right input type")]
+        public NodeType RightInputType => Right == null ? NodeType.Indeterminate : Right.OutputType;
     }
 
     [Serializable]
     public class InputNode : INode
     {
-        [Browsable(false)]
+        [Category("Type information")]
+        [DisplayName("Output type")]
         public NodeType OutputType { get; set; }
     }
 
     [Serializable]
     public class OutputNode : IUnaryNode
     {
-        [Browsable(false)]
+        [Category("Type information")]
+        [DisplayName("Output type")]
         public NodeType OutputType => NodeType.None;
 
         [Browsable(false)]
         public INode Input { get; set; }
+
+        [Category("Type information")]
+        [DisplayName("Input type")]
+        public NodeType InputType => Input == null ? NodeType.Indeterminate : Input.OutputType;
     }
 }
