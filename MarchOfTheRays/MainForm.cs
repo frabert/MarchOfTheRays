@@ -134,10 +134,17 @@ namespace MarchOfTheRays
                     var viewMenu = new ToolStripMenuItem("&View");
                     var fitToScreen = new ToolStripMenuItem("Fit to screen", null, (s, e) =>
                     {
-                        canvas.FitToView();
+                        canvas.FitToView(_ => true);
                     });
                     fitToScreen.ShortcutKeys = Keys.Control | Keys.Shift | Keys.W;
                     viewMenu.DropDownItems.Add(fitToScreen);
+
+                    var fitToSelection = new ToolStripMenuItem("Fit to selection", null, (s, e) =>
+                    {
+                        canvas.FitToView(x => x.Selected);
+                    });
+                    fitToSelection.ShortcutKeys = Keys.Control | Keys.W;
+                    viewMenu.DropDownItems.Add(fitToSelection);
 
                     var resetZoom = new ToolStripMenuItem("Reset zoom", null, (s, e) =>
                     {
@@ -667,7 +674,7 @@ namespace MarchOfTheRays
                 }
             }
 
-            canvas.FitToView();
+            canvas.FitToView(_ => true);
             canvas.ResetHistory();
         }
 

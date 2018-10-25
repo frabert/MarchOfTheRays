@@ -642,14 +642,14 @@ namespace MarchOfTheRays.Editor
             get => elements.Where(x => x.Selected);
         }
 
-        public void FitToView()
+        public void FitToView(Func<NodeElement, bool> predicate)
         {
             var minX = float.PositiveInfinity;
             var minY = float.PositiveInfinity;
             var maxX = float.NegativeInfinity;
             var maxY = float.NegativeInfinity;
 
-            foreach (var elem in elements)
+            foreach (var elem in elements.Where(predicate))
             {
                 var minpos = elem.Location;
                 var maxpos = elem.Location + elem.Size;
@@ -660,6 +660,8 @@ namespace MarchOfTheRays.Editor
                 maxX = Math.Max(maxX, maxpos.X);
                 maxY = Math.Max(maxY, maxpos.Y);
             }
+
+            if (float.IsInfinity(minX)) return;
 
             var center = new PointF((maxX - minX) / 2.0f + minX, (maxY - minY) / 2.0f + minY);
             var w = maxX - minX;
