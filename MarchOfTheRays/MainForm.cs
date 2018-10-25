@@ -315,7 +315,7 @@ namespace MarchOfTheRays
             {
                 if (e.Button != MouseButtons.Left) return;
 
-                var img = renderer.RenderImageAsync(renderBox.Width, renderBox.Height, outputNode);
+                var img = renderer.RenderImageAsync(renderBox.Width, renderBox.Height, outputNode, 4);
 
                 renderBox.Cursor = Cursors.WaitCursor;
                 renderBox.Image = await img;
@@ -403,8 +403,6 @@ namespace MarchOfTheRays
             if (elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Width = 90,
-                Height = 50,
                 Location = location,
                 Text = "Position",
                 InputCount = 0,
@@ -423,8 +421,6 @@ namespace MarchOfTheRays
             if (elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Width = 90,
-                Height = 50,
                 Location = location,
                 Text = "Output",
                 InputCount = 1,
@@ -444,8 +440,6 @@ namespace MarchOfTheRays
             if (elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Width = 100,
-                Height = 50,
                 Text = node.Value.ToString(),
                 Location = location,
                 InputCount = 0,
@@ -469,8 +463,6 @@ namespace MarchOfTheRays
             if (elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Width = 100,
-                Height = 50,
                 Text = $"({node.X}; {node.Y})",
                 Location = location,
                 InputCount = 0,
@@ -494,8 +486,6 @@ namespace MarchOfTheRays
             if (elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Width = 100,
-                Height = 50,
                 Text = $"({node.X}; {node.Y}; {node.Z})",
                 Location = location,
                 InputCount = 0,
@@ -520,8 +510,6 @@ namespace MarchOfTheRays
             if (elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Width = 100,
-                Height = 50,
                 Text = $"({node.X}; {node.Y}, {node.Z}; {node.W})",
                 Location = location,
                 InputCount = 0,
@@ -545,8 +533,6 @@ namespace MarchOfTheRays
             if (elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Width = 100,
-                Height = 60,
                 Text = node.Operation.ToString(),
                 Location = location,
                 InputCount = 2,
@@ -570,8 +556,6 @@ namespace MarchOfTheRays
             if (elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Width = 100,
-                Height = 60,
                 Text = node.IsMin ? "Min" : "Max",
                 Location = location,
                 InputCount = 2,
@@ -595,8 +579,6 @@ namespace MarchOfTheRays
             if (elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Width = 80,
-                Height = 50,
                 Text = "Length",
                 Location = location,
                 InputCount = 1,
@@ -614,8 +596,6 @@ namespace MarchOfTheRays
             if (elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Width = 60,
-                Height = 50,
                 Text = "Abs",
                 Location = location,
                 InputCount = 1,

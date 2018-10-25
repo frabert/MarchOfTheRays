@@ -18,14 +18,6 @@ namespace MarchOfTheRays.CpuRenderer
         const float MAX_DIST = 20.0f; // Make sure you change this if you have objects farther than 20 units away from the camera
         const float EPSILON = 0.001f; // At this distance we are close enough to the object that we have essentially hit it
 
-        float distfunc(Vector3 pos)
-        {
-            //return sphere(pos, 1.0f);
-            //return opRep(pos, new Vector3(0.4f), x => sphere(x, 0.1f));
-            //return opRep(new Vector3(2f), opSubtract(sphere(0.5f), udBox(new Vector3(0.4f))))(pos);
-            return 0;
-        }
-
         Vector2 Map(Func<float, float> f, Vector2 v)
         {
             return new Vector2(f(v.X), f(v.Y));
@@ -436,44 +428,82 @@ namespace MarchOfTheRays.CpuRenderer
             }
         }
 
-        public Image RenderImage(int width, int height, Core.OutputNode node, Func<Vector3, float> func)
+        void RenderChunk(IntPtr scan0, int totalWidth, int totalHeight, int height, int stride, int yoff, Func<Vector3, float> func)
+        {
+            unsafe
+            {
+                byte* rawBytes = (byte*)scan0;
+                int strideDiff = stride - totalWidth * 3;
+                for(int i = 0; i < totalWidth * height; i++)
+                {
+                    int x = i % totalWidth;
+                    int y = (i - x) / totalWidth;
+
+                    int idx = (stride * (y + yoff)) + x * 3;
+
+                    Vector3 color;
+                    MainRender(x, y + yoff, totalWidth, totalHeight, out color, func);
+                    rawBytes[idx + 0] = (byte)(Math.Min(color.X, 1.0f) * 255);
+                    rawBytes[idx + 1] = (byte)(Math.Min(color.Y, 1.0f) * 255);
+                    rawBytes[idx + 2] = (byte)(Math.Min(color.Z, 1.0f) * 255);
+                }
+            }
+        }
+
+        public Image RenderImage(int width, int height, Func<Vector3, float> func)
         {
             var img = new Bitmap(width, height);
 
             var data = img.LockBits(new Rectangle(Point.Empty, new Size(width, height)), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
-
-            unsafe
-            {
-                byte* rawBytes = (byte*)data.Scan0;
-                int ptr = 0;
-                int additional = (data.Stride - width * 3);
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        Vector3 color;
-                        MainRender(x, y, width, height, out color, func);
-                        rawBytes[ptr++] = (byte)(Math.Min(color.X, 1.0f) * 255);
-                        rawBytes[ptr++] = (byte)(Math.Min(color.Y, 1.0f) * 255);
-                        rawBytes[ptr++] = (byte)(Math.Min(color.Z, 1.0f) * 255);
-                    }
-                    ptr += additional;
-                }
-            }
+            
+            RenderChunk(data.Scan0, width, height, height, data.Stride, 0, func);
 
             img.UnlockBits(data);
 
             return img;
         }
 
+        public Image RenderImage(int width, int height, Func<Vector3, float> func, int nthreads)
+        {
+            var img = new Bitmap(width, height);
+
+            var data = img.LockBits(new Rectangle(Point.Empty, new Size(width, height)), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
+
+            Task[] tasks = new Task[nthreads];
+
+            var stripeHeight = height / (float)nthreads;
+            for(int i = 0; i < nthreads; i++)
+            {
+                int start = (int)stripeHeight * i;
+                int end = (int)(stripeHeight * (i + 1));
+                tasks[i] = Task.Factory.StartNew(() => RenderChunk(data.Scan0, width, height, end - start, data.Stride, start, func));
+            }
+
+            Task.WaitAll(tasks);
+
+            img.UnlockBits(data);
+
+            return img;
+        }
+
+        public Func<Vector3, float> Compile(Core.OutputNode node)
+        {
+            return compileToFunc(node);
+        }
+
         public Task<Image> RenderImageAsync(int width, int height, Core.OutputNode node)
         {
-            return Task<Image>.Factory.StartNew(() => RenderImage(width, height, node, compileToFunc(node)));
+            return Task<Image>.Factory.StartNew(() => RenderImage(width, height, compileToFunc(node)));
+        }
+
+        public Task<Image> RenderImageAsync(int width, int height, Core.OutputNode node, int nthreads)
+        {
+            return Task<Image>.Factory.StartNew(() => RenderImage(width, height, compileToFunc(node), nthreads));
         }
 
         public Task<Image> RenderImageSlowAsync(int width, int height, Core.OutputNode node)
         {
-            return Task<Image>.Factory.StartNew(() => RenderImage(width, height, node, x => evalNodeFloat(x, node)));
+            return Task<Image>.Factory.StartNew(() => RenderImage(width, height, x => evalNodeFloat(x, node)));
         }
     }
 }
