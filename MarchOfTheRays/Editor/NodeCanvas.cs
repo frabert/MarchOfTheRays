@@ -21,6 +21,101 @@ namespace MarchOfTheRays.Editor
         public int DestinationIndex { get; private set; }
     }
 
+    class EdgeDictionary
+    {
+        Dictionary<NodeElement, List<(NodeElement destination, int index)>> forwardStars;
+        Dictionary<NodeElement, List<(NodeElement source, int index)>> backwardStars;
+        Dictionary<(NodeElement destination, int index), NodeElement> inwardNodes;
+
+        public EdgeDictionary()
+        {
+            forwardStars = new Dictionary<NodeElement, List<(NodeElement, int)>>();
+            backwardStars = new Dictionary<NodeElement, List<(NodeElement, int)>>();
+            inwardNodes = new Dictionary<(NodeElement, int), NodeElement>();
+        }
+
+        public void Clear()
+        {
+            forwardStars.Clear();
+            backwardStars.Clear();
+            inwardNodes.Clear();
+        }
+
+        public IEnumerable<(NodeElement destination, int index)> ForwardStar(NodeElement source)
+        {
+            if (forwardStars.TryGetValue(source, out var list))
+            {
+                foreach (var e in list) yield return e;
+            }
+        }
+
+        public IEnumerable<(NodeElement source, int index)> BackwardStar(NodeElement destination)
+        {
+            if (backwardStars.TryGetValue(destination, out var list))
+            {
+                foreach (var e in list) yield return e;
+            }
+        }
+
+        public NodeElement IncidentNode(NodeElement destination, int index)
+        {
+            if (inwardNodes.TryGetValue((destination, index), out var e))
+            {
+                return e;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public void AddElement(NodeElement elem)
+        {
+            forwardStars.Add(elem, new List<(NodeElement, int)>());
+            backwardStars.Add(elem, new List<(NodeElement, int)>());
+        }
+
+        public void RemoveElement(NodeElement elem)
+        {
+            foreach (var (destination, index) in forwardStars[elem])
+            {
+                inwardNodes.Remove((destination, index));
+            }
+            forwardStars.Remove(elem);
+            foreach(var (source, index) in backwardStars[elem])
+            {
+                inwardNodes.Remove((elem, index));
+            }
+            backwardStars.Remove(elem);
+        }
+
+        public void AddEdge(NodeElement source, NodeElement destination, int index)
+        {
+            forwardStars[source].Add((destination, index));
+            backwardStars[destination].Add((source, index));
+            inwardNodes.Add((destination, index), source);
+        }
+
+        public void RemoveEdge(NodeElement destination, int index)
+        {
+            var source = inwardNodes[(destination, index)];
+            forwardStars[source].Remove((destination, index));
+            backwardStars[destination].Remove((source, index));
+            inwardNodes.Remove((destination, index));
+        }
+
+        public IEnumerable<(NodeElement source, NodeElement destination, int index)> Edges
+        {
+            get
+            {
+                foreach (var e in inwardNodes)
+                {
+                    yield return (e.Value, e.Key.destination, e.Key.index);
+                }
+            }
+        }
+    }
+
     class NodeCanvas : UserControl
     {
         #region Commands
@@ -28,11 +123,13 @@ namespace MarchOfTheRays.Editor
         {
             private NodeCanvas canvas;
             private IList<NodeElement> elems;
+            private List<(NodeElement source, NodeElement destination, int index)> edges;
 
             public AddElementsCommand(NodeCanvas canvas, IList<NodeElement> elems)
             {
                 this.canvas = canvas;
                 this.elems = elems;
+                edges = new List<(NodeElement, NodeElement, int)>();
             }
 
             public void Execute()
@@ -41,6 +138,12 @@ namespace MarchOfTheRays.Editor
                 {
                     elem.NeedsRepaint += canvas.element_NeedsRepaint;
                     canvas.elements.Add(elem);
+                    canvas.edges.AddElement(elem);
+                }
+
+                foreach (var edge in edges)
+                {
+                    canvas.edges.AddEdge(edge.source, edge.destination, edge.index);
                 }
                 canvas.Invalidate();
             }
@@ -49,7 +152,17 @@ namespace MarchOfTheRays.Editor
             {
                 foreach (var elem in elems)
                 {
+                    foreach(var bs in canvas.edges.BackwardStar(elem))
+                    {
+                        edges.Add((bs.source, elem, bs.index));
+                    }
+
+                    foreach(var fs in canvas.edges.ForwardStar(elem))
+                    {
+                        edges.Add((elem, fs.destination, fs.index));
+                    }
                     canvas.elements.Remove(elem);
+                    canvas.edges.RemoveElement(elem);
                 }
                 canvas.Invalidate();
             }
@@ -72,13 +185,13 @@ namespace MarchOfTheRays.Editor
 
             public void Execute()
             {
-                canvas.edgeDictionary.Add((destination, index), source);
+                canvas.edges.AddEdge(source, destination, index);
                 canvas.OnEdgeAdded(new EdgeModifiedEventArgs(source, destination, index));
             }
 
             public void Undo()
             {
-                canvas.edgeDictionary.Remove((destination, index));
+                canvas.edges.RemoveEdge(destination, index);
                 canvas.OnEdgeRemoved(new EdgeModifiedEventArgs(source, destination, index));
             }
         }
@@ -154,7 +267,8 @@ namespace MarchOfTheRays.Editor
         #endregion
 
         List<NodeElement> elements = new List<NodeElement>();
-        Dictionary<(NodeElement, int), NodeElement> edgeDictionary = new Dictionary<(NodeElement, int), NodeElement>();
+        EdgeDictionary edges = new EdgeDictionary();
+
         CommandList commands = new CommandList();
 
         WorldViewMatrix wvMatrix = new WorldViewMatrix();
@@ -202,7 +316,7 @@ namespace MarchOfTheRays.Editor
         public void Clear()
         {
             elements.Clear();
-            edgeDictionary.Clear();
+            edges.Clear();
             commands.Clear();
             Invalidate();
         }
@@ -223,7 +337,7 @@ namespace MarchOfTheRays.Editor
 
         public void AddEdge(NodeElement source, NodeElement destination, int index)
         {
-            if (edgeDictionary.ContainsKey((destination, index))) return;
+            if (edges.IncidentNode(destination, index) != null) return;
             var cmd = new AddEdgeCommand(this, source, destination, index);
             cmd.Execute();
             commands.Add(cmd);
@@ -231,7 +345,7 @@ namespace MarchOfTheRays.Editor
 
         public void RemoveEdge(NodeElement destination, int index)
         {
-            var e = edgeDictionary[(destination, index)];
+            var e = edges.IncidentNode(destination, index);
             var cmd = new InverseCommand(new AddEdgeCommand(this, e, destination, index));
             cmd.Execute();
             commands.Add(cmd);
@@ -269,11 +383,14 @@ namespace MarchOfTheRays.Editor
                     {
                         selecting = false;
                         dragging = true;
-                        var source = edgeDictionary[(elem, inputHandle)];
-                        draggedElem = source;
-                        draggingEdge = true;
-                        RemoveEdge(elem, inputHandle);
-                        break;
+                        var source = edges.IncidentNode(elem, inputHandle);
+                        if(source != null)
+                        {
+                            draggedElem = source;
+                            draggingEdge = true;
+                            RemoveEdge(elem, inputHandle);
+                            break;
+                        }
                     }
 
                     if (elem.ClipRegion.Contains(coords))
@@ -336,9 +453,9 @@ namespace MarchOfTheRays.Editor
                 }
             }
 
-            if(dragging)
+            if (dragging)
             {
-                if(moveDistance.Width > 0 || moveDistance.Height > 0)
+                if (moveDistance.Width > 0 || moveDistance.Height > 0)
                 {
                     var cmd = new MoveElementsCommand(SelectedElements.ToList(), moveDistance);
                     commands.Add(cmd);
@@ -423,7 +540,7 @@ namespace MarchOfTheRays.Editor
                 else if (!draggingEdge)
                 {
                     var delta = new SizeF(b.X - a.X, b.Y - a.Y);
-                    foreach(var elem in SelectedElements)
+                    foreach (var elem in SelectedElements)
                     {
                         elem.Location += delta;
                     }
@@ -522,10 +639,9 @@ namespace MarchOfTheRays.Editor
                 g.EndContainer(ctx);
             }
 
-            foreach (var edge in edgeDictionary)
+            foreach (var edge in edges.Edges)
             {
-                if (elements.Contains(edge.Value) && elements.Contains(edge.Key.Item1))
-                    DrawCurve(g, edge.Value, edge.Key.Item1, edge.Key.Item2);
+                DrawCurve(g, edge.source, edge.destination, edge.index);
             }
 
             if (draggingEdge)
