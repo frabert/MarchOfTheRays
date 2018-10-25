@@ -154,12 +154,14 @@ namespace MarchOfTheRays.Editor
                 {
                     foreach(var bs in canvas.edges.BackwardStar(elem))
                     {
-                        edges.Add((bs.source, elem, bs.index));
+                        var tuple = (bs.source, elem, bs.index);
+                        if(!edges.Contains(tuple)) edges.Add(tuple);
                     }
 
                     foreach(var fs in canvas.edges.ForwardStar(elem))
                     {
-                        edges.Add((elem, fs.destination, fs.index));
+                        var tuple = (elem, fs.destination, fs.index);
+                        if (!edges.Contains(tuple)) edges.Add(tuple);
                     }
                     canvas.elements.Remove(elem);
                     canvas.edges.RemoveElement(elem);
@@ -321,16 +323,23 @@ namespace MarchOfTheRays.Editor
             Invalidate();
         }
 
-        public void AddElement(NodeElement e)
+        public void AddElements(params NodeElement[] e)
         {
-            var cmd = new AddElementsCommand(this, new List<NodeElement>() { e });
+            var cmd = new AddElementsCommand(this, e);
             cmd.Execute();
             commands.Add(cmd);
         }
 
-        public void RemoveElement(NodeElement e)
+        public void AddElements(IList<NodeElement> e)
         {
-            var cmd = new InverseCommand(new AddElementsCommand(this, new List<NodeElement>() { e }));
+            var cmd = new AddElementsCommand(this, e);
+            cmd.Execute();
+            commands.Add(cmd);
+        }
+
+        public void RemoveElements(params NodeElement[] e)
+        {
+            var cmd = new InverseCommand(new AddElementsCommand(this, e));
             cmd.Execute();
             commands.Add(cmd);
         }
@@ -341,6 +350,21 @@ namespace MarchOfTheRays.Editor
             var cmd = new AddEdgeCommand(this, source, destination, index);
             cmd.Execute();
             commands.Add(cmd);
+        }
+
+        public void AddEdges(IList<(NodeElement source, NodeElement destination, int index)> e)
+        {
+            var list = new List<ICommand>();
+            foreach(var edge in e)
+            {
+                if (edges.IncidentNode(edge.destination, edge.index) != null) continue;
+                var cmd = new AddEdgeCommand(this, edge.source, edge.destination, edge.index);
+                list.Add(cmd);
+            }
+
+            var aggregate = new AggregateCommand(list);
+            aggregate.Execute();
+            commands.Add(aggregate);
         }
 
         public void RemoveEdge(NodeElement destination, int index)

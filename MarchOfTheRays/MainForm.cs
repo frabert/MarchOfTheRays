@@ -92,15 +92,25 @@ namespace MarchOfTheRays
 
                     editMenu.DropDownItems.Add(new ToolStripSeparator());
 
-                    var cut = new ToolStripMenuItem("Cu&t", null, (s, e) => { });
+                    var cut = new ToolStripMenuItem("Cu&t", null, (s, e) =>
+                    {
+                        Copy();
+                        canvas.DeleteElements(x => x.Selected && !(x.Tag is Core.OutputNode));
+                    });
                     cut.ShortcutKeys = Keys.Control | Keys.X;
                     editMenu.DropDownItems.Add(cut);
 
-                    var copy = new ToolStripMenuItem("&Copy", null, (s, e) => { });
+                    var copy = new ToolStripMenuItem("&Copy", null, (s, e) =>
+                    {
+                        Copy();
+                    });
                     copy.ShortcutKeys = Keys.Control | Keys.C;
                     editMenu.DropDownItems.Add(copy);
 
-                    var paste = new ToolStripMenuItem("&Paste", null, (s, e) => { });
+                    var paste = new ToolStripMenuItem("&Paste", null, (s, e) =>
+                    {
+                        Paste();
+                    });
                     paste.ShortcutKeys = Keys.Control | Keys.V;
                     editMenu.DropDownItems.Add(paste);
 
@@ -328,7 +338,6 @@ namespace MarchOfTheRays
 
             ResumeLayout();
             splitContainerV.SplitterDistance = 500;
-
             NewDocument();
         }
 
@@ -340,6 +349,12 @@ namespace MarchOfTheRays
             {
                 Deserialize(stream);
             }
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            canvas.FitToView(_ => true);
+            base.OnLoad(e);
         }
 
         bool Save()
@@ -383,21 +398,43 @@ namespace MarchOfTheRays
         Editor.NodeElement AddNode(PointF location, Core.INode node)
         {
             if (node == null) throw new ArgumentNullException();
-            switch (node)
-            {
-                case Core.AbsNode n: return AddNode(location, n);
-                case Core.ArithmeticNode n: return AddNode(location, n);
-                case Core.Float3ConstantNode n: return AddNode(location, n);
-                case Core.FloatConstantNode n: return AddNode(location, n);
-                case Core.InputNode n: return AddNode(location, n);
-                case Core.LengthNode n: return AddNode(location, n);
-                case Core.MinMaxNode n: return AddNode(location, n);
-                case Core.OutputNode n: return AddNode(location, n);
-                default: throw new NotImplementedException();
-            }
+            var elem = CreateNode(location, node);
+            canvas.AddElements(elem);
+            return elem;
         }
 
-        Editor.NodeElement AddNode(PointF location, Core.InputNode node)
+        IEnumerable<Editor.NodeElement> AddNodes(IEnumerable<(PointF, Core.INode)> nodes)
+        {
+            if (nodes == null) throw new ArgumentNullException();
+            var list = new List<Editor.NodeElement>();
+            foreach (var (location, node) in nodes)
+            {
+                list.Add(CreateNode(location, node));
+            }
+            canvas.AddElements(list);
+            return list;
+        }
+
+        Editor.NodeElement CreateNode(PointF location, Core.INode node)
+        {
+            if (node == null) throw new ArgumentNullException();
+            Editor.NodeElement elem;
+            switch (node)
+            {
+                case Core.AbsNode n: elem = CreateNode(location, n); break;
+                case Core.ArithmeticNode n: elem = CreateNode(location, n); break;
+                case Core.Float3ConstantNode n: elem = CreateNode(location, n); break;
+                case Core.FloatConstantNode n: elem = CreateNode(location, n); break;
+                case Core.InputNode n: elem = CreateNode(location, n); break;
+                case Core.LengthNode n: elem = CreateNode(location, n); break;
+                case Core.MinMaxNode n: elem = CreateNode(location, n); break;
+                case Core.OutputNode n: elem = CreateNode(location, n); break;
+                default: throw new NotImplementedException();
+            }
+            return elem;
+        }
+
+        Editor.NodeElement CreateNode(PointF location, Core.InputNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
@@ -410,12 +447,11 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            canvas.AddElement(elem);
             elements.Add(node, elem);
             return elem;
         }
 
-        Editor.NodeElement AddNode(PointF location, Core.OutputNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.OutputNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
@@ -428,13 +464,12 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            canvas.AddElement(elem);
             elements.Add(node, elem);
 
             return elem;
         }
 
-        Editor.NodeElement AddNode(PointF location, Core.FloatConstantNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.FloatConstantNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
@@ -452,12 +487,11 @@ namespace MarchOfTheRays
                 elem.Text = node.Value.ToString();
             };
 
-            canvas.AddElement(elem);
             elements.Add(node, elem);
             return elem;
         }
 
-        Editor.NodeElement AddNode(PointF location, Core.Float2ConstantNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.Float2ConstantNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
@@ -475,12 +509,11 @@ namespace MarchOfTheRays
                 elem.Text = $"({node.X}; {node.Y})";
             };
 
-            canvas.AddElement(elem);
             elements.Add(node, elem);
             return elem;
         }
 
-        Editor.NodeElement AddNode(PointF location, Core.Float3ConstantNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.Float3ConstantNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
@@ -498,13 +531,11 @@ namespace MarchOfTheRays
                 elem.Text = $"({node.X}; {node.Y}; {node.Z})";
             };
 
-
-            canvas.AddElement(elem);
             elements.Add(node, elem);
             return elem;
         }
 
-        Editor.NodeElement AddNode(PointF location, Core.Float4ConstantNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.Float4ConstantNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
@@ -522,12 +553,11 @@ namespace MarchOfTheRays
                 elem.Text = $"({node.X}; {node.Y}; {node.Z}; {node.W})";
             };
 
-            canvas.AddElement(elem);
             elements.Add(node, elem);
             return elem;
         }
 
-        Editor.NodeElement AddNode(PointF location, Core.ArithmeticNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.ArithmeticNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
@@ -545,12 +575,11 @@ namespace MarchOfTheRays
                 elem.Text = node.Operation.ToString();
             };
 
-            canvas.AddElement(elem);
             elements.Add(node, elem);
             return elem;
         }
 
-        Editor.NodeElement AddNode(PointF location, Core.MinMaxNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.MinMaxNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
@@ -568,12 +597,11 @@ namespace MarchOfTheRays
                 elem.Text = node.IsMin ? "Min" : "Max";
             };
 
-            canvas.AddElement(elem);
             elements.Add(node, elem);
             return elem;
         }
 
-        Editor.NodeElement AddNode(PointF location, Core.LengthNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.LengthNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
@@ -585,12 +613,11 @@ namespace MarchOfTheRays
                 HasOutput = true,
                 Tag = node
             };
-            canvas.AddElement(elem);
             elements.Add(node, elem);
             return elem;
         }
 
-        Editor.NodeElement AddNode(PointF location, Core.AbsNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.AbsNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
@@ -602,7 +629,6 @@ namespace MarchOfTheRays
                 HasOutput = true,
                 Tag = node
             };
-            canvas.AddElement(elem);
             elements.Add(node, elem);
             return elem;
         }
@@ -654,7 +680,6 @@ namespace MarchOfTheRays
                 }
             }
 
-            canvas.FitToView(_ => true);
             canvas.ResetHistory();
         }
 
@@ -667,6 +692,107 @@ namespace MarchOfTheRays
             outputNode = new Core.OutputNode();
             AddNode(new PointF(200, 0), outputNode);
             canvas.ResetHistory();
+        }
+
+        void Copy()
+        {
+            var clones = new List<(Core.INode, PointF)>();
+            var originalsToClones = new Dictionary<Core.INode, Core.INode>();
+
+            Core.INode CloneElement(Editor.NodeElement element)
+            {
+                if (element.Tag is Core.InputNode) return null;
+
+                var original = (Core.INode)element.Tag;
+                if (originalsToClones.TryGetValue(original, out var clone))
+                {
+                    return clone;
+                }
+                else
+                {
+                    clone = (Core.INode)original.Clone();
+                    originalsToClones.Add(original, clone);
+                    clones.Add((clone, element.Location));
+                    switch (clone)
+                    {
+                        case Core.IUnaryNode n:
+                            {
+                                if (n.Input == null) break;
+                                var inputNode = elements[n.Input];
+                                n.Input = inputNode.Selected ? CloneElement(inputNode) : null;
+                            }
+                            break;
+                        case Core.IBinaryNode n:
+                            {
+                                if(n.Left != null)
+                                {
+                                    var leftNode = elements[n.Left];
+                                    n.Left = leftNode.Selected ? CloneElement(leftNode) : null;
+                                }
+
+                                if(n.Right != null)
+                                {
+                                    var rightNode = elements[n.Right];
+                                    n.Right = rightNode.Selected ? CloneElement(rightNode) : null;
+                                }
+                            }
+                            break;
+                    }
+                    return clone;
+                }
+            }
+
+            foreach (var selectedElem in canvas.SelectedElements)
+            {
+                if (selectedElem.Tag is Core.OutputNode) continue;
+                if (selectedElem.Tag is Core.InputNode) continue;
+                CloneElement(selectedElem);
+            }
+
+            Clipboard.SetData("MarchOfTheRays", clones);
+        }
+
+        void Paste()
+        {
+            var clipboardData = (List<(Core.INode, PointF)>)Clipboard.GetData("MarchOfTheRays");
+            canvas.SelectElements(_ => false);
+
+            var nodes = AddNodes(clipboardData.Select(tuple => (tuple.Item2 + new SizeF(10, 10), tuple.Item1)));
+            foreach(var node in nodes)
+            {
+                node.Selected = true;
+            }
+
+            var edges = new List<(Editor.NodeElement, Editor.NodeElement, int)>();
+
+            foreach (var (node, pos) in clipboardData)
+            {
+                var dest = elements[node];
+                switch (node)
+                {
+                    case Core.IUnaryNode n:
+                        if (n.Input != null)
+                        {
+                            var source = elements[n.Input];
+                            edges.Add((source, dest, 0));
+                        }
+                        break;
+                    case Core.IBinaryNode n:
+                        if (n.Left != null)
+                        {
+                            var source = elements[n.Left];
+                            edges.Add((source, dest, 0));
+                        }
+                        if (n.Right != null)
+                        {
+                            var source = elements[n.Right];
+                            edges.Add((source, dest, 1));
+                        }
+                        break;
+                }
+            }
+            canvas.AddEdges(edges);
+            canvas.Center(clipboardData[0].Item2);
         }
     }
 }

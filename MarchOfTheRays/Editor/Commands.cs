@@ -27,6 +27,32 @@ namespace MarchOfTheRays.Editor
         }
     }
 
+    class AggregateCommand : ICommand
+    {
+        IList<ICommand> cmds;
+
+        public AggregateCommand(IList<ICommand> cmds)
+        {
+            this.cmds = cmds;
+        }
+
+        public void Execute()
+        {
+            for(int i = 0; i < cmds.Count; i++)
+            {
+                cmds[i].Execute();
+            }
+        }
+
+        public void Undo()
+        {
+            for (int i = cmds.Count - 1; i >= 0; i--)
+            {
+                cmds[i].Undo();
+            }
+        }
+    }
+
     class CommandList
     {
         List<ICommand> commands = new List<ICommand>();
