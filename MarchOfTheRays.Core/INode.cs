@@ -402,7 +402,8 @@ namespace MarchOfTheRays.Core
             return new ArithmeticNode()
             {
                 Left = Left,
-                Right = Right
+                Right = Right,
+                m_Operation = m_Operation
             };
         }
     }
