@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MarchOfTheRays.Properties;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -12,9 +13,10 @@ namespace MarchOfTheRays
     {
         RichTextBox helpBox;
         Editor.NodeCanvas canvas;
-        ContextMenu canvasContextMenu;
+        ContextMenuStrip canvasContextMenu;
         PictureBox renderBox;
         Core.OutputNode outputNode;
+        ToolStripMenuItem paste;
 
         Dictionary<Core.INode, Editor.NodeElement> elements = new Dictionary<Core.INode, Editor.NodeElement>();
 
@@ -28,159 +30,157 @@ namespace MarchOfTheRays
 
             var mainMenu = new MenuStrip();
 
+            var fileMenu = new ToolStripMenuItem("&File");
+
+            var menuNew = new ToolStripMenuItem("&New", Resources.NewFile, (s, e) =>
             {
+                var res = MessageBox.Show("Save changes to the file?", "March of the Rays", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                if (res == DialogResult.Yes)
                 {
-                    var fileMenu = new ToolStripMenuItem("&File");
-
-                    var menuNew = new ToolStripMenuItem("&New", null, (s, e) =>
-                    {
-                        var res = MessageBox.Show("Save changes to the file?", "March of the Rays", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-                        if (res == DialogResult.Yes)
-                        {
-                            if (Save()) NewDocument();
-                        }
-                        else if (res == DialogResult.No)
-                        {
-                            NewDocument();
-                        }
-                    });
-                    menuNew.ShortcutKeys = Keys.Control | Keys.N;
-
-                    var menuOpen = new ToolStripMenuItem("&Open", null, (s, e) =>
-                    {
-                        Open();
-                    });
-                    menuOpen.ShortcutKeys = Keys.Control | Keys.O;
-
-                    var menuSave = new ToolStripMenuItem("&Save", null, (s, e) =>
-                    {
-                        Save();
-                    });
-                    menuSave.ShortcutKeys = Keys.Control | Keys.S;
-
-                    var menuExit = new ToolStripMenuItem("E&xit", null, (s, e) =>
-                    {
-                        Close();
-                    });
-                    menuExit.ShortcutKeys = Keys.Control | Keys.Q;
-
-                    fileMenu.DropDownItems.Add(menuNew);
-                    fileMenu.DropDownItems.Add(menuOpen);
-                    fileMenu.DropDownItems.Add(menuSave);
-                    fileMenu.DropDownItems.Add(new ToolStripSeparator());
-                    fileMenu.DropDownItems.Add(menuExit);
-
-                    mainMenu.Items.Add(fileMenu);
+                    if (Save()) NewDocument();
                 }
-
+                else if (res == DialogResult.No)
                 {
-                    var editMenu = new ToolStripMenuItem("&Edit");
-
-                    var undo = new ToolStripMenuItem("&Undo", null, (s, e) =>
-                    {
-                        canvas.Undo();
-                    });
-                    undo.ShortcutKeys = Keys.Control | Keys.Z;
-                    editMenu.DropDownItems.Add(undo);
-
-                    var redo = new ToolStripMenuItem("&Redo", null, (s, e) =>
-                    {
-                        canvas.Redo();
-                    });
-                    redo.ShortcutKeys = Keys.Control | Keys.Y;
-                    editMenu.DropDownItems.Add(redo);
-
-                    editMenu.DropDownItems.Add(new ToolStripSeparator());
-
-                    var cut = new ToolStripMenuItem("Cu&t", null, (s, e) =>
-                    {
-                        Copy();
-                        canvas.DeleteElements(x => x.Selected && !(x.Tag is Core.OutputNode));
-                    });
-                    cut.ShortcutKeys = Keys.Control | Keys.X;
-                    editMenu.DropDownItems.Add(cut);
-
-                    var copy = new ToolStripMenuItem("&Copy", null, (s, e) =>
-                    {
-                        Copy();
-                    });
-                    copy.ShortcutKeys = Keys.Control | Keys.C;
-                    editMenu.DropDownItems.Add(copy);
-
-                    var paste = new ToolStripMenuItem("&Paste", null, (s, e) =>
-                    {
-                        Paste();
-                    });
-                    paste.ShortcutKeys = Keys.Control | Keys.V;
-                    editMenu.DropDownItems.Add(paste);
-
-                    var delete = new ToolStripMenuItem("&Delete", null, (s, e) =>
-                    {
-                        canvas.DeleteElements(x => x.Selected && !(x.Tag is Core.OutputNode));
-                    });
-                    delete.ShortcutKeys = Keys.Delete;
-                    editMenu.DropDownItems.Add(delete);
-
-                    editMenu.DropDownItems.Add(new ToolStripSeparator());
-
-                    var selectAll = new ToolStripMenuItem("Select &All", null, (s, e) =>
-                    {
-                        canvas.SelectElements(x => true);
-                    });
-                    selectAll.ShortcutKeys = Keys.Control | Keys.A;
-                    editMenu.DropDownItems.Add(selectAll);
-
-                    var deselect = new ToolStripMenuItem("&Deselect", null, (s, e) =>
-                    {
-                        canvas.SelectElements(x => false);
-                    });
-                    deselect.ShortcutKeys = Keys.Control | Keys.D;
-                    editMenu.DropDownItems.Add(deselect);
-
-                    mainMenu.Items.Add(editMenu);
+                    NewDocument();
                 }
+            });
+            menuNew.ShortcutKeys = Keys.Control | Keys.N;
 
-                {
-                    var viewMenu = new ToolStripMenuItem("&View");
-                    var fitToScreen = new ToolStripMenuItem("Fit to screen", null, (s, e) =>
-                    {
-                        canvas.FitToView(_ => true);
-                    });
-                    fitToScreen.ShortcutKeys = Keys.Control | Keys.Shift | Keys.W;
-                    viewMenu.DropDownItems.Add(fitToScreen);
+            var menuOpen = new ToolStripMenuItem("&Open", Resources.Open, (s, e) =>
+            {
+                Open();
+            });
+            menuOpen.ShortcutKeys = Keys.Control | Keys.O;
 
-                    var fitToSelection = new ToolStripMenuItem("Fit to selection", null, (s, e) =>
-                    {
-                        canvas.FitToView(x => x.Selected);
-                    });
-                    fitToSelection.ShortcutKeys = Keys.Control | Keys.W;
-                    viewMenu.DropDownItems.Add(fitToSelection);
+            var menuSave = new ToolStripMenuItem("&Save", Resources.Save, (s, e) =>
+            {
+                Save();
+            });
+            menuSave.ShortcutKeys = Keys.Control | Keys.S;
 
-                    var resetZoom = new ToolStripMenuItem("Reset zoom", null, (s, e) =>
-                    {
-                        canvas.ResetZoom();
-                        canvas.Center();
-                    });
-                    resetZoom.ShortcutKeys = Keys.Control | Keys.D0;
-                    viewMenu.DropDownItems.Add(resetZoom);
+            var menuExit = new ToolStripMenuItem("E&xit", Resources.Exit, (s, e) =>
+            {
+                Close();
+            });
+            menuExit.ShortcutKeys = Keys.Control | Keys.Q;
 
-                    var zoomIn = new ToolStripMenuItem("Zoom in", null, (s, e) =>
-                    {
-                        canvas.ZoomCenter(1.1f);
-                    });
-                    zoomIn.ShortcutKeys = Keys.Control | Keys.Oemplus;
-                    viewMenu.DropDownItems.Add(zoomIn);
+            fileMenu.DropDownItems.Add(menuNew);
+            fileMenu.DropDownItems.Add(menuOpen);
+            fileMenu.DropDownItems.Add(menuSave);
+            fileMenu.DropDownItems.Add(new ToolStripSeparator());
+            fileMenu.DropDownItems.Add(menuExit);
 
-                    var zoomOut = new ToolStripMenuItem("Zoom out", null, (s, e) =>
-                    {
-                        canvas.ZoomCenter(1.0f / 1.1f);
-                    });
-                    zoomOut.ShortcutKeys = Keys.Control | Keys.OemMinus;
-                    viewMenu.DropDownItems.Add(zoomOut);
+            mainMenu.Items.Add(fileMenu);
 
-                    mainMenu.Items.Add(viewMenu);
-                }
-            }
+
+            var editMenu = new ToolStripMenuItem("&Edit");
+
+            var undo = new ToolStripMenuItem("&Undo", Resources.Undo, (s, e) =>
+            {
+                canvas.Undo();
+            });
+            undo.ShortcutKeys = Keys.Control | Keys.Z;
+            editMenu.DropDownItems.Add(undo);
+
+            var redo = new ToolStripMenuItem("&Redo", Resources.Redo, (s, e) =>
+            {
+                canvas.Redo();
+            });
+            redo.ShortcutKeys = Keys.Control | Keys.Y;
+            editMenu.DropDownItems.Add(redo);
+
+            editMenu.DropDownItems.Add(new ToolStripSeparator());
+
+            var cut = new ToolStripMenuItem("Cu&t", Resources.Cut, (s, e) =>
+            {
+                Copy();
+                canvas.DeleteElements(x => x.Selected && !(x.Tag is Core.OutputNode));
+            });
+            cut.ShortcutKeys = Keys.Control | Keys.X;
+            cut.Enabled = false;
+            editMenu.DropDownItems.Add(cut);
+
+            var copy = new ToolStripMenuItem("&Copy", Resources.Copy, (s, e) =>
+            {
+                Copy();
+            });
+            copy.ShortcutKeys = Keys.Control | Keys.C;
+            copy.Enabled = false;
+            editMenu.DropDownItems.Add(copy);
+
+            paste = new ToolStripMenuItem("&Paste", Resources.Paste, (s, e) =>
+            {
+                Paste();
+            });
+            paste.ShortcutKeys = Keys.Control | Keys.V;
+            // Enable paste command only if the clipboard is not empty
+            paste.Enabled = (List<(Core.INode, PointF)>)Clipboard.GetData("MarchOfTheRays") != null;
+            editMenu.DropDownItems.Add(paste);
+
+            var delete = new ToolStripMenuItem("&Delete", Resources.Delete, (s, e) =>
+            {
+                canvas.DeleteElements(x => x.Selected && !(x.Tag is Core.OutputNode));
+            });
+            delete.ShortcutKeys = Keys.Delete;
+            delete.Enabled = false;
+            editMenu.DropDownItems.Add(delete);
+
+            editMenu.DropDownItems.Add(new ToolStripSeparator());
+
+            var selectAll = new ToolStripMenuItem("Select &All", Resources.SelectAll, (s, e) =>
+            {
+                canvas.SelectElements(x => true);
+            });
+            selectAll.ShortcutKeys = Keys.Control | Keys.A;
+            editMenu.DropDownItems.Add(selectAll);
+
+            var deselect = new ToolStripMenuItem("&Deselect", null, (s, e) =>
+            {
+                canvas.SelectElements(x => false);
+            });
+            deselect.ShortcutKeys = Keys.Control | Keys.D;
+            editMenu.DropDownItems.Add(deselect);
+
+            mainMenu.Items.Add(editMenu);
+
+            var viewMenu = new ToolStripMenuItem("&View");
+            var fitToScreen = new ToolStripMenuItem("Fit to screen", Resources.ZoomToFit, (s, e) =>
+            {
+                canvas.FitToView(_ => true);
+            });
+            fitToScreen.ShortcutKeys = Keys.Control | Keys.Shift | Keys.W;
+            viewMenu.DropDownItems.Add(fitToScreen);
+
+            var fitToSelection = new ToolStripMenuItem("Fit to selection", Resources.ZoomToWidth, (s, e) =>
+            {
+                canvas.FitToView(x => x.Selected);
+            });
+            fitToSelection.ShortcutKeys = Keys.Control | Keys.W;
+            viewMenu.DropDownItems.Add(fitToSelection);
+
+            var resetZoom = new ToolStripMenuItem("Reset zoom", Resources.ZoomOriginalSize, (s, e) =>
+            {
+                canvas.ResetZoom();
+                canvas.Center();
+            });
+            resetZoom.ShortcutKeys = Keys.Control | Keys.D0;
+            viewMenu.DropDownItems.Add(resetZoom);
+
+            var zoomIn = new ToolStripMenuItem("Zoom in", Resources.ZoomIn, (s, e) =>
+            {
+                canvas.ZoomCenter(1.1f);
+            });
+            zoomIn.ShortcutKeys = Keys.Control | Keys.Oemplus;
+            viewMenu.DropDownItems.Add(zoomIn);
+
+            var zoomOut = new ToolStripMenuItem("Zoom out", Resources.ZoomOut, (s, e) =>
+            {
+                canvas.ZoomCenter(1.0f / 1.1f);
+            });
+            zoomOut.ShortcutKeys = Keys.Control | Keys.OemMinus;
+            viewMenu.DropDownItems.Add(zoomOut);
+
+            mainMenu.Items.Add(viewMenu);
 
             var statusStrip = new StatusStrip();
 
@@ -231,8 +231,8 @@ namespace MarchOfTheRays
 
             splitContainerV.Location = new Point(0, mainMenu.Height);
 
-            canvasContextMenu = new ContextMenu();
-            canvasContextMenu.MenuItems.Add("Float constant", (s, e) =>
+            canvasContextMenu = new ContextMenuStrip();
+            canvasContextMenu.Items.Add("Float constant", null, (s, e) =>
             {
                 var controlCoords = canvas.PointToClient(Cursor.Position);
                 var worldCoords = canvas.GetWorldCoordinates(controlCoords);
@@ -240,7 +240,7 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.FloatConstantNode());
             });
 
-            canvasContextMenu.MenuItems.Add("Float3 constant", (s, e) =>
+            canvasContextMenu.Items.Add("Float3 constant", null, (s, e) =>
             {
                 var controlCoords = canvas.PointToClient(Cursor.Position);
                 var worldCoords = canvas.GetWorldCoordinates(controlCoords);
@@ -248,7 +248,7 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.Float3ConstantNode());
             });
 
-            canvasContextMenu.MenuItems.Add("Arithmetic operation", (s, e) =>
+            canvasContextMenu.Items.Add("Arithmetic operation", null, (s, e) =>
             {
                 var controlCoords = canvas.PointToClient(Cursor.Position);
                 var worldCoords = canvas.GetWorldCoordinates(controlCoords);
@@ -256,7 +256,7 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.ArithmeticNode());
             });
 
-            canvasContextMenu.MenuItems.Add("Min/max operation", (s, e) =>
+            canvasContextMenu.Items.Add("Min/max operation", null, (s, e) =>
             {
                 var controlCoords = canvas.PointToClient(Cursor.Position);
                 var worldCoords = canvas.GetWorldCoordinates(controlCoords);
@@ -264,7 +264,7 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.MinMaxNode());
             });
 
-            canvasContextMenu.MenuItems.Add("Length operation", (s, e) =>
+            canvasContextMenu.Items.Add("Length operation", null, (s, e) =>
             {
                 var controlCoords = canvas.PointToClient(Cursor.Position);
                 var worldCoords = canvas.GetWorldCoordinates(controlCoords);
@@ -272,7 +272,7 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.LengthNode());
             });
 
-            canvasContextMenu.MenuItems.Add("Abs operation", (s, e) =>
+            canvasContextMenu.Items.Add("Abs operation", null, (s, e) =>
             {
                 var controlCoords = canvas.PointToClient(Cursor.Position);
                 var worldCoords = canvas.GetWorldCoordinates(controlCoords);
@@ -280,7 +280,13 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.AbsNode());
             });
 
-            canvas.ContextMenu = canvasContextMenu;
+            canvasContextMenu.Items.Add(new ToolStripSeparator());
+            canvasContextMenu.Items.Add(cut);
+            canvasContextMenu.Items.Add(copy);
+            canvasContextMenu.Items.Add(paste);
+            canvasContextMenu.Items.Add(delete);
+
+            canvas.ContextMenuStrip = canvasContextMenu;
 
             canvas.EdgeAdded += (s, e) =>
             {
@@ -317,6 +323,19 @@ namespace MarchOfTheRays
                 else
                 {
                     propertyBox.SelectedObject = null;
+                }
+
+                if (selectedItems.Count == 0)
+                {
+                    copy.Enabled = false;
+                    cut.Enabled = false;
+                    delete.Enabled = false;
+                }
+                else
+                {
+                    copy.Enabled = true;
+                    cut.Enabled = true;
+                    delete.Enabled = true;
                 }
             };
 
@@ -724,13 +743,13 @@ namespace MarchOfTheRays
                             break;
                         case Core.IBinaryNode n:
                             {
-                                if(n.Left != null)
+                                if (n.Left != null)
                                 {
                                     var leftNode = elements[n.Left];
                                     n.Left = leftNode.Selected ? CloneElement(leftNode) : null;
                                 }
 
-                                if(n.Right != null)
+                                if (n.Right != null)
                                 {
                                     var rightNode = elements[n.Right];
                                     n.Right = rightNode.Selected ? CloneElement(rightNode) : null;
@@ -750,15 +769,17 @@ namespace MarchOfTheRays
             }
 
             Clipboard.SetData("MarchOfTheRays", clones);
+            paste.Enabled = true;
         }
 
         void Paste()
         {
             var clipboardData = (List<(Core.INode, PointF)>)Clipboard.GetData("MarchOfTheRays");
+            if (clipboardData == null) return;
             canvas.SelectElements(_ => false);
 
             var nodes = AddNodes(clipboardData.Select(tuple => (tuple.Item2 + new SizeF(10, 10), tuple.Item1)));
-            foreach(var node in nodes)
+            foreach (var node in nodes)
             {
                 node.Selected = true;
             }

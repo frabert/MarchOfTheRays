@@ -105,7 +105,7 @@ namespace MarchOfTheRays.Editor
                 var min_height = Math.Max(textSize.Height, n_inputs * (m_HandleSize * 2.5f));
                 var min_width = textSize.Width;
 
-                Size = new SizeF(min_width, min_height);
+                Size = new SizeF((float)Math.Ceiling(min_width / 10.0f) * 10.0f, (float)Math.Ceiling(min_height / 10.0f) * 10.0f);
             }
         }
 
