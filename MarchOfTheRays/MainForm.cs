@@ -16,7 +16,7 @@ namespace MarchOfTheRays
         ContextMenuStrip canvasContextMenu;
         PictureBox renderBox;
         Core.OutputNode outputNode;
-        ToolStripMenuItem paste;
+        ToolStripMenuItem paste, pasteContext;
 
         Dictionary<Core.INode, Editor.NodeElement> elements = new Dictionary<Core.INode, Editor.NodeElement>();
 
@@ -279,12 +279,6 @@ namespace MarchOfTheRays
 
                 AddNode(worldCoords, new Core.AbsNode());
             });
-
-            canvasContextMenu.Items.Add(new ToolStripSeparator());
-            canvasContextMenu.Items.Add(cut);
-            canvasContextMenu.Items.Add(copy);
-            canvasContextMenu.Items.Add(paste);
-            canvasContextMenu.Items.Add(delete);
 
             canvas.ContextMenuStrip = canvasContextMenu;
 
