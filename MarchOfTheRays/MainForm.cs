@@ -16,7 +16,9 @@ namespace MarchOfTheRays
         ContextMenuStrip canvasContextMenu;
         PictureBox renderBox;
         Core.OutputNode outputNode;
-        ToolStripMenuItem paste, pasteContext;
+        ToolStripMenuItem paste;
+        bool documentModifiedSinceLastSave = false;
+        string documentPath = null;
 
         Dictionary<Core.INode, Editor.NodeElement> elements = new Dictionary<Core.INode, Editor.NodeElement>();
 
@@ -34,12 +36,27 @@ namespace MarchOfTheRays
 
             var menuNew = new ToolStripMenuItem("&New", Resources.NewFile, (s, e) =>
             {
-                var res = MessageBox.Show("Save changes to the file?", "March of the Rays", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-                if (res == DialogResult.Yes)
+                if (documentModifiedSinceLastSave)
                 {
-                    if (Save()) NewDocument();
+                    var res = MessageBox.Show("Save changes to the file?", "March of the Rays", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                    if (res == DialogResult.Yes)
+                    {
+                        if (documentPath == null)
+                        {
+                            if (SaveAs()) NewDocument();
+                        }
+                        else
+                        {
+                            Save(documentPath);
+                            NewDocument();
+                        }
+                    }
+                    else if (res == DialogResult.No)
+                    {
+                        NewDocument();
+                    }
                 }
-                else if (res == DialogResult.No)
+                else
                 {
                     NewDocument();
                 }
@@ -54,9 +71,18 @@ namespace MarchOfTheRays
 
             var menuSave = new ToolStripMenuItem("&Save", Resources.Save, (s, e) =>
             {
-                Save();
+                if (documentPath == null) SaveAs();
+                else
+                {
+                    Save(documentPath);
+                }
             });
             menuSave.ShortcutKeys = Keys.Control | Keys.S;
+
+            var menuSaveAs = new ToolStripMenuItem("Save As...", Resources.SaveAs, (s, e) =>
+            {
+                SaveAs();
+            });
 
             var menuExit = new ToolStripMenuItem("E&xit", Resources.Exit, (s, e) =>
             {
@@ -67,6 +93,7 @@ namespace MarchOfTheRays
             fileMenu.DropDownItems.Add(menuNew);
             fileMenu.DropDownItems.Add(menuOpen);
             fileMenu.DropDownItems.Add(menuSave);
+            fileMenu.DropDownItems.Add(menuSaveAs);
             fileMenu.DropDownItems.Add(new ToolStripSeparator());
             fileMenu.DropDownItems.Add(menuExit);
 
@@ -293,6 +320,7 @@ namespace MarchOfTheRays
                         else n.Right = src;
                         break;
                 }
+                documentModifiedSinceLastSave = true;
             };
 
             canvas.EdgeRemoved += (s, e) =>
@@ -305,6 +333,22 @@ namespace MarchOfTheRays
                         else n.Right = null;
                         break;
                 }
+                documentModifiedSinceLastSave = true;
+            };
+
+            canvas.ElementAdded += (s, e) =>
+            {
+                documentModifiedSinceLastSave = true;
+            };
+
+            canvas.ElementRemoved += (s, e) =>
+            {
+                documentModifiedSinceLastSave = true;
+            };
+
+            canvas.ElementMoved += (s, e) =>
+            {
+                documentModifiedSinceLastSave = true;
             };
 
             canvas.SelectionChanged += (s, e) =>
@@ -362,6 +406,39 @@ namespace MarchOfTheRays
             {
                 Deserialize(stream);
             }
+            documentPath = args[0];
+            documentModifiedSinceLastSave = false;
+            Text = "March of the Rays - " + Path.GetFileName(documentPath);
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            if (documentModifiedSinceLastSave)
+            {
+                var res = MessageBox.Show("Save changes to the file?", "March of the Rays", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                if (res == DialogResult.Yes)
+                {
+                    if (documentPath == null)
+                    {
+                        e.Cancel = !SaveAs();
+                    }
+                    else
+                    {
+                        Save(documentPath);
+                        e.Cancel = false;
+                    }
+                }
+                else if (res == DialogResult.No)
+                {
+                    e.Cancel = false;
+                }
+                else
+                {
+                    e.Cancel = true;
+                }
+            }
+
+            base.OnFormClosing(e);
         }
 
         protected override void OnLoad(EventArgs e)
@@ -370,17 +447,28 @@ namespace MarchOfTheRays
             base.OnLoad(e);
         }
 
-        bool Save()
+        void Save(string path)
+        {
+            var nodes = canvas.Elements.Select(x => (x.Tag as Core.INode, x.Location)).ToList();
+
+            using (var stream = File.Open(path, FileMode.Create))
+            {
+                Serialize(stream, nodes);
+            }
+
+            documentPath = path;
+            Text = "March of the Rays - " + Path.GetFileName(documentPath);
+            documentModifiedSinceLastSave = false;
+        }
+
+        bool SaveAs()
         {
             var saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "March of the Rays file|*.mtr";
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
-                var nodes = canvas.Elements.Select(x => (x.Tag as Core.INode, x.Location)).ToList();
-                using (var stream = File.Open(saveFileDialog.FileName, FileMode.Create))
-                {
-                    Serialize(stream, nodes);
-                }
+                Save(saveFileDialog.FileName);
+
                 return true;
             }
             else
@@ -400,6 +488,11 @@ namespace MarchOfTheRays
                 {
                     Deserialize(stream);
                 }
+
+                documentPath = openFileDialog.FileName;
+                documentModifiedSinceLastSave = false;
+                Text = "March of the Rays - " + Path.GetFileName(documentPath);
+
                 return true;
             }
             else
@@ -705,6 +798,9 @@ namespace MarchOfTheRays
             outputNode = new Core.OutputNode();
             AddNode(new PointF(200, 0), outputNode);
             canvas.ResetHistory();
+            documentModifiedSinceLastSave = false;
+            documentPath = null;
+            Text = "March of the Rays";
         }
 
         void Copy()
