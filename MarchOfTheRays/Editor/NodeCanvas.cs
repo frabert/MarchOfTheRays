@@ -409,7 +409,7 @@ namespace MarchOfTheRays.Editor
                 selecting = true;
                 var coords = wvMatrix.TransformVW(mouseCoords);
 
-                foreach (var elem in elements)
+                foreach (var elem in elements.OrderBy(x => !x.Selected))
                 {
                     var localCoords = coords - new SizeF(elem.Location);
                     var inputHandle = elem.IsOverInputHandle(localCoords);
