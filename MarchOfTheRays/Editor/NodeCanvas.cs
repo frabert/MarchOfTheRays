@@ -79,12 +79,14 @@ namespace MarchOfTheRays.Editor
         {
             foreach (var (destination, index) in forwardStars[elem])
             {
-                inwardNodes.Remove((destination, index));
+                if (inwardNodes.Remove((destination, index)))
+                    EdgeRemoved?.Invoke(this, new EdgeModifiedEventArgs(elem, destination, index));
             }
             forwardStars.Remove(elem);
-            foreach(var (source, index) in backwardStars[elem])
+            foreach (var (source, index) in backwardStars[elem])
             {
-                inwardNodes.Remove((elem, index));
+                if (inwardNodes.Remove((elem, index)))
+                    EdgeRemoved?.Invoke(this, new EdgeModifiedEventArgs(source, elem, index));
             }
             backwardStars.Remove(elem);
         }
@@ -94,6 +96,8 @@ namespace MarchOfTheRays.Editor
             forwardStars[source].Add((destination, index));
             backwardStars[destination].Add((source, index));
             inwardNodes.Add((destination, index), source);
+
+            EdgeAdded?.Invoke(this, new EdgeModifiedEventArgs(source, destination, index));
         }
 
         public void RemoveEdge(NodeElement destination, int index)
@@ -102,6 +106,8 @@ namespace MarchOfTheRays.Editor
             forwardStars[source].Remove((destination, index));
             backwardStars[destination].Remove((source, index));
             inwardNodes.Remove((destination, index));
+
+            EdgeRemoved?.Invoke(this, new EdgeModifiedEventArgs(source, destination, index));
         }
 
         public IEnumerable<(NodeElement source, NodeElement destination, int index)> Edges
@@ -114,6 +120,9 @@ namespace MarchOfTheRays.Editor
                 }
             }
         }
+
+        public event EventHandler<EdgeModifiedEventArgs> EdgeAdded;
+        public event EventHandler<EdgeModifiedEventArgs> EdgeRemoved;
     }
 
     class NodeCanvas : UserControl
@@ -152,13 +161,13 @@ namespace MarchOfTheRays.Editor
             {
                 foreach (var elem in elems)
                 {
-                    foreach(var bs in canvas.edges.BackwardStar(elem))
+                    foreach (var bs in canvas.edges.BackwardStar(elem))
                     {
                         var tuple = (bs.source, elem, bs.index);
-                        if(!edges.Contains(tuple)) edges.Add(tuple);
+                        if (!edges.Contains(tuple)) edges.Add(tuple);
                     }
 
-                    foreach(var fs in canvas.edges.ForwardStar(elem))
+                    foreach (var fs in canvas.edges.ForwardStar(elem))
                     {
                         var tuple = (elem, fs.destination, fs.index);
                         if (!edges.Contains(tuple)) edges.Add(tuple);
@@ -287,6 +296,15 @@ namespace MarchOfTheRays.Editor
         public NodeCanvas()
         {
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
+            edges.EdgeAdded += (s, e) =>
+            {
+                OnEdgeAdded(e);
+            };
+
+            edges.EdgeRemoved += (s, e) =>
+            {
+                OnEdgeRemoved(e);
+            };
         }
 
         static float lerp(float a, float b, float x)
@@ -355,7 +373,7 @@ namespace MarchOfTheRays.Editor
         public void AddEdges(IList<(NodeElement source, NodeElement destination, int index)> e)
         {
             var list = new List<ICommand>();
-            foreach(var edge in e)
+            foreach (var edge in e)
             {
                 if (edges.IncidentNode(edge.destination, edge.index) != null) continue;
                 var cmd = new AddEdgeCommand(this, edge.source, edge.destination, edge.index);
@@ -408,7 +426,7 @@ namespace MarchOfTheRays.Editor
                         selecting = false;
                         dragging = true;
                         var source = edges.IncidentNode(elem, inputHandle);
-                        if(source != null)
+                        if (source != null)
                         {
                             draggedElem = source;
                             draggingEdge = true;
@@ -639,7 +657,23 @@ namespace MarchOfTheRays.Editor
                 }
             }
 
+            // First draw the non-selected nodes and edges...
+            foreach (var elem in elements.Where(x => !x.Selected))
+            {
 
+                var ctx = g.BeginContainer();
+                g.TranslateTransform(elem.Location.X, elem.Location.Y);
+
+                elem.Paint(g);
+                g.EndContainer(ctx);
+            }
+
+            foreach (var edge in edges.Edges.Where(x => !x.destination.Selected && !x.source.Selected))
+            {
+                DrawCurve(g, edge.source, edge.destination, edge.index);
+            }
+
+            // ...then the semi-transparent selection rectangles...
             foreach (var rect in selectionRectangles)
             {
                 var color = Color.FromArgb(80, SystemColors.Highlight);
@@ -653,7 +687,8 @@ namespace MarchOfTheRays.Editor
                 }
             }
 
-            foreach (var elem in elements)
+            // ...then the selected nodes and edges.
+            foreach (var elem in elements.Where(x => x.Selected))
             {
 
                 var ctx = g.BeginContainer();
@@ -663,7 +698,7 @@ namespace MarchOfTheRays.Editor
                 g.EndContainer(ctx);
             }
 
-            foreach (var edge in edges.Edges)
+            foreach (var edge in edges.Edges.Where(x => x.destination.Selected || x.source.Selected))
             {
                 DrawCurve(g, edge.source, edge.destination, edge.index);
             }
