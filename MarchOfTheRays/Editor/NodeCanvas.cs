@@ -21,6 +21,16 @@ namespace MarchOfTheRays.Editor
         public int DestinationIndex { get; private set; }
     }
 
+    class ElementModifiedEventArgs : EventArgs
+    {
+        public ElementModifiedEventArgs(NodeElement elem)
+        {
+            Element = elem;
+        }
+
+        public NodeElement Element { get; private set; }
+    }
+
     class EdgeDictionary
     {
         Dictionary<NodeElement, List<(NodeElement destination, int index)>> forwardStars;
@@ -148,13 +158,13 @@ namespace MarchOfTheRays.Editor
                     elem.NeedsRepaint += canvas.element_NeedsRepaint;
                     canvas.elements.Add(elem);
                     canvas.edges.AddElement(elem);
+                    canvas.OnElementAdded(new ElementModifiedEventArgs(elem));
                 }
 
                 foreach (var edge in edges)
                 {
                     canvas.edges.AddEdge(edge.source, edge.destination, edge.index);
                 }
-                canvas.Invalidate();
             }
 
             public void Undo()
@@ -174,8 +184,8 @@ namespace MarchOfTheRays.Editor
                     }
                     canvas.elements.Remove(elem);
                     canvas.edges.RemoveElement(elem);
+                    canvas.OnElementRemoved(new ElementModifiedEventArgs(elem));
                 }
-                canvas.Invalidate();
             }
         }
 
@@ -250,11 +260,13 @@ namespace MarchOfTheRays.Editor
 
         class MoveElementsCommand : ICommand
         {
+            private NodeCanvas canvas;
             private IList<NodeElement> elems;
             private SizeF amount;
 
-            public MoveElementsCommand(IList<NodeElement> elems, SizeF amount)
+            public MoveElementsCommand(NodeCanvas canvas, IList<NodeElement> elems, SizeF amount)
             {
+                this.canvas = canvas;
                 this.elems = elems;
                 this.amount = amount;
             }
@@ -264,6 +276,7 @@ namespace MarchOfTheRays.Editor
                 foreach (var elem in elems)
                 {
                     elem.Location += amount;
+                    canvas.OnElementMoved(new ElementModifiedEventArgs(elem));
                 }
             }
 
@@ -272,6 +285,7 @@ namespace MarchOfTheRays.Editor
                 foreach (var elem in elems)
                 {
                     elem.Location -= amount;
+                    canvas.OnElementMoved(new ElementModifiedEventArgs(elem));
                 }
             }
         }
@@ -460,6 +474,9 @@ namespace MarchOfTheRays.Editor
 
         public event EventHandler<EdgeModifiedEventArgs> EdgeAdded;
         public event EventHandler<EdgeModifiedEventArgs> EdgeRemoved;
+        public event EventHandler<ElementModifiedEventArgs> ElementAdded;
+        public event EventHandler<ElementModifiedEventArgs> ElementRemoved;
+        public event EventHandler<ElementModifiedEventArgs> ElementMoved;
         public event EventHandler SelectionChanged;
 
         protected virtual void OnEdgeAdded(EdgeModifiedEventArgs e)
@@ -471,6 +488,24 @@ namespace MarchOfTheRays.Editor
         protected virtual void OnEdgeRemoved(EdgeModifiedEventArgs e)
         {
             EdgeRemoved?.Invoke(this, e);
+            Invalidate();
+        }
+
+        protected virtual void OnElementAdded(ElementModifiedEventArgs e)
+        {
+            ElementAdded?.Invoke(this, e);
+            Invalidate();
+        }
+
+        protected virtual void OnElementRemoved(ElementModifiedEventArgs e)
+        {
+            ElementRemoved?.Invoke(this, e);
+            Invalidate();
+        }
+
+        protected virtual void OnElementMoved(ElementModifiedEventArgs e)
+        {
+            ElementMoved?.Invoke(this, e);
             Invalidate();
         }
 
@@ -497,10 +532,15 @@ namespace MarchOfTheRays.Editor
 
             if (dragging)
             {
-                if (moveDistance.Width > 0 || moveDistance.Height > 0)
+                if (moveDistance.Width != 0 || moveDistance.Height != 0)
                 {
-                    var cmd = new MoveElementsCommand(SelectedElements.ToList(), moveDistance);
+                    var cmd = new MoveElementsCommand(this, SelectedElements.ToList(), moveDistance);
                     commands.Add(cmd);
+
+                    foreach(var elem in SelectedElements)
+                    {
+                        OnElementMoved(new ElementModifiedEventArgs(elem));
+                    }
                 }
             }
 
