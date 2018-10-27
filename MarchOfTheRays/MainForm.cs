@@ -382,6 +382,21 @@ namespace MarchOfTheRays
             {
                 if (e.Button != MouseButtons.Left) return;
 
+                var cycle = Core.Compiler.CheckForCycles(outputNode, elements.Keys.ToList());
+                foreach(var elem in elements)
+                {
+                    elem.Value.Errored = false;
+                }
+
+                if(cycle.Count > 0)
+                {
+                    foreach(var elem in elements)
+                    {
+                        elem.Value.Errored = cycle.Contains(elem.Key);
+                    }
+                    return;
+                }
+
                 var img = renderer.RenderImageAsync(renderBox.Width, renderBox.Height, outputNode, 4);
 
                 renderBox.Cursor = Cursors.WaitCursor;
@@ -394,8 +409,8 @@ namespace MarchOfTheRays
             Controls.Add(statusStrip);
 
             ResumeLayout();
-            splitContainerV.SplitterDistance = 500;
             NewDocument();
+            splitContainerV.SplitterDistance = 500;
         }
 
         public MainForm(string[] args) : this()
@@ -441,10 +456,10 @@ namespace MarchOfTheRays
             base.OnFormClosing(e);
         }
 
-        protected override void OnLoad(EventArgs e)
+        protected override void OnShown(EventArgs e)
         {
             canvas.FitToView(_ => true);
-            base.OnLoad(e);
+            base.OnShown(e);
         }
 
         void Save(string path)
@@ -492,6 +507,7 @@ namespace MarchOfTheRays
                 documentPath = openFileDialog.FileName;
                 documentModifiedSinceLastSave = false;
                 Text = "March of the Rays - " + Path.GetFileName(documentPath);
+                canvas.FitToView(x => true);
 
                 return true;
             }

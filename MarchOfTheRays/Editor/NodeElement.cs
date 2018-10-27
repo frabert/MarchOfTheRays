@@ -319,6 +319,49 @@ namespace MarchOfTheRays.Editor
         }
         #endregion
 
+        #region ErrorColor
+        Color m_ErrorColor = Color.LightPink;
+        public Color ErrorColor
+        {
+            get => m_ErrorColor;
+            set
+            {
+                m_ErrorColor = value;
+                OnErrorColorChanged();
+            }
+        }
+
+        public event EventHandler ErrorColorChanged;
+
+        protected virtual void OnErrorColorChanged()
+        {
+            ErrorColorChanged?.Invoke(this, new EventArgs());
+            OnNeedsRepaint();
+        }
+        #endregion
+
+        #region Errored
+        bool m_Errored;
+
+        public bool Errored
+        {
+            get => m_Errored;
+            set
+            {
+                m_Errored = value;
+                OnErroredChanged();
+            }
+        }
+
+        public event EventHandler ErroredChanged;
+
+        protected virtual void OnErroredChanged()
+        {
+            ErroredChanged?.Invoke(this, new EventArgs());
+            OnNeedsRepaint();
+        }
+        #endregion
+
         public event EventHandler NeedsRepaint;
 
         protected virtual void OnNeedsRepaint()
@@ -330,7 +373,7 @@ namespace MarchOfTheRays.Editor
         {
             var backRect = new RectangleF(m_HandleSize / 2.0f, 0, m_Size.Width - m_HandleSize, m_Size.Height);
 
-            using (var backBrush = new SolidBrush(BackColor))
+            using (var backBrush = new SolidBrush(m_Errored ? ErrorColor : BackColor))
             using (var borderPen = new Pen(BorderColor))
             using (var foreBrush = new SolidBrush(ForeColor))
             {

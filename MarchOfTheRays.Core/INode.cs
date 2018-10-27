@@ -262,7 +262,7 @@ namespace MarchOfTheRays.Core
     {
         [Category("Type information")]
         [DisplayName("Output type")]
-        public NodeType OutputType => Input.OutputType;
+        public NodeType OutputType => Input == null ? NodeType.Indeterminate : Input.OutputType;
 
         [Category("Type information")]
         [DisplayName("Input type")]
