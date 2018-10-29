@@ -49,6 +49,12 @@ namespace MarchOfTheRays.Core
                         if (b.Left != null) edges.Add(b.Left);
                         if (b.Right != null) edges.Add(b.Right);
                         break;
+                    case INAryNode a:
+                        for(int i = 0; i < a.InputCount; i++)
+                        {
+                            if (a.GetInput(i) != null) edges.Add(a.GetInput(i));
+                        }
+                        break;
                 }
 
                 foreach (var edge in edges)

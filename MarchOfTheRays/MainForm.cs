@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
 
@@ -275,36 +276,20 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.Float3ConstantNode());
             });
 
-            canvasContextMenu.Items.Add("Arithmetic operation", null, (s, e) =>
+            canvasContextMenu.Items.Add("Binary operation", null, (s, e) =>
             {
                 var controlCoords = canvas.PointToClient(Cursor.Position);
                 var worldCoords = canvas.GetWorldCoordinates(controlCoords);
 
-                AddNode(worldCoords, new Core.ArithmeticNode());
+                AddNode(worldCoords, new Core.BinaryNode());
             });
 
-            canvasContextMenu.Items.Add("Min/max operation", null, (s, e) =>
+            canvasContextMenu.Items.Add("Unary operation", null, (s, e) =>
             {
                 var controlCoords = canvas.PointToClient(Cursor.Position);
                 var worldCoords = canvas.GetWorldCoordinates(controlCoords);
 
-                AddNode(worldCoords, new Core.MinMaxNode());
-            });
-
-            canvasContextMenu.Items.Add("Length operation", null, (s, e) =>
-            {
-                var controlCoords = canvas.PointToClient(Cursor.Position);
-                var worldCoords = canvas.GetWorldCoordinates(controlCoords);
-
-                AddNode(worldCoords, new Core.LengthNode());
-            });
-
-            canvasContextMenu.Items.Add("Abs operation", null, (s, e) =>
-            {
-                var controlCoords = canvas.PointToClient(Cursor.Position);
-                var worldCoords = canvas.GetWorldCoordinates(controlCoords);
-
-                AddNode(worldCoords, new Core.AbsNode());
+                AddNode(worldCoords, new Core.UnaryNode());
             });
 
             canvas.ContextMenuStrip = canvasContextMenu;
@@ -383,25 +368,39 @@ namespace MarchOfTheRays
                 if (e.Button != MouseButtons.Left) return;
 
                 var cycle = Core.Compiler.CheckForCycles(outputNode, elements.Keys.ToList());
-                foreach(var elem in elements)
+                foreach (var elem in elements)
                 {
                     elem.Value.Errored = false;
                 }
 
-                if(cycle.Count > 0)
+                if (cycle.Count > 0)
                 {
-                    foreach(var elem in elements)
+                    foreach (var elem in elements)
                     {
                         elem.Value.Errored = cycle.Contains(elem.Key);
                     }
                     return;
                 }
 
-                var img = renderer.RenderImageAsync(renderBox.Width, renderBox.Height, outputNode, 4);
+                Func<System.Numerics.Vector3, float> func;
 
-                renderBox.Cursor = Cursors.WaitCursor;
-                renderBox.Image = await img;
-                renderBox.Cursor = Cursors.Default;
+                try
+                {
+                    var param = Expression.Parameter(typeof(System.Numerics.Vector3), "pos");
+                    var body = outputNode.Compile(param);
+                    var lambda = Expression.Lambda<Func<System.Numerics.Vector3, float>>(body, param);
+                    func = lambda.Compile();
+
+                    var img = renderer.RenderImageAsync(renderBox.Width, renderBox.Height, outputNode, func, 4);
+
+                    renderBox.Cursor = Cursors.WaitCursor;
+                    renderBox.Image = await img;
+                    renderBox.Cursor = Cursors.Default;
+                }
+                catch (Core.InvalidNodeException ex)
+                {
+                    elements[ex.Node].Errored = true;
+                }
             };
 
             MainMenuStrip = mainMenu;
@@ -543,13 +542,11 @@ namespace MarchOfTheRays
             Editor.NodeElement elem;
             switch (node)
             {
-                case Core.AbsNode n: elem = CreateNode(location, n); break;
-                case Core.ArithmeticNode n: elem = CreateNode(location, n); break;
+                case Core.UnaryNode n: elem = CreateNode(location, n); break;
+                case Core.BinaryNode n: elem = CreateNode(location, n); break;
                 case Core.Float3ConstantNode n: elem = CreateNode(location, n); break;
                 case Core.FloatConstantNode n: elem = CreateNode(location, n); break;
                 case Core.InputNode n: elem = CreateNode(location, n); break;
-                case Core.LengthNode n: elem = CreateNode(location, n); break;
-                case Core.MinMaxNode n: elem = CreateNode(location, n); break;
                 case Core.OutputNode n: elem = CreateNode(location, n); break;
                 default: throw new NotImplementedException();
             }
@@ -679,7 +676,7 @@ namespace MarchOfTheRays
             return elem;
         }
 
-        Editor.NodeElement CreateNode(PointF location, Core.ArithmeticNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.BinaryNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
@@ -701,56 +698,24 @@ namespace MarchOfTheRays
             return elem;
         }
 
-        Editor.NodeElement CreateNode(PointF location, Core.MinMaxNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.UnaryNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Text = node.IsMin ? "Min" : "Max",
-                Location = location,
-                InputCount = 2,
-                HasOutput = true,
-                Tag = node
-            };
-
-            node.IsMinChanged += (_, __) =>
-            {
-                elem.Text = node.IsMin ? "Min" : "Max";
-            };
-
-            elements.Add(node, elem);
-            return elem;
-        }
-
-        Editor.NodeElement CreateNode(PointF location, Core.LengthNode node)
-        {
-            if (node == null) throw new ArgumentNullException();
-            if (elements.TryGetValue(node, out var e)) return e;
-            var elem = new Editor.NodeElement()
-            {
-                Text = "Length",
+                Text = node.Operation.ToString(),
                 Location = location,
                 InputCount = 1,
                 HasOutput = true,
                 Tag = node
             };
-            elements.Add(node, elem);
-            return elem;
-        }
 
-        Editor.NodeElement CreateNode(PointF location, Core.AbsNode node)
-        {
-            if (node == null) throw new ArgumentNullException();
-            if (elements.TryGetValue(node, out var e)) return e;
-            var elem = new Editor.NodeElement()
+            node.OperationChanged += (_, __) =>
             {
-                Text = "Abs",
-                Location = location,
-                InputCount = 1,
-                HasOutput = true,
-                Tag = node
+                elem.Text = node.Operation.ToString();
             };
+
             elements.Add(node, elem);
             return elem;
         }
@@ -762,7 +727,6 @@ namespace MarchOfTheRays
         }
 
         void Deserialize(Stream stream)
-
         {
             canvas.Clear();
             elements.Clear();
