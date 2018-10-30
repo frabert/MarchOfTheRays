@@ -783,5 +783,12 @@ namespace MarchOfTheRays.Core
             if (Input == null) throw new InvalidNodeException(this);
             return Input.Compile(parameters);
         }
+
+        public Expression Compile(NodeType wantedtype, params Expression[] parameters)
+        {
+            if (Input == null) throw new InvalidNodeException(this);
+            if (Input.OutputType != wantedtype) throw new InvalidNodeException(this);
+            return Input.Compile(parameters);
+        }
     }
 }

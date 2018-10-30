@@ -7,6 +7,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
+using System.Numerics;
 
 namespace MarchOfTheRays
 {
@@ -22,6 +23,8 @@ namespace MarchOfTheRays
         string documentPath = null;
 
         Dictionary<Core.INode, Editor.NodeElement> elements = new Dictionary<Core.INode, Editor.NodeElement>();
+
+        RenderingSettings settings;
 
         public MainForm()
         {
@@ -210,6 +213,21 @@ namespace MarchOfTheRays
 
             mainMenu.Items.Add(viewMenu);
 
+            var renderingMenu = new ToolStripMenuItem("&Rendering");
+            var renderSettings = new ToolStripMenuItem("Settings", Resources.Settings, (s, e) =>
+            {
+                var dialog = new RenderingSettingsDialog();
+                dialog.Value = settings;
+                if(dialog.ShowDialog() == DialogResult.OK)
+                {
+                    settings = dialog.Value;
+                    documentModifiedSinceLastSave = true;
+                }
+            });
+            renderingMenu.DropDownItems.Add(renderSettings);
+
+            mainMenu.Items.Add(renderingMenu);
+
             var statusStrip = new StatusStrip();
 
             var splitContainerV = new SplitContainer();
@@ -362,10 +380,18 @@ namespace MarchOfTheRays
                 }
             };
 
-            var renderer = new CpuRenderer.Renderer();
             renderBox.MouseClick += async (s, e) =>
             {
                 if (e.Button != MouseButtons.Left) return;
+
+                var renderer = new CpuRenderer.Renderer(
+                    settings.CameraPosition,
+                    settings.CameraTarget,
+                    settings.CameraUp,
+                    settings.MaximumIterations,
+                    settings.MaximumDistance,
+                    settings.Epsilon,
+                    settings.StepSize);
 
                 var cycle = Core.Compiler.CheckForCycles(outputNode, elements.Keys.ToList());
                 foreach (var elem in elements)
@@ -379,16 +405,17 @@ namespace MarchOfTheRays
                     {
                         elem.Value.Errored = cycle.Contains(elem.Key);
                     }
+                    MessageBox.Show("Rendering aborted: a cycle has been detected", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                Func<System.Numerics.Vector3, float> func;
+                Func<Vector3, float> func;
 
                 try
                 {
-                    var param = Expression.Parameter(typeof(System.Numerics.Vector3), "pos");
-                    var body = outputNode.Compile(param);
-                    var lambda = Expression.Lambda<Func<System.Numerics.Vector3, float>>(body, param);
+                    var param = Expression.Parameter(typeof(Vector3), "pos");
+                    var body = outputNode.Compile(Core.NodeType.Float, param);
+                    var lambda = Expression.Lambda<Func<Vector3, float>>(body, param);
                     func = lambda.Compile();
 
                     var img = renderer.RenderImageAsync(renderBox.Width, renderBox.Height, outputNode, func, 4);
@@ -400,6 +427,7 @@ namespace MarchOfTheRays
                 catch (Core.InvalidNodeException ex)
                 {
                     elements[ex.Node].Errored = true;
+                    MessageBox.Show("Rendering aborted: an invalid node was detected", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             };
 
@@ -467,7 +495,7 @@ namespace MarchOfTheRays
 
             using (var stream = File.Open(path, FileMode.Create))
             {
-                Serialize(stream, nodes);
+                Serialize(stream, new Document() { Nodes = nodes, Settings = settings });
             }
 
             documentPath = path;
@@ -720,10 +748,10 @@ namespace MarchOfTheRays
             return elem;
         }
 
-        void Serialize(Stream stream, List<(Core.INode, PointF)> nodes)
+        void Serialize(Stream stream, Document doc)
         {
             var formatter = new BinaryFormatter();
-            formatter.Serialize(stream, nodes);
+            formatter.Serialize(stream, doc);
         }
 
         void Deserialize(Stream stream)
@@ -732,14 +760,17 @@ namespace MarchOfTheRays
             elements.Clear();
 
             var formatter = new BinaryFormatter();
-            var nodes = formatter.Deserialize(stream) as List<(Core.INode, PointF)>;
-            foreach (var tuple in nodes)
+            var doc = formatter.Deserialize(stream) as Document;
+
+            settings = doc.Settings;
+
+            foreach (var tuple in doc.Nodes)
             {
                 AddNode(tuple.Item2, tuple.Item1);
                 if (tuple.Item1 is Core.OutputNode n) outputNode = n;
             }
 
-            foreach (var tuple in nodes)
+            foreach (var tuple in doc.Nodes)
             {
                 var dest = elements[tuple.Item1];
                 switch (tuple.Item1)
@@ -780,6 +811,7 @@ namespace MarchOfTheRays
             canvas.ResetHistory();
             documentModifiedSinceLastSave = false;
             documentPath = null;
+            settings = new RenderingSettings();
             Text = "March of the Rays";
         }
 

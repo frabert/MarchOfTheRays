@@ -14,9 +14,22 @@ namespace MarchOfTheRays.CpuRenderer
         Vector3 cameraTarget = Vector3.Zero;
         Vector3 upDirection = Vector3.UnitY;
 
-        const int MAX_ITER = 100; // 100 is a safe number to use, it won't produce too many artifacts and still be quite fast
-        const float MAX_DIST = 20.0f; // Make sure you change this if you have objects farther than 20 units away from the camera
-        const float EPSILON = 0.001f; // At this distance we are close enough to the object that we have essentially hit it
+        int MAX_ITER = 100; // 100 is a safe number to use, it won't produce too many artifacts and still be quite fast
+        float MAX_DIST = 20.0f; // Make sure you change this if you have objects farther than 20 units away from the camera
+        float EPSILON = 0.001f; // At this distance we are close enough to the object that we have essentially hit it
+        float STEP_SIZE = 1.0f;
+
+        public Renderer(Vector3 cameraOrigin, Vector3 cameraTarget, Vector3 upDirection, int maxIter, float maxDist, float Epsilon, float stepSize)
+        {
+            this.cameraOrigin = cameraOrigin;
+            this.cameraTarget = cameraTarget;
+            this.upDirection = upDirection;
+
+            MAX_ITER = maxIter;
+            MAX_DIST = maxDist;
+            EPSILON = Epsilon;
+            STEP_SIZE = stepSize;
+        }
 
         void MainRender(float x, float y, float width, float height, out Vector3 outColor, Func<Vector3, float> distFunc)
         {
@@ -41,8 +54,8 @@ namespace MarchOfTheRays.CpuRenderer
                     break; // If you use windows and the shader isn't working properly, change this to continue;
 
                 dist = distFunc(pos); // Evalulate the distance at the current point
-                totalDist += (dist / 10.0f);
-                pos += (dist / 10.0f) * rayDir; // Advance the point forwards in the ray direction by the distance
+                totalDist += dist * STEP_SIZE;
+                pos += (dist * STEP_SIZE) * rayDir; // Advance the point forwards in the ray direction by the distance
 
             }
 
