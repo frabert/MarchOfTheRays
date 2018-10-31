@@ -54,6 +54,10 @@ namespace MarchOfTheRays
             base.OnBackgroundImageChanged(e);
         }
 
+        public bool NoActivation { get; set; }
+
+        protected override bool ShowWithoutActivation => NoActivation;
+
         bool m_Loading;
 
         public bool Loading

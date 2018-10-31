@@ -7,9 +7,9 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Windows.Forms;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace MarchOfTheRays
 {
@@ -39,6 +39,7 @@ namespace MarchOfTheRays
             Width = 800;
             Height = 600;
             WindowState = FormWindowState.Maximized;
+            KeyPreview = true;
             SuspendLayout();
 
             var mainMenu = new MenuStrip();
@@ -239,9 +240,10 @@ namespace MarchOfTheRays
             };
             renderingMenu.DropDownItems.Add(livePreview);
 
-            var renderPreview = new ToolStripMenuItem("Render preview", null, (s, e) =>
+            var renderPreview = new ToolStripMenuItem("Render preview", null, async (s, e) =>
             {
-                UpdatePreview();
+                previousPreviewTask = UpdatePreview();
+                await previousPreviewTask;
             });
             renderPreview.ShortcutKeys = Keys.F5;
             renderingMenu.DropDownItems.Add(renderPreview);
@@ -491,6 +493,7 @@ namespace MarchOfTheRays
             previewForm.Text = "Preview";
             previewForm.Size = Settings.Default.PreviewWindowSize;
             previewForm.BackgroundImageLayout = ImageLayout.Center;
+            previewForm.NoActivation = true;
             previewForm.FormClosed += (s, e) =>
             {
                 Settings.Default.PreviewWindowVisible = false;
@@ -585,7 +588,7 @@ namespace MarchOfTheRays
 
                 previewForm.Cursor = Cursors.WaitCursor;
                 var image = await img;
-                if(image != null) previewForm.BackgroundImage = image;
+                if (image != null) previewForm.BackgroundImage = image;
                 previewForm.Cursor = Cursors.Default;
 
                 previewForm.Loading = false;
