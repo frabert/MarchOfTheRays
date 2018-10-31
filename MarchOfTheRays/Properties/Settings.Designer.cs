@@ -34,5 +34,41 @@ namespace MarchOfTheRays.Properties {
                 this["RenderingCores"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool PreviewWindowVisible {
+            get {
+                return ((bool)(this["PreviewWindowVisible"]));
+            }
+            set {
+                this["PreviewWindowVisible"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool LivePreview {
+            get {
+                return ((bool)(this["LivePreview"]));
+            }
+            set {
+                this["LivePreview"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("200, 180")]
+        public global::System.Drawing.Size PreviewWindowSize {
+            get {
+                return ((global::System.Drawing.Size)(this["PreviewWindowSize"]));
+            }
+            set {
+                this["PreviewWindowSize"] = value;
+            }
+        }
     }
 }

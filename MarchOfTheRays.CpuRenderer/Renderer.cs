@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq.Expressions;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MarchOfTheRays.CpuRenderer
@@ -81,13 +82,13 @@ namespace MarchOfTheRays.CpuRenderer
             }
         }
 
-        void RenderChunk(IntPtr scan0, int totalWidth, int totalHeight, int height, int stride, int yoff, Func<Vector3, float> func)
+        void RenderChunk(IntPtr scan0, int totalWidth, int totalHeight, int height, int stride, int yoff, Func<Vector3, float> func, CancellationToken token, IProgress<int> progress)
         {
             unsafe
             {
                 byte* rawBytes = (byte*)scan0;
                 int strideDiff = stride - totalWidth * 3;
-                for(int i = 0; i < totalWidth * height; i++)
+                for(int i = 0; i < totalWidth * height && !token.IsCancellationRequested; i++)
                 {
                     int x = i % totalWidth;
                     int y = (i - x) / totalWidth;
@@ -99,24 +100,12 @@ namespace MarchOfTheRays.CpuRenderer
                     rawBytes[idx + 0] = (byte)(Math.Min(color.X, 1.0f) * 255);
                     rawBytes[idx + 1] = (byte)(Math.Min(color.Y, 1.0f) * 255);
                     rawBytes[idx + 2] = (byte)(Math.Min(color.Z, 1.0f) * 255);
+                    if(i % 100 == 99) progress?.Report(100);
                 }
             }
         }
 
-        public Image RenderImage(int width, int height, Func<Vector3, float> func)
-        {
-            var img = new Bitmap(width, height);
-
-            var data = img.LockBits(new Rectangle(Point.Empty, new Size(width, height)), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
-            
-            RenderChunk(data.Scan0, width, height, height, data.Stride, 0, func);
-
-            img.UnlockBits(data);
-
-            return img;
-        }
-
-        public Image RenderImage(int width, int height, Func<Vector3, float> func, int nthreads)
+        public Image RenderImage(int width, int height, Func<Vector3, float> func, int nthreads, CancellationToken token, IProgress<int> progress)
         {
             var img = new Bitmap(width, height);
 
@@ -129,7 +118,7 @@ namespace MarchOfTheRays.CpuRenderer
             {
                 int start = (int)stripeHeight * i;
                 int end = (int)(stripeHeight * (i + 1));
-                tasks[i] = Task.Factory.StartNew(() => RenderChunk(data.Scan0, width, height, end - start, data.Stride, start, func));
+                tasks[i] = Task.Factory.StartNew(() => RenderChunk(data.Scan0, width, height, end - start, data.Stride, start, func, token, progress));
             }
 
             Task.WaitAll(tasks);
@@ -139,14 +128,14 @@ namespace MarchOfTheRays.CpuRenderer
             return img;
         }
 
-        public Task<Image> RenderImageAsync(int width, int height, Core.OutputNode node, Func<Vector3, float> func)
+        public Task<Image> RenderImageAsync(int width, int height, Core.OutputNode node, Func<Vector3, float> func, int nthreads, CancellationToken token, IProgress<int> progress)
         {
-            return Task<Image>.Factory.StartNew(() => RenderImage(width, height, func));
+            return Task<Image>.Factory.StartNew(() => RenderImage(width, height, func, nthreads, token, progress));
         }
 
         public Task<Image> RenderImageAsync(int width, int height, Core.OutputNode node, Func<Vector3, float> func, int nthreads)
         {
-            return Task<Image>.Factory.StartNew(() => RenderImage(width, height, func, nthreads));
+            return RenderImageAsync(width, height, node, func, nthreads, CancellationToken.None, null);
         }
     }
 }

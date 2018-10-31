@@ -5,9 +5,10 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
-using System.Numerics;
+using System.Threading.Tasks;
 
 namespace MarchOfTheRays
 {
@@ -16,15 +17,18 @@ namespace MarchOfTheRays
         RichTextBox helpBox;
         Editor.NodeCanvas canvas;
         ContextMenuStrip canvasContextMenu;
-        PictureBox renderBox;
         Core.OutputNode outputNode;
         ToolStripMenuItem paste;
         bool documentModifiedSinceLastSave = false;
         string documentPath = null;
 
+        ToolStripItem statusLabel;
+
         Dictionary<Core.INode, Editor.NodeElement> elements = new Dictionary<Core.INode, Editor.NodeElement>();
 
         RenderingSettings settings;
+
+        RenderForm previewForm;
 
         public MainForm()
         {
@@ -214,11 +218,37 @@ namespace MarchOfTheRays
             mainMenu.Items.Add(viewMenu);
 
             var renderingMenu = new ToolStripMenuItem("&Rendering");
+            var renderPreviewWindow = new ToolStripMenuItem("Show preview window", null, (s, e) =>
+            {
+                ShowPreviewForm();
+            });
+            renderPreviewWindow.ShortcutKeys = Keys.F9;
+            renderingMenu.DropDownItems.Add(renderPreviewWindow);
+
+            var livePreview = new ToolStripMenuItem("Live preview")
+            {
+                CheckOnClick = true,
+                Checked = Settings.Default.LivePreview
+            };
+            livePreview.Click += (s, e) =>
+            {
+                Settings.Default.LivePreview = livePreview.Checked;
+            };
+            renderingMenu.DropDownItems.Add(livePreview);
+
+            var renderPreview = new ToolStripMenuItem("Render preview", null, (s, e) =>
+            {
+                UpdatePreview();
+            });
+            renderPreview.ShortcutKeys = Keys.F5;
+            renderingMenu.DropDownItems.Add(renderPreview);
+
+            renderingMenu.DropDownItems.Add(new ToolStripSeparator());
             var renderSettings = new ToolStripMenuItem("Settings", Resources.Settings, (s, e) =>
             {
                 var dialog = new RenderingSettingsDialog();
                 dialog.Value = settings;
-                if(dialog.ShowDialog() == DialogResult.OK)
+                if (dialog.ShowDialog() == DialogResult.OK)
                 {
                     settings = dialog.Value;
                     documentModifiedSinceLastSave = true;
@@ -229,6 +259,7 @@ namespace MarchOfTheRays
             mainMenu.Items.Add(renderingMenu);
 
             var statusStrip = new StatusStrip();
+            statusLabel = statusStrip.Items.Add("Ready.");
 
             var splitContainerV = new SplitContainer();
             splitContainerV.Orientation = Orientation.Vertical;
@@ -249,24 +280,8 @@ namespace MarchOfTheRays
             var propertyBox = new PropertyGrid();
             propertyBox.Dock = DockStyle.Fill;
 
-            var tabContainer = new TabControl();
-            tabContainer.Dock = DockStyle.Fill;
-            tabContainer.TabPages.Add(new TabPage()
-            {
-                Text = "Configuration",
-                Controls = { propertyBox }
-            });
-            tabContainer.TabPages.Add(new TabPage()
-            {
-                Text = "Help",
-                Controls = { helpBox }
-            });
-
-            renderBox = new PictureBox();
-            renderBox.Dock = DockStyle.Fill;
-
-            splitContainerH.Panel1.Controls.Add(renderBox);
-            splitContainerH.Panel2.Controls.Add(tabContainer);
+            splitContainerH.Panel1.Controls.Add(propertyBox);
+            splitContainerH.Panel2.Controls.Add(helpBox);
 
             canvas = new Editor.NodeCanvas();
             canvas.Dock = DockStyle.Fill;
@@ -324,6 +339,7 @@ namespace MarchOfTheRays
                         break;
                 }
                 documentModifiedSinceLastSave = true;
+                UpdateLivePreview();
             };
 
             canvas.EdgeRemoved += (s, e) =>
@@ -337,6 +353,7 @@ namespace MarchOfTheRays
                         break;
                 }
                 documentModifiedSinceLastSave = true;
+                UpdateLivePreview();
             };
 
             canvas.ElementAdded += (s, e) =>
@@ -380,57 +397,6 @@ namespace MarchOfTheRays
                 }
             };
 
-            renderBox.MouseClick += async (s, e) =>
-            {
-                if (e.Button != MouseButtons.Left) return;
-
-                var renderer = new CpuRenderer.Renderer(
-                    settings.CameraPosition,
-                    settings.CameraTarget,
-                    settings.CameraUp,
-                    settings.MaximumIterations,
-                    settings.MaximumDistance,
-                    settings.Epsilon,
-                    settings.StepSize);
-
-                var cycle = Core.Compiler.CheckForCycles(outputNode, elements.Keys.ToList());
-                foreach (var elem in elements)
-                {
-                    elem.Value.Errored = false;
-                }
-
-                if (cycle.Count > 0)
-                {
-                    foreach (var elem in elements)
-                    {
-                        elem.Value.Errored = cycle.Contains(elem.Key);
-                    }
-                    MessageBox.Show("Rendering aborted: a cycle has been detected", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
-
-                Func<Vector3, float> func;
-
-                try
-                {
-                    var param = Expression.Parameter(typeof(Vector3), "pos");
-                    var body = outputNode.Compile(Core.NodeType.Float, param);
-                    var lambda = Expression.Lambda<Func<Vector3, float>>(body, param);
-                    func = lambda.Compile();
-
-                    var img = renderer.RenderImageAsync(renderBox.Width, renderBox.Height, outputNode, func, 4);
-
-                    renderBox.Cursor = Cursors.WaitCursor;
-                    renderBox.Image = await img;
-                    renderBox.Cursor = Cursors.Default;
-                }
-                catch (Core.InvalidNodeException ex)
-                {
-                    elements[ex.Node].Errored = true;
-                    MessageBox.Show("Rendering aborted: an invalid node was detected", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            };
-
             MainMenuStrip = mainMenu;
             Controls.Add(mainMenu);
             Controls.Add(statusStrip);
@@ -438,6 +404,8 @@ namespace MarchOfTheRays
             ResumeLayout();
             NewDocument();
             splitContainerV.SplitterDistance = 500;
+
+            if (Settings.Default.PreviewWindowVisible) ShowPreviewForm();
         }
 
         public MainForm(string[] args) : this()
@@ -480,6 +448,8 @@ namespace MarchOfTheRays
                 }
             }
 
+            Settings.Default.Save();
+
             base.OnFormClosing(e);
         }
 
@@ -487,6 +457,112 @@ namespace MarchOfTheRays
         {
             canvas.FitToView(_ => true);
             base.OnShown(e);
+        }
+
+        void ShowPreviewForm()
+        {
+            if (previewForm != null && !previewForm.IsDisposed)
+            {
+                previewForm.Show();
+                return;
+            }
+
+            previewForm = new RenderForm();
+            previewForm.Owner = this;
+            previewForm.FormBorderStyle = FormBorderStyle.SizableToolWindow;
+            previewForm.ShowInTaskbar = false;
+            previewForm.Text = "Preview";
+            previewForm.Size = Settings.Default.PreviewWindowSize;
+            previewForm.BackgroundImageLayout = ImageLayout.Center;
+            previewForm.FormClosed += (s, e) =>
+            {
+                Settings.Default.PreviewWindowVisible = false;
+            };
+            previewForm.Resize += (s, e) =>
+            {
+                Settings.Default.PreviewWindowSize = previewForm.Size;
+            };
+
+            Settings.Default.PreviewWindowVisible = true;
+
+            previewForm.Show();
+        }
+
+        void UpdateLivePreview()
+        {
+            if (Settings.Default.LivePreview) UpdatePreview();
+        }
+
+        async void UpdatePreview()
+        {
+            if (previewForm == null || previewForm.IsDisposed) return;
+
+            var renderer = new CpuRenderer.Renderer(
+                    settings.CameraPosition,
+                    settings.CameraTarget,
+                    settings.CameraUp,
+                    settings.MaximumIterations,
+                    settings.MaximumDistance,
+                    settings.Epsilon,
+                    settings.StepSize);
+
+            previewForm.Loading = true;
+            previewForm.Progress = 0;
+            foreach (var elem in elements)
+            {
+                elem.Value.Errored = false;
+            }
+            statusLabel.Text = "Checking graph for cycles...";
+
+            var cycles = Core.Compiler.CheckForCycles(outputNode, elements.Keys.ToList());
+            if (cycles.Count > 0)
+            {
+                foreach (var elem in elements)
+                {
+                    elem.Value.Errored = cycles.Contains(elem.Key);
+                }
+                statusLabel.Text = "Graph contains a cycle.";
+                previewForm.Loading = false;
+                return;
+            }
+
+            Func<Vector3, float> func;
+
+            try
+            {
+                var param = Expression.Parameter(typeof(Vector3), "pos");
+                var body = outputNode.Compile(Core.NodeType.Float, param);
+                var lambda = Expression.Lambda<Func<Vector3, float>>(body, param);
+                func = lambda.Compile();
+
+                float totalProgress = 0;
+                float total = previewForm.ClientSize.Width * previewForm.ClientSize.Height;
+
+                var prog = new Progress<int>();
+                prog.ProgressChanged += (s1, e1) =>
+                {
+                    totalProgress += e1;
+                    previewForm.Progress = totalProgress / total;
+                };
+
+                statusLabel.Text = "Rendering started...";
+                var img = renderer.RenderImageAsync(previewForm.ClientSize.Width, previewForm.ClientSize.Height, outputNode, func, 4, System.Threading.CancellationToken.None, prog);
+
+                if (previewForm == null || previewForm.IsDisposed) return;
+
+                previewForm.Cursor = Cursors.WaitCursor;
+                previewForm.BackgroundImage = await img;
+                previewForm.Cursor = Cursors.Default;
+
+                previewForm.Loading = false;
+                statusLabel.Text = "Ready.";
+            }
+            catch (Core.InvalidNodeException ex)
+            {
+                elements[ex.Node].Errored = true;
+                previewForm.Loading = false;
+                statusLabel.Text = "Invalid graph elements found.";
+            }
         }
 
         void Save(string path)
@@ -632,6 +708,7 @@ namespace MarchOfTheRays
             node.ValueChanged += (_, __) =>
             {
                 elem.Text = node.Value.ToString();
+                UpdateLivePreview();
             };
 
             elements.Add(node, elem);
@@ -654,6 +731,7 @@ namespace MarchOfTheRays
             node.ValueChanged += (_, __) =>
             {
                 elem.Text = $"({node.X}; {node.Y})";
+                UpdateLivePreview();
             };
 
             elements.Add(node, elem);
@@ -676,6 +754,7 @@ namespace MarchOfTheRays
             node.ValueChanged += (_, __) =>
             {
                 elem.Text = $"({node.X}; {node.Y}; {node.Z})";
+                UpdateLivePreview();
             };
 
             elements.Add(node, elem);
@@ -698,6 +777,7 @@ namespace MarchOfTheRays
             node.ValueChanged += (_, __) =>
             {
                 elem.Text = $"({node.X}; {node.Y}; {node.Z}; {node.W})";
+                UpdateLivePreview();
             };
 
             elements.Add(node, elem);
@@ -720,6 +800,7 @@ namespace MarchOfTheRays
             node.OperationChanged += (_, __) =>
             {
                 elem.Text = node.Operation.ToString();
+                UpdateLivePreview();
             };
 
             elements.Add(node, elem);
@@ -742,6 +823,7 @@ namespace MarchOfTheRays
             node.OperationChanged += (_, __) =>
             {
                 elem.Text = node.Operation.ToString();
+                UpdateLivePreview();
             };
 
             elements.Add(node, elem);
@@ -756,6 +838,8 @@ namespace MarchOfTheRays
 
         void Deserialize(Stream stream)
         {
+            var livePreviewSetting = Settings.Default.LivePreview;
+            Settings.Default.LivePreview = false;
             canvas.Clear();
             elements.Clear();
 
@@ -798,6 +882,8 @@ namespace MarchOfTheRays
             }
 
             canvas.ResetHistory();
+            Settings.Default.LivePreview = livePreviewSetting;
+            UpdateLivePreview();
         }
 
         void NewDocument()

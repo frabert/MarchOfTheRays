@@ -5,5 +5,14 @@
     <Setting Name="RenderingCores" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">4</Value>
     </Setting>
+    <Setting Name="PreviewWindowVisible" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="LivePreview" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="PreviewWindowSize" Type="System.Drawing.Size" Scope="User">
+      <Value Profile="(Default)">200, 180</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
