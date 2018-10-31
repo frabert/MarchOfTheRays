@@ -29,7 +29,7 @@ namespace MarchOfTheRays
                 documentModified = false;
                 DocumentPath = e;
 
-                Text = "March of the Rays - " + Path.GetFileName(DocumentPath);
+                Text = Path.GetFileName(DocumentPath) + " - March of the Rays";
             };
 
             DocumentOpened += (s, e) =>
@@ -38,7 +38,7 @@ namespace MarchOfTheRays
                 DocumentPath = e;
 
                 if (e != null)
-                    Text = "March of the Rays - " + Path.GetFileName(DocumentPath);
+                    Text = Path.GetFileName(DocumentPath) + " - March of the Rays";
                 else
                     Text = "March of the Rays";
             };

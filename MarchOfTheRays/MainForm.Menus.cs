@@ -101,7 +101,7 @@ namespace MarchOfTheRays
             });
             paste.ShortcutKeys = Keys.Control | Keys.V;
             // Enable paste command only if the clipboard is not empty
-            paste.Enabled = (List<(Core.INode, PointF)>)Clipboard.GetData("MarchOfTheRays") != null;
+            paste.Enabled = CanPaste;
             editMenu.DropDownItems.Add(paste);
 
             var delete = new ToolStripMenuItem("&Delete", Resources.Delete, (s, e) =>
@@ -209,7 +209,7 @@ namespace MarchOfTheRays
             };
             renderingMenu.DropDownItems.Add(livePreview);
 
-            var renderPreview = new ToolStripMenuItem("Render preview", null, (s, e) =>
+            var renderPreview = new ToolStripMenuItem("Render preview", Resources.Render, (s, e) =>
             {
                 OnRenderPreview();
             });
