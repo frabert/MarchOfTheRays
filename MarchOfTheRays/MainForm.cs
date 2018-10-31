@@ -13,25 +13,23 @@ using System.Windows.Forms;
 
 namespace MarchOfTheRays
 {
-    class MainForm : Form
+    class DocumentClosingEventArgs : EventArgs
+    {
+        public bool Cancel { get; set; }
+    }
+
+    partial class MainForm : Form
     {
         RichTextBox helpBox;
         Editor.NodeCanvas canvas;
         ContextMenuStrip canvasContextMenu;
         Core.OutputNode outputNode;
-        ToolStripMenuItem paste;
-        bool documentModifiedSinceLastSave = false;
-        string documentPath = null;
-
-        CancellationTokenSource tokenSource = new CancellationTokenSource();
 
         ToolStripItem statusLabel;
 
         Dictionary<Core.INode, Editor.NodeElement> elements = new Dictionary<Core.INode, Editor.NodeElement>();
 
         RenderingSettings settings;
-
-        RenderForm previewForm;
 
         public MainForm()
         {
@@ -42,226 +40,7 @@ namespace MarchOfTheRays
             KeyPreview = true;
             SuspendLayout();
 
-            var mainMenu = new MenuStrip();
-
-            var fileMenu = new ToolStripMenuItem("&File");
-
-            var menuNew = new ToolStripMenuItem("&New", Resources.NewFile, (s, e) =>
-            {
-                if (documentModifiedSinceLastSave)
-                {
-                    var res = MessageBox.Show("Save changes to the file?", "March of the Rays", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-                    if (res == DialogResult.Yes)
-                    {
-                        if (documentPath == null)
-                        {
-                            if (SaveAs()) NewDocument();
-                        }
-                        else
-                        {
-                            Save(documentPath);
-                            NewDocument();
-                        }
-                    }
-                    else if (res == DialogResult.No)
-                    {
-                        NewDocument();
-                    }
-                }
-                else
-                {
-                    NewDocument();
-                }
-            });
-            menuNew.ShortcutKeys = Keys.Control | Keys.N;
-
-            var menuOpen = new ToolStripMenuItem("&Open", Resources.Open, (s, e) =>
-            {
-                Open();
-            });
-            menuOpen.ShortcutKeys = Keys.Control | Keys.O;
-
-            var menuSave = new ToolStripMenuItem("&Save", Resources.Save, (s, e) =>
-            {
-                if (documentPath == null) SaveAs();
-                else
-                {
-                    Save(documentPath);
-                }
-            });
-            menuSave.ShortcutKeys = Keys.Control | Keys.S;
-
-            var menuSaveAs = new ToolStripMenuItem("Save As...", Resources.SaveAs, (s, e) =>
-            {
-                SaveAs();
-            });
-
-            var menuExit = new ToolStripMenuItem("E&xit", Resources.Exit, (s, e) =>
-            {
-                Close();
-            });
-            menuExit.ShortcutKeys = Keys.Control | Keys.Q;
-
-            fileMenu.DropDownItems.Add(menuNew);
-            fileMenu.DropDownItems.Add(menuOpen);
-            fileMenu.DropDownItems.Add(menuSave);
-            fileMenu.DropDownItems.Add(menuSaveAs);
-            fileMenu.DropDownItems.Add(new ToolStripSeparator());
-            fileMenu.DropDownItems.Add(menuExit);
-
-            mainMenu.Items.Add(fileMenu);
-
-
-            var editMenu = new ToolStripMenuItem("&Edit");
-
-            var undo = new ToolStripMenuItem("&Undo", Resources.Undo, (s, e) =>
-            {
-                canvas.Undo();
-            });
-            undo.ShortcutKeys = Keys.Control | Keys.Z;
-            editMenu.DropDownItems.Add(undo);
-
-            var redo = new ToolStripMenuItem("&Redo", Resources.Redo, (s, e) =>
-            {
-                canvas.Redo();
-            });
-            redo.ShortcutKeys = Keys.Control | Keys.Y;
-            editMenu.DropDownItems.Add(redo);
-
-            editMenu.DropDownItems.Add(new ToolStripSeparator());
-
-            var cut = new ToolStripMenuItem("Cu&t", Resources.Cut, (s, e) =>
-            {
-                Copy();
-                canvas.DeleteElements(x => x.Selected && !(x.Tag is Core.OutputNode));
-            });
-            cut.ShortcutKeys = Keys.Control | Keys.X;
-            cut.Enabled = false;
-            editMenu.DropDownItems.Add(cut);
-
-            var copy = new ToolStripMenuItem("&Copy", Resources.Copy, (s, e) =>
-            {
-                Copy();
-            });
-            copy.ShortcutKeys = Keys.Control | Keys.C;
-            copy.Enabled = false;
-            editMenu.DropDownItems.Add(copy);
-
-            paste = new ToolStripMenuItem("&Paste", Resources.Paste, (s, e) =>
-            {
-                Paste();
-            });
-            paste.ShortcutKeys = Keys.Control | Keys.V;
-            // Enable paste command only if the clipboard is not empty
-            paste.Enabled = (List<(Core.INode, PointF)>)Clipboard.GetData("MarchOfTheRays") != null;
-            editMenu.DropDownItems.Add(paste);
-
-            var delete = new ToolStripMenuItem("&Delete", Resources.Delete, (s, e) =>
-            {
-                canvas.DeleteElements(x => x.Selected && !(x.Tag is Core.OutputNode));
-            });
-            delete.ShortcutKeys = Keys.Delete;
-            delete.Enabled = false;
-            editMenu.DropDownItems.Add(delete);
-
-            editMenu.DropDownItems.Add(new ToolStripSeparator());
-
-            var selectAll = new ToolStripMenuItem("Select &All", Resources.SelectAll, (s, e) =>
-            {
-                canvas.SelectElements(x => true);
-            });
-            selectAll.ShortcutKeys = Keys.Control | Keys.A;
-            editMenu.DropDownItems.Add(selectAll);
-
-            var deselect = new ToolStripMenuItem("&Deselect", null, (s, e) =>
-            {
-                canvas.SelectElements(x => false);
-            });
-            deselect.ShortcutKeys = Keys.Control | Keys.D;
-            editMenu.DropDownItems.Add(deselect);
-
-            mainMenu.Items.Add(editMenu);
-
-            var viewMenu = new ToolStripMenuItem("&View");
-            var fitToScreen = new ToolStripMenuItem("Fit to screen", Resources.ZoomToFit, (s, e) =>
-            {
-                canvas.FitToView(_ => true);
-            });
-            fitToScreen.ShortcutKeys = Keys.Control | Keys.Shift | Keys.W;
-            viewMenu.DropDownItems.Add(fitToScreen);
-
-            var fitToSelection = new ToolStripMenuItem("Fit to selection", Resources.ZoomToWidth, (s, e) =>
-            {
-                canvas.FitToView(x => x.Selected);
-            });
-            fitToSelection.ShortcutKeys = Keys.Control | Keys.W;
-            viewMenu.DropDownItems.Add(fitToSelection);
-
-            var resetZoom = new ToolStripMenuItem("Reset zoom", Resources.ZoomOriginalSize, (s, e) =>
-            {
-                canvas.ResetZoom();
-                canvas.Center();
-            });
-            resetZoom.ShortcutKeys = Keys.Control | Keys.D0;
-            viewMenu.DropDownItems.Add(resetZoom);
-
-            var zoomIn = new ToolStripMenuItem("Zoom in", Resources.ZoomIn, (s, e) =>
-            {
-                canvas.ZoomCenter(1.1f);
-            });
-            zoomIn.ShortcutKeys = Keys.Control | Keys.Oemplus;
-            viewMenu.DropDownItems.Add(zoomIn);
-
-            var zoomOut = new ToolStripMenuItem("Zoom out", Resources.ZoomOut, (s, e) =>
-            {
-                canvas.ZoomCenter(1.0f / 1.1f);
-            });
-            zoomOut.ShortcutKeys = Keys.Control | Keys.OemMinus;
-            viewMenu.DropDownItems.Add(zoomOut);
-
-            mainMenu.Items.Add(viewMenu);
-
-            var renderingMenu = new ToolStripMenuItem("&Rendering");
-            var renderPreviewWindow = new ToolStripMenuItem("Show preview window", null, (s, e) =>
-            {
-                ShowPreviewForm();
-            });
-            renderPreviewWindow.ShortcutKeys = Keys.F9;
-            renderingMenu.DropDownItems.Add(renderPreviewWindow);
-
-            var livePreview = new ToolStripMenuItem("Live preview")
-            {
-                CheckOnClick = true,
-                Checked = Settings.Default.LivePreview
-            };
-            livePreview.Click += (s, e) =>
-            {
-                Settings.Default.LivePreview = livePreview.Checked;
-            };
-            renderingMenu.DropDownItems.Add(livePreview);
-
-            var renderPreview = new ToolStripMenuItem("Render preview", null, async (s, e) =>
-            {
-                previousPreviewTask = UpdatePreview();
-                await previousPreviewTask;
-            });
-            renderPreview.ShortcutKeys = Keys.F5;
-            renderingMenu.DropDownItems.Add(renderPreview);
-
-            renderingMenu.DropDownItems.Add(new ToolStripSeparator());
-            var renderSettings = new ToolStripMenuItem("Settings", Resources.Settings, (s, e) =>
-            {
-                var dialog = new RenderingSettingsDialog();
-                dialog.Value = settings;
-                if (dialog.ShowDialog() == DialogResult.OK)
-                {
-                    settings = dialog.Value;
-                    documentModifiedSinceLastSave = true;
-                }
-            });
-            renderingMenu.DropDownItems.Add(renderSettings);
-
-            mainMenu.Items.Add(renderingMenu);
+            InitializeMenus();
 
             var statusStrip = new StatusStrip();
             statusLabel = statusStrip.Items.Add("Ready.");
@@ -281,7 +60,6 @@ namespace MarchOfTheRays
             helpBox.ReadOnly = true;
             helpBox.Dock = DockStyle.Fill;
             helpBox.BorderStyle = BorderStyle.None;
-            helpBox.Margin = new Padding(10, 10, 10, 10);
 
             var propertyBox = new PropertyGrid();
             propertyBox.Dock = DockStyle.Fill;
@@ -333,7 +111,7 @@ namespace MarchOfTheRays
 
             canvas.ContextMenuStrip = canvasContextMenu;
 
-            canvas.EdgeAdded += async (s, e) =>
+            canvas.EdgeAdded += (s, e) =>
             {
                 var src = (Core.INode)e.Source.Tag;
                 switch (e.Destination.Tag)
@@ -344,11 +122,10 @@ namespace MarchOfTheRays
                         else n.Right = src;
                         break;
                 }
-                documentModifiedSinceLastSave = true;
-                await UpdateLivePreview();
+                OnGraphChanged();
             };
 
-            canvas.EdgeRemoved += async (s, e) =>
+            canvas.EdgeRemoved += (s, e) =>
             {
                 switch (e.Destination.Tag)
                 {
@@ -358,23 +135,22 @@ namespace MarchOfTheRays
                         else n.Right = null;
                         break;
                 }
-                documentModifiedSinceLastSave = true;
-                await UpdateLivePreview();
+                OnGraphChanged();
             };
 
             canvas.ElementAdded += (s, e) =>
             {
-                documentModifiedSinceLastSave = true;
+                OnDocumentChanged();
             };
 
             canvas.ElementRemoved += (s, e) =>
             {
-                documentModifiedSinceLastSave = true;
+                OnDocumentChanged();
             };
 
             canvas.ElementMoved += (s, e) =>
             {
-                documentModifiedSinceLastSave = true;
+                OnDocumentChanged();
             };
 
             canvas.SelectionChanged += (s, e) =>
@@ -402,18 +178,7 @@ namespace MarchOfTheRays
                     helpBox.Rtf = "";
                 }
 
-                if (selectedItems.Count == 0)
-                {
-                    copy.Enabled = false;
-                    cut.Enabled = false;
-                    delete.Enabled = false;
-                }
-                else
-                {
-                    copy.Enabled = true;
-                    cut.Enabled = true;
-                    delete.Enabled = true;
-                }
+                OnSelectionChanged();
             };
 
             MainMenuStrip = mainMenu;
@@ -421,8 +186,15 @@ namespace MarchOfTheRays
             Controls.Add(statusStrip);
 
             ResumeLayout();
+            InitializeDocument();
+            InitializeRendering();
             NewDocument();
             splitContainerV.SplitterDistance = 500;
+
+            DocumentOpened += (s, e) =>
+            {
+                canvas.FitToView(x => true);
+            };
 
             if (Settings.Default.PreviewWindowVisible) ShowPreviewForm();
         }
@@ -435,41 +207,8 @@ namespace MarchOfTheRays
             {
                 Deserialize(stream);
             }
-            documentPath = args[0];
-            documentModifiedSinceLastSave = false;
-            Text = "March of the Rays - " + Path.GetFileName(documentPath);
-        }
 
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            if (documentModifiedSinceLastSave)
-            {
-                var res = MessageBox.Show("Save changes to the file?", "March of the Rays", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
-                if (res == DialogResult.Yes)
-                {
-                    if (documentPath == null)
-                    {
-                        e.Cancel = !SaveAs();
-                    }
-                    else
-                    {
-                        Save(documentPath);
-                        e.Cancel = false;
-                    }
-                }
-                else if (res == DialogResult.No)
-                {
-                    e.Cancel = false;
-                }
-                else
-                {
-                    e.Cancel = true;
-                }
-            }
-
-            Settings.Default.Save();
-
-            base.OnFormClosing(e);
+            OnDocumentOpened(args[0]);
         }
 
         protected override void OnShown(EventArgs e)
@@ -478,183 +217,10 @@ namespace MarchOfTheRays
             base.OnShown(e);
         }
 
-        void ShowPreviewForm()
+        protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            if (previewForm != null && !previewForm.IsDisposed)
-            {
-                previewForm.Show();
-                return;
-            }
-
-            previewForm = new RenderForm();
-            previewForm.Owner = this;
-            previewForm.FormBorderStyle = FormBorderStyle.SizableToolWindow;
-            previewForm.ShowInTaskbar = false;
-            previewForm.Text = "Preview";
-            previewForm.Size = Settings.Default.PreviewWindowSize;
-            previewForm.BackgroundImageLayout = ImageLayout.Center;
-            previewForm.NoActivation = true;
-            previewForm.FormClosed += (s, e) =>
-            {
-                Settings.Default.PreviewWindowVisible = false;
-            };
-            previewForm.Resize += (s, e) =>
-            {
-                Settings.Default.PreviewWindowSize = previewForm.Size;
-            };
-
-            Settings.Default.PreviewWindowVisible = true;
-
-            previewForm.Show();
-        }
-
-        async Task UpdateLivePreview()
-        {
-            if (Settings.Default.LivePreview)
-            {
-                previousPreviewTask = UpdatePreview();
-                await previousPreviewTask;
-            }
-        }
-
-        Task previousPreviewTask = null;
-
-        async Task UpdatePreview()
-        {
-            if (previewForm == null || previewForm.IsDisposed) return;
-
-            if (previousPreviewTask != null)
-            {
-                tokenSource.Cancel();
-                await previousPreviewTask;
-            }
-
-            var renderer = new CpuRenderer.Renderer(
-                    settings.CameraPosition,
-                    settings.CameraTarget,
-                    settings.CameraUp,
-                    settings.MaximumIterations,
-                    settings.MaximumDistance,
-                    settings.Epsilon,
-                    settings.StepSize);
-
-            previewForm.Loading = true;
-            previewForm.Progress = 0;
-            foreach (var elem in elements)
-            {
-                elem.Value.Errored = false;
-            }
-            statusLabel.Text = "Checking graph for cycles...";
-
-            var cycles = Core.Compiler.CheckForCycles(outputNode, elements.Keys.ToList());
-            if (cycles.Count > 0)
-            {
-                foreach (var elem in elements)
-                {
-                    elem.Value.Errored = cycles.Contains(elem.Key);
-                }
-                statusLabel.Text = "Graph contains a cycle.";
-                previewForm.Loading = false;
-                return;
-            }
-
-            Func<Vector3, float> func;
-
-            try
-            {
-                var newTokenSource = new CancellationTokenSource();
-
-                var param = Expression.Parameter(typeof(Vector3), "pos");
-                var body = outputNode.Compile(Core.NodeType.Float, new Dictionary<Core.INode, Expression>(), param);
-                var lambda = Expression.Lambda<Func<Vector3, float>>(body, param);
-                func = lambda.Compile();
-
-                float totalProgress = 0;
-                float total = previewForm.ClientSize.Width * previewForm.ClientSize.Height;
-
-                var prog = new Progress<int>();
-                prog.ProgressChanged += (s1, e1) =>
-                {
-                    totalProgress += e1;
-                    previewForm.Progress = totalProgress / total;
-                };
-
-                statusLabel.Text = "Rendering started...";
-                var img = renderer.RenderImageAsync(previewForm.ClientSize.Width, previewForm.ClientSize.Height, func, 4, newTokenSource.Token, prog);
-
-                tokenSource = newTokenSource;
-
-                if (previewForm == null || previewForm.IsDisposed) return;
-
-                previewForm.Cursor = Cursors.WaitCursor;
-                var image = await img;
-                if (image != null) previewForm.BackgroundImage = image;
-                previewForm.Cursor = Cursors.Default;
-
-                previewForm.Loading = false;
-                statusLabel.Text = "Ready.";
-            }
-            catch (Core.InvalidNodeException ex)
-            {
-                elements[ex.Node].Errored = true;
-                previewForm.Loading = false;
-                statusLabel.Text = "Invalid graph elements found.";
-            }
-        }
-
-        void Save(string path)
-        {
-            var nodes = canvas.Elements.Select(x => (x.Tag as Core.INode, x.Location)).ToList();
-
-            using (var stream = File.Open(path, FileMode.Create))
-            {
-                Serialize(stream, new Document() { Nodes = nodes, Settings = settings });
-            }
-
-            documentPath = path;
-            Text = "March of the Rays - " + Path.GetFileName(documentPath);
-            documentModifiedSinceLastSave = false;
-        }
-
-        bool SaveAs()
-        {
-            var saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Filter = "March of the Rays file|*.mtr";
-            if (saveFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                Save(saveFileDialog.FileName);
-
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        bool Open()
-        {
-            var openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "March of the Rays file|*.mtr";
-            openFileDialog.Multiselect = false;
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                using (var stream = File.OpenRead(openFileDialog.FileName))
-                {
-                    Deserialize(stream);
-                }
-
-                documentPath = openFileDialog.FileName;
-                documentModifiedSinceLastSave = false;
-                Text = "March of the Rays - " + Path.GetFileName(documentPath);
-                canvas.FitToView(x => true);
-
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            Settings.Default.Save();
+            base.OnFormClosed(e);
         }
 
         Editor.NodeElement AddNode(PointF location, Core.INode node)
@@ -742,10 +308,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.ValueChanged += async (_, __) =>
+            node.ValueChanged += (_, __) =>
             {
                 elem.Text = node.Value.ToString();
-                await UpdateLivePreview();
+                OnGraphChanged();
             };
 
             elements.Add(node, elem);
@@ -765,10 +331,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.ValueChanged += async (_, __) =>
+            node.ValueChanged += (_, __) =>
             {
                 elem.Text = $"({node.X}; {node.Y})";
-                await UpdateLivePreview();
+                OnGraphChanged();
             };
 
             elements.Add(node, elem);
@@ -788,10 +354,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.ValueChanged += async (_, __) =>
+            node.ValueChanged += (_, __) =>
             {
                 elem.Text = $"({node.X}; {node.Y}; {node.Z})";
-                await UpdateLivePreview();
+                OnGraphChanged();
             };
 
             elements.Add(node, elem);
@@ -811,10 +377,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.ValueChanged += async (_, __) =>
+            node.ValueChanged += (_, __) =>
             {
                 elem.Text = $"({node.X}; {node.Y}; {node.Z}; {node.W})";
-                await UpdateLivePreview();
+                OnGraphChanged();
             };
 
             elements.Add(node, elem);
@@ -834,10 +400,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.OperationChanged += async (_, __) =>
+            node.OperationChanged += (_, __) =>
             {
                 elem.Text = node.Operation.ToString();
-                await UpdateLivePreview();
+                OnGraphChanged();
             };
 
             elements.Add(node, elem);
@@ -857,10 +423,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.OperationChanged += async (_, __) =>
+            node.OperationChanged += (_, __) =>
             {
                 elem.Text = node.Operation.ToString();
-                await UpdateLivePreview();
+                OnGraphChanged();
             };
 
             elements.Add(node, elem);
@@ -920,125 +486,63 @@ namespace MarchOfTheRays
 
             canvas.ResetHistory();
             Settings.Default.LivePreview = livePreviewSetting;
-            UpdateLivePreview();
+            OnGraphChanged();
         }
 
-        void NewDocument()
-        {
-            elements.Clear();
-            canvas.Clear();
-            AddNode(PointF.Empty, new Core.InputNode() { OutputType = Core.NodeType.Float3 });
+        event EventHandler ClipboardChanged;
 
-            outputNode = new Core.OutputNode();
-            AddNode(new PointF(200, 0), outputNode);
-            canvas.ResetHistory();
-            documentModifiedSinceLastSave = false;
-            documentPath = null;
-            settings = new RenderingSettings();
-            Text = "March of the Rays";
+        protected void OnClipboardChanged()
+        {
+            ClipboardChanged?.Invoke(this, new EventArgs());
         }
 
-        void Copy()
+        event EventHandler GraphChanged;
+
+        protected void OnGraphChanged()
         {
-            var clones = new List<(Core.INode, PointF)>();
-            var originalsToClones = new Dictionary<Core.INode, Core.INode>();
-
-            Core.INode CloneElement(Editor.NodeElement element)
-            {
-                if (element.Tag is Core.InputNode) return null;
-
-                var original = (Core.INode)element.Tag;
-                if (originalsToClones.TryGetValue(original, out var clone))
-                {
-                    return clone;
-                }
-                else
-                {
-                    clone = (Core.INode)original.Clone();
-                    originalsToClones.Add(original, clone);
-                    clones.Add((clone, element.Location));
-                    switch (clone)
-                    {
-                        case Core.IUnaryNode n:
-                            {
-                                if (n.Input == null) break;
-                                var inputNode = elements[n.Input];
-                                n.Input = inputNode.Selected ? CloneElement(inputNode) : null;
-                            }
-                            break;
-                        case Core.IBinaryNode n:
-                            {
-                                if (n.Left != null)
-                                {
-                                    var leftNode = elements[n.Left];
-                                    n.Left = leftNode.Selected ? CloneElement(leftNode) : null;
-                                }
-
-                                if (n.Right != null)
-                                {
-                                    var rightNode = elements[n.Right];
-                                    n.Right = rightNode.Selected ? CloneElement(rightNode) : null;
-                                }
-                            }
-                            break;
-                    }
-                    return clone;
-                }
-            }
-
-            foreach (var selectedElem in canvas.SelectedElements)
-            {
-                if (selectedElem.Tag is Core.OutputNode) continue;
-                if (selectedElem.Tag is Core.InputNode) continue;
-                CloneElement(selectedElem);
-            }
-
-            Clipboard.SetData("MarchOfTheRays", clones);
-            paste.Enabled = true;
+            GraphChanged?.Invoke(this, new EventArgs());
         }
 
-        void Paste()
+        event EventHandler SelectionChanged;
+
+        protected void OnSelectionChanged()
         {
-            var clipboardData = (List<(Core.INode, PointF)>)Clipboard.GetData("MarchOfTheRays");
-            if (clipboardData == null) return;
-            canvas.SelectElements(_ => false);
+            SelectionChanged?.Invoke(this, new EventArgs());
+        }
 
-            var nodes = AddNodes(clipboardData.Select(tuple => (tuple.Item2 + new SizeF(10, 10), tuple.Item1)));
-            foreach (var node in nodes)
-            {
-                node.Selected = true;
-            }
+        event EventHandler DocumentChanged;
 
-            var edges = new List<(Editor.NodeElement, Editor.NodeElement, int)>();
+        protected void OnDocumentChanged()
+        {
+            DocumentChanged?.Invoke(this, new EventArgs());
+        }
 
-            foreach (var (node, pos) in clipboardData)
-            {
-                var dest = elements[node];
-                switch (node)
-                {
-                    case Core.IUnaryNode n:
-                        if (n.Input != null)
-                        {
-                            var source = elements[n.Input];
-                            edges.Add((source, dest, 0));
-                        }
-                        break;
-                    case Core.IBinaryNode n:
-                        if (n.Left != null)
-                        {
-                            var source = elements[n.Left];
-                            edges.Add((source, dest, 0));
-                        }
-                        if (n.Right != null)
-                        {
-                            var source = elements[n.Right];
-                            edges.Add((source, dest, 1));
-                        }
-                        break;
-                }
-            }
-            canvas.AddEdges(edges);
-            canvas.Center(clipboardData[0].Item2);
+        event EventHandler<string> DocumentSaved;
+
+        protected void OnDocumentSaved(string path)
+        {
+            DocumentSaved?.Invoke(this, path);
+        }
+
+        event EventHandler<string> DocumentOpened;
+
+        protected void OnDocumentOpened(string path)
+        {
+            DocumentOpened?.Invoke(this, path);
+        }
+
+        event EventHandler<DocumentClosingEventArgs> DocumentClosing;
+
+        protected void OnDocumentClosing(DocumentClosingEventArgs e)
+        {
+            DocumentClosing?.Invoke(this, e);
+        }
+
+        event EventHandler RenderPreview;
+
+        protected void OnRenderPreview()
+        {
+            RenderPreview?.Invoke(this, new EventArgs());
         }
     }
 }
