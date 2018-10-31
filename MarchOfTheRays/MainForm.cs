@@ -8,7 +8,6 @@ using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
-using System.Threading.Tasks;
 
 namespace MarchOfTheRays
 {
@@ -276,6 +275,7 @@ namespace MarchOfTheRays
             helpBox.ReadOnly = true;
             helpBox.Dock = DockStyle.Fill;
             helpBox.BorderStyle = BorderStyle.None;
+            helpBox.Margin = new Padding(10, 10, 10, 10);
 
             var propertyBox = new PropertyGrid();
             propertyBox.Dock = DockStyle.Fill;
@@ -377,10 +377,23 @@ namespace MarchOfTheRays
                 if (selectedItems.Count == 1)
                 {
                     propertyBox.SelectedObject = selectedItems[0].Tag;
+
+                    var name = propertyBox.SelectedObject.GetType().Name;
+                    var filePath = $"HelpFiles/{name}.xml";
+                    helpBox.Rtf = "";
+                    if (File.Exists(filePath))
+                    {
+                        using (var file = File.OpenRead(filePath))
+                        {
+                            var doc = new Docs.Document(file);
+                            helpBox.Rtf = doc.ToRtf();
+                        }
+                    }
                 }
                 else
                 {
                     propertyBox.SelectedObject = null;
+                    helpBox.Rtf = "";
                 }
 
                 if (selectedItems.Count == 0)

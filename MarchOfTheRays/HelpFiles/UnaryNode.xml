@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<document>
+    <p>
+        <h1>Unary operation</h1>
+    </p>
+    <p>
+        Performs computations on a single input value.
+    </p>
+    <p>
+        <h2>Available operations</h2>
+    </p>
+    <p>
+        <i>Abs:</i> computes the absolute value of the input. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Length:</i> computes the norm of the input. On scalars, this is equivalent to <i>Abs</i>.
+    </p>
+    <p>
+        <i>Normalize:</i> returns the input vector scaled according to its norm. It is not a valid operation on scalars.
+    </p>
+    <p>
+        <i>Invert:</i> inverts the sign of the input. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Sin:</i> computes the sine of the input. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Cos:</i> computes the cosine of the input. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Tan:</i> computes the tangent of the input. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Asin:</i> computes the arcsine of the input. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Acos:</i> computes the arccosine of the input. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Atan:</i> computes the arctangent of the input. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Exp:</i> computes the exponential function on the input. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Radians:</i> converts the input value from degrees to radians. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Degrees:</i> converts the input value from radians to degrees. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Floor:</i> computes the floor function of the input. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>Ceil:</i> computes the ceiling function of the input. If the input is a vector, the result is computed component-wise.
+    </p>
+    <p>
+        <i>X:</i> extracts the X component from the input. It is not a valid operation on scalars.
+    </p>
+    <p>
+        <i>Y:</i> extracts the Y component from the input. It is not a valid operation on scalars.
+    </p>
+    <p>
+        <i>Z:</i> extracts the Z component from the input. It is not a valid operation on scalars.
+    </p>
+</document>

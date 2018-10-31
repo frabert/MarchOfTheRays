@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<document>
+    <p>
+        <h1>Float3 constant</h1>
+    </p>
+    <p>
+        Provides a constant 3D vectorial value to the nodes it is connected to.
+    </p>
+    <p>
+        <h2>Properties</h2>
+    </p>
+    <p>
+        <i>X:</i> the X component of the vector.
+    </p>
+    <p>
+        <i>Y:</i> the Y component of the vector.
+    </p>
+    <p>
+        <i>Z:</i> the Z component of the vector.
+    </p>
+</document>

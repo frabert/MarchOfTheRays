@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<document>
+    <p>
+        <h1>Float constant</h1>
+    </p>
+    <p>
+        Provides a constant floating point value to the nodes it is connected to.
+    </p>
+    <p>
+        <h2>Properties</h2>
+    </p>
+    <p>
+        <i>Value:</i> the value provided to the connected nodes.
+    </p>
+</document>

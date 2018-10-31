@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<document>
+    <p>
+        <h1>Binary operation</h1>
+    </p>
+    <p>
+        Performs computations on two input values.
+    </p>
+    <p>
+        <h2>Available operations</h2>
+    </p>
+    <p>
+        <i>Add:</i> computes the sum of the inputs. The operation is not valid if the two inputs are vectors of different sizes. If one of the input is a vector and the other is a scalar, the scalar is converted to a vector whose components are all of the value of the scalar.
+    </p>
+    <p>
+        <i>Sub:</i> computes the difference of the inputs. The operation is not valid if the two inputs are vectors of different sizes. If one of the input is a vector and the other is a scalar, the scalar is converted to a vector whose components are all of the value of the scalar.
+    </p>
+    <p>
+        <i>Mul:</i> computes the product of the inputs. On vectors, this is performed component-wise. The operation is not valid if the two inputs are vectors of different sizes. If one of the input is a vector and the other is a scalar, the scalar is converted to a vector whose components are all of the value of the scalar.
+    </p>
+    <p>
+        <i>Div:</i> computes the division of the inputs. On vectors, this is performed component-wise. The operation is not valid if the two inputs are vectors of different sizes. If one of the input is a vector and the other is a scalar, the scalar is converted to a vector whose components are all of the value of the scalar.
+    </p>
+    <p>
+        <i>Mod:</i> computes the modulo division of the inputs. On vectors, this is performed component-wise. The operation is not valid if the two inputs are vectors of different sizes. If one of the input is a vector and the other is a scalar, the scalar is converted to a vector whose components are all of the value of the scalar.
+    </p>
+    <p>
+        <i>Dot:</i> computes the scalar product of the inputs. The operation is not valid if the two inputs are vectors of different sizes, or if one of the inputs is scalar.
+    </p>
+    <p>
+        <i>Cross:</i> computes the cross product of the inputs. The operation is only valid on 3D vectors.
+    </p>
+    <p>
+        <i>Atan2:</i> computes the arctangent of the inputs. On vectors, this is performed component-wise. The operation is not valid if the two inputs are vectors of different sizes. If one of the input is a vector and the other is a scalar, the scalar is converted to a vector whose components are all of the value of the scalar.
+    </p>
+    <p>
+        <i>Min:</i> computes the minimum of the inputs. On vectors, this is performed component-wise. The operation is not valid if the two inputs are vectors of different sizes. If one of the input is a vector and the other is a scalar, the scalar is converted to a vector whose components are all of the value of the scalar.
+    </p>
+    <p>
+        <i>Max:</i> computes the maximum of the inputs. On vectors, this is performed component-wise. The operation is not valid if the two inputs are vectors of different sizes. If one of the input is a vector and the other is a scalar, the scalar is converted to a vector whose components are all of the value of the scalar.
+    </p>
+</document>

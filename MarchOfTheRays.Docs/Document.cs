@@ -33,6 +33,7 @@ namespace MarchOfTheRays.Docs
                     case "#text":
                         {
                             string text = child.InnerText.Replace("\\", "\\\\").Replace("{", "\\{").Replace("}", "\\}");
+                            if (i != 0 && char.IsWhiteSpace(text[0])) builder.Append(" ");
                             builder.Append(child.InnerText.Trim());
                         }
                         break;
@@ -41,11 +42,25 @@ namespace MarchOfTheRays.Docs
                             builder.Append(@"\line ");
                         }
                         break;
-                    case "h":
+                    case "h1":
                         {
                             builder.Append(@"{\fs40 ");
                             NodeToRtf(child, builder);
-                            builder.Append(@"\line}");
+                            builder.Append("}");
+                        }
+                        break;
+                    case "h2":
+                        {
+                            builder.Append(@"{\fs30 ");
+                            NodeToRtf(child, builder);
+                            builder.Append("}");
+                        }
+                        break;
+                    case "h3":
+                        {
+                            builder.Append(@"{\fs25 ");
+                            NodeToRtf(child, builder);
+                            builder.Append("}");
                         }
                         break;
                     case "i":
@@ -117,31 +132,31 @@ namespace MarchOfTheRays.Docs
         public string ToRtf()
         {
             var builder = new StringBuilder();
-            builder.Append("{\\rtf1 ");
+            builder.Append(@"{\rtf1 ");
             if (doc.LastChild.Name != "document") throw new InvalidDataException();
             for (int i = 0; i < doc.LastChild.ChildNodes.Count; i++)
             {
                 var child = doc.LastChild.ChildNodes[i];
                 if (child.Name != "p") throw new InvalidDataException();
-                builder.Append("{\\pard ");
+                builder.Append(@"{\pard ");
                 var align = child.Attributes["align"];
                 if (align != null)
                 {
                     if (align.Value == "left")
                     {
-                        builder.Append("\\ql ");
+                        builder.Append(@"\ql ");
                     }
                     else if (align.Value == "right")
                     {
-                        builder.Append("\\qr ");
+                        builder.Append(@"\qr ");
                     }
                     else if (align.Value == "center")
                     {
-                        builder.Append("\\qc ");
+                        builder.Append(@"\qc ");
                     }
                 }
                 NodeToRtf(child, builder);
-                builder.Append("\\par}");
+                builder.Append(@"\line \par}");
             }
             builder.Append("}");
             return builder.ToString();
