@@ -82,14 +82,16 @@ namespace MarchOfTheRays.CpuRenderer
             }
         }
 
-        void RenderChunk(IntPtr scan0, int totalWidth, int totalHeight, int height, int stride, int yoff, Func<Vector3, float> func, CancellationToken token, IProgress<int> progress)
+        bool RenderChunk(IntPtr scan0, int totalWidth, int totalHeight, int height, int stride, int yoff, Func<Vector3, float> func, CancellationToken token, IProgress<int> progress)
         {
             unsafe
             {
                 byte* rawBytes = (byte*)scan0;
                 int strideDiff = stride - totalWidth * 3;
-                for(int i = 0; i < totalWidth * height && !token.IsCancellationRequested; i++)
+                for(int i = 0; i < totalWidth * height; i++)
                 {
+                    if (token.IsCancellationRequested)
+                        return false;
                     int x = i % totalWidth;
                     int y = (i - x) / totalWidth;
 
@@ -103,15 +105,16 @@ namespace MarchOfTheRays.CpuRenderer
                     if(i % 100 == 99) progress?.Report(100);
                 }
             }
+            return true;
         }
 
-        public Image RenderImage(int width, int height, Func<Vector3, float> func, int nthreads, CancellationToken token, IProgress<int> progress)
+        public async Task<Image> RenderImageAsync(int width, int height, Func<Vector3, float> func, int nthreads, CancellationToken token, IProgress<int> progress)
         {
             var img = new Bitmap(width, height);
 
             var data = img.LockBits(new Rectangle(Point.Empty, new Size(width, height)), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
 
-            Task[] tasks = new Task[nthreads];
+            Task<bool>[] tasks = new Task<bool>[nthreads];
 
             var stripeHeight = height / (float)nthreads;
             for(int i = 0; i < nthreads; i++)
@@ -121,21 +124,21 @@ namespace MarchOfTheRays.CpuRenderer
                 tasks[i] = Task.Factory.StartNew(() => RenderChunk(data.Scan0, width, height, end - start, data.Stride, start, func, token, progress));
             }
 
-            Task.WaitAll(tasks);
+            bool imageComplete = true;
+
+            foreach(var task in tasks)
+            {
+                imageComplete &= await task;
+            }
 
             img.UnlockBits(data);
 
-            return img;
+            return imageComplete ? img : null;
         }
 
-        public Task<Image> RenderImageAsync(int width, int height, Core.OutputNode node, Func<Vector3, float> func, int nthreads, CancellationToken token, IProgress<int> progress)
+        public async Task<Image> RenderImageAsync(int width, int height, Func<Vector3, float> func, int nthreads)
         {
-            return Task<Image>.Factory.StartNew(() => RenderImage(width, height, func, nthreads, token, progress));
-        }
-
-        public Task<Image> RenderImageAsync(int width, int height, Core.OutputNode node, Func<Vector3, float> func, int nthreads)
-        {
-            return RenderImageAsync(width, height, node, func, nthreads, CancellationToken.None, null);
+            return await RenderImageAsync(width, height, func, nthreads, CancellationToken.None, null);
         }
     }
 }

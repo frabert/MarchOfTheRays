@@ -8,6 +8,8 @@ using System.Linq.Expressions;
 using System.Numerics;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MarchOfTheRays
 {
@@ -20,6 +22,8 @@ namespace MarchOfTheRays
         ToolStripMenuItem paste;
         bool documentModifiedSinceLastSave = false;
         string documentPath = null;
+
+        CancellationTokenSource tokenSource = new CancellationTokenSource();
 
         ToolStripItem statusLabel;
 
@@ -327,7 +331,7 @@ namespace MarchOfTheRays
 
             canvas.ContextMenuStrip = canvasContextMenu;
 
-            canvas.EdgeAdded += (s, e) =>
+            canvas.EdgeAdded += async (s, e) =>
             {
                 var src = (Core.INode)e.Source.Tag;
                 switch (e.Destination.Tag)
@@ -339,10 +343,10 @@ namespace MarchOfTheRays
                         break;
                 }
                 documentModifiedSinceLastSave = true;
-                UpdateLivePreview();
+                await UpdateLivePreview();
             };
 
-            canvas.EdgeRemoved += (s, e) =>
+            canvas.EdgeRemoved += async (s, e) =>
             {
                 switch (e.Destination.Tag)
                 {
@@ -353,7 +357,7 @@ namespace MarchOfTheRays
                         break;
                 }
                 documentModifiedSinceLastSave = true;
-                UpdateLivePreview();
+                await UpdateLivePreview();
             };
 
             canvas.ElementAdded += (s, e) =>
@@ -501,14 +505,26 @@ namespace MarchOfTheRays
             previewForm.Show();
         }
 
-        void UpdateLivePreview()
+        async Task UpdateLivePreview()
         {
-            if (Settings.Default.LivePreview) UpdatePreview();
+            if (Settings.Default.LivePreview)
+            {
+                previousPreviewTask = UpdatePreview();
+                await previousPreviewTask;
+            }
         }
 
-        async void UpdatePreview()
+        Task previousPreviewTask = null;
+
+        async Task UpdatePreview()
         {
             if (previewForm == null || previewForm.IsDisposed) return;
+
+            if (previousPreviewTask != null)
+            {
+                tokenSource.Cancel();
+                await previousPreviewTask;
+            }
 
             var renderer = new CpuRenderer.Renderer(
                     settings.CameraPosition,
@@ -543,8 +559,10 @@ namespace MarchOfTheRays
 
             try
             {
+                var newTokenSource = new CancellationTokenSource();
+
                 var param = Expression.Parameter(typeof(Vector3), "pos");
-                var body = outputNode.Compile(Core.NodeType.Float, param);
+                var body = outputNode.Compile(Core.NodeType.Float, new Dictionary<Core.INode, Expression>(), param);
                 var lambda = Expression.Lambda<Func<Vector3, float>>(body, param);
                 func = lambda.Compile();
 
@@ -559,12 +577,15 @@ namespace MarchOfTheRays
                 };
 
                 statusLabel.Text = "Rendering started...";
-                var img = renderer.RenderImageAsync(previewForm.ClientSize.Width, previewForm.ClientSize.Height, outputNode, func, 4, System.Threading.CancellationToken.None, prog);
+                var img = renderer.RenderImageAsync(previewForm.ClientSize.Width, previewForm.ClientSize.Height, func, 4, newTokenSource.Token, prog);
+
+                tokenSource = newTokenSource;
 
                 if (previewForm == null || previewForm.IsDisposed) return;
 
                 previewForm.Cursor = Cursors.WaitCursor;
-                previewForm.BackgroundImage = await img;
+                var image = await img;
+                if(image != null) previewForm.BackgroundImage = image;
                 previewForm.Cursor = Cursors.Default;
 
                 previewForm.Loading = false;
@@ -718,10 +739,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.ValueChanged += (_, __) =>
+            node.ValueChanged += async (_, __) =>
             {
                 elem.Text = node.Value.ToString();
-                UpdateLivePreview();
+                await UpdateLivePreview();
             };
 
             elements.Add(node, elem);
@@ -741,10 +762,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.ValueChanged += (_, __) =>
+            node.ValueChanged += async (_, __) =>
             {
                 elem.Text = $"({node.X}; {node.Y})";
-                UpdateLivePreview();
+                await UpdateLivePreview();
             };
 
             elements.Add(node, elem);
@@ -764,10 +785,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.ValueChanged += (_, __) =>
+            node.ValueChanged += async (_, __) =>
             {
                 elem.Text = $"({node.X}; {node.Y}; {node.Z})";
-                UpdateLivePreview();
+                await UpdateLivePreview();
             };
 
             elements.Add(node, elem);
@@ -787,10 +808,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.ValueChanged += (_, __) =>
+            node.ValueChanged += async (_, __) =>
             {
                 elem.Text = $"({node.X}; {node.Y}; {node.Z}; {node.W})";
-                UpdateLivePreview();
+                await UpdateLivePreview();
             };
 
             elements.Add(node, elem);
@@ -810,10 +831,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.OperationChanged += (_, __) =>
+            node.OperationChanged += async (_, __) =>
             {
                 elem.Text = node.Operation.ToString();
-                UpdateLivePreview();
+                await UpdateLivePreview();
             };
 
             elements.Add(node, elem);
@@ -833,10 +854,10 @@ namespace MarchOfTheRays
                 Tag = node
             };
 
-            node.OperationChanged += (_, __) =>
+            node.OperationChanged += async (_, __) =>
             {
                 elem.Text = node.Operation.ToString();
-                UpdateLivePreview();
+                await UpdateLivePreview();
             };
 
             elements.Add(node, elem);

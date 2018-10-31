@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Numerics;
@@ -127,7 +128,7 @@ namespace MarchOfTheRays.Core
     public interface INode : ICloneable
     {
         NodeType OutputType { get; }
-        Expression Compile(params Expression[] parameters);
+        Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters);
     }
 
     public interface IUnaryNode : INode
@@ -182,9 +183,11 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(params Expression[] parameters)
+        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            return Expression.Constant(m_Value);
+            var expr = Expression.Constant(m_Value);
+            nodeDictionary[this] = expr;
+            return expr;
         }
     }
 
@@ -228,9 +231,11 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(params Expression[] parameters)
+        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            return Expression.Constant(new Vector2(m_X, m_Y));
+            var expr = Expression.Constant(new Vector2(m_X, m_Y));
+            nodeDictionary[this] = expr;
+            return expr;
         }
     }
 
@@ -285,9 +290,11 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(params Expression[] parameters)
+        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            return Expression.Constant(new Vector3(m_X, m_Y, m_Z));
+            var expr = Expression.Constant(new Vector3(m_X, m_Y, m_Z));
+            nodeDictionary[this] = expr;
+            return expr;
         }
     }
 
@@ -353,9 +360,11 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(params Expression[] parameters)
+        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            return Expression.Constant(new Vector4(m_X, m_Y, m_Z, m_W));
+            var expr = Expression.Constant(new Vector4(m_X, m_Y, m_Z, m_W));
+            nodeDictionary[this] = expr;
+            return expr;
         }
     }
 
@@ -398,8 +407,39 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class UnaryNode : IUnaryNode
     {
+        INode input;
+
         [Browsable(false)]
-        public INode Input { get; set; }
+        public INode Input
+        {
+            get => input;
+            set
+            {
+                input = value;
+
+                if (input == null
+                    || input.OutputType == NodeType.Indeterminate
+                    || input.OutputType == NodeType.Invalid) OutputType = NodeType.Indeterminate;
+
+                if ((m_Operation == UnaryOp.Normalize
+                    || m_Operation == UnaryOp.X
+                    || m_Operation == UnaryOp.Y
+                    || m_Operation == UnaryOp.Z) && Input.OutputType == NodeType.Float) OutputType = NodeType.Invalid;
+
+
+                if (m_Operation == UnaryOp.Length
+                    || m_Operation == UnaryOp.X
+                    || m_Operation == UnaryOp.Y
+                    || m_Operation == UnaryOp.Z)
+                {
+                    OutputType = NodeType.Float;
+                }
+                else
+                {
+                    OutputType = Input.OutputType;
+                }
+            }
+        }
 
         UnaryOp m_Operation;
 
@@ -414,33 +454,7 @@ namespace MarchOfTheRays.Core
         }
 
         [Browsable(false)]
-        public NodeType OutputType
-        {
-            get
-            {
-                if (Input == null
-                    || Input.OutputType == NodeType.Indeterminate
-                    || Input.OutputType == NodeType.Invalid) return NodeType.Indeterminate;
-
-                if ((m_Operation == UnaryOp.Normalize
-                    || m_Operation == UnaryOp.X
-                    || m_Operation == UnaryOp.Y
-                    || m_Operation == UnaryOp.Z) && Input.OutputType == NodeType.Float) return NodeType.Invalid;
-
-
-                if (m_Operation == UnaryOp.Length
-                    || m_Operation == UnaryOp.X
-                    || m_Operation == UnaryOp.Y
-                    || m_Operation == UnaryOp.Z)
-                {
-                    return NodeType.Float;
-                }
-                else
-                {
-                    return Input.OutputType;
-                }
-            }
-        }
+        public NodeType OutputType { get; private set; } = NodeType.Indeterminate;
 
         [field: NonSerialized]
         public event EventHandler OperationChanged;
@@ -454,13 +468,15 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(params Expression[] parameters)
+        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Input == null
                 || Input.OutputType == NodeType.Indeterminate
                 || Input.OutputType == NodeType.Invalid) throw new InvalidNodeException(this);
 
-            var arg = Input.Compile(parameters);
+            Expression arg;
+            if (!nodeDictionary.TryGetValue(Input, out arg)) arg = Input.Compile(nodeDictionary, parameters);
+
             var inputType = Input.OutputType;
             Expression<Func<float, float>> expr = null;
             Type t = null;
@@ -517,45 +533,94 @@ namespace MarchOfTheRays.Core
                     break;
                 case UnaryOp.Length:
                     {
-                        if(inputType == NodeType.Float) return Expression.Invoke(CompilerTools.ToExpr<float>(x => Math.Abs(x)), arg);
-                        return Expression.Call(arg, t.GetMethod("Length"));
+                        Expression e;
+                        if (inputType == NodeType.Float) e = Expression.Invoke(CompilerTools.ToExpr<float>(x => Math.Abs(x)), arg);
+                        e = Expression.Call(arg, t.GetMethod("Length"));
+                        nodeDictionary[this] = e;
+                        return e;
                     }
                 case UnaryOp.Normalize:
                     {
-                        return Expression.Call(null, t.GetMethod("Normalize"), arg);
+                        var e = Expression.Call(null, t.GetMethod("Normalize"), arg);
+                        nodeDictionary[this] = e;
+                        return e;
                     }
                 case UnaryOp.X:
                     {
-                        return Expression.Field(arg, "X");
+                        var e = Expression.Field(arg, "X");
+                        nodeDictionary[this] = e;
+                        return e;
                     }
                 case UnaryOp.Y:
                     {
-                        return Expression.Field(arg, "Y");
+                        var e = Expression.Field(arg, "Y");
+                        nodeDictionary[this] = e;
+                        return e;
                     }
                 case UnaryOp.Z:
                     {
-                        return Expression.Field(arg, "Z");
+                        var e = Expression.Field(arg, "Z");
+                        nodeDictionary[this] = e;
+                        return e;
                     }
             }
 
+            Expression res;
             switch (inputType)
             {
-                case NodeType.Float: return Expression.Invoke(expr, arg);
-                case NodeType.Float2: return CompilerTools.MapExprFloat2(expr, arg);
-                case NodeType.Float3: return CompilerTools.MapExprFloat3(expr, arg);
-                case NodeType.Float4: return CompilerTools.MapExprFloat4(expr, arg);
+                case NodeType.Float:
+                    {
+                        res = Expression.Invoke(expr, arg);
+                        break;
+                    }
+                case NodeType.Float2:
+                    {
+                        res = CompilerTools.MapExprFloat2(expr, arg);
+                        break;
+                    }
+                case NodeType.Float3:
+                    {
+                        res = CompilerTools.MapExprFloat3(expr, arg);
+                        break;
+                    }
+                case NodeType.Float4:
+                    {
+                        res = CompilerTools.MapExprFloat4(expr, arg);
+                        break;
+                    }
                 default: throw new InvalidNodeException(this);
             }
+            nodeDictionary[this] = res;
+            return res;
         }
     }
 
     [Serializable]
     public class BinaryNode : IBinaryNode
     {
+        INode leftIn, rightIn;
+
         [Browsable(false)]
-        public INode Left { get; set; }
+        public INode Left
+        {
+            get => leftIn;
+            set
+            {
+                leftIn = value;
+                OutputType = CalcType();
+            }
+        }
+
         [Browsable(false)]
-        public INode Right { get; set; }
+        public INode Right
+        {
+            get => rightIn;
+            set
+            {
+                rightIn = value;
+                OutputType = CalcType();
+            }
+        }
 
         BinaryOp m_Operation;
 
@@ -570,56 +635,55 @@ namespace MarchOfTheRays.Core
         }
 
         [Browsable(false)]
-        public NodeType OutputType
-        {
-            get
-            {
-                if (Left == null || Right == null) return NodeType.Indeterminate;
-                if (Left.OutputType == NodeType.Indeterminate
-                    || Left.OutputType == NodeType.Invalid
-                    || Right.OutputType == NodeType.Indeterminate
-                    || Right.OutputType == NodeType.Invalid) return NodeType.Indeterminate;
+        public NodeType OutputType { get; private set; } = NodeType.Indeterminate;
 
-                if (m_Operation == BinaryOp.Cross)
+        NodeType CalcType()
+        {
+            if (Left == null || Right == null) return NodeType.Indeterminate;
+            if (Left.OutputType == NodeType.Indeterminate
+                || Left.OutputType == NodeType.Invalid
+                || Right.OutputType == NodeType.Indeterminate
+                || Right.OutputType == NodeType.Invalid) return NodeType.Indeterminate;
+
+            if (m_Operation == BinaryOp.Cross)
+            {
+                if (Left.OutputType != NodeType.Float3 || Right.OutputType != NodeType.Float3) return NodeType.Invalid;
+                return NodeType.Float3;
+            }
+            else
+            {
+                if (Left.OutputType == NodeType.Float4)
                 {
-                    if (Left.OutputType != NodeType.Float3 || Right.OutputType != NodeType.Float3) return NodeType.Invalid;
+                    if (Right.OutputType != NodeType.Float4 && Right.OutputType != NodeType.Float) return NodeType.Invalid;
+                    return NodeType.Float4;
+                }
+                else if (Left.OutputType == NodeType.Float3)
+                {
+                    if (Right.OutputType != NodeType.Float3 && Right.OutputType != NodeType.Float) return NodeType.Invalid;
                     return NodeType.Float3;
                 }
-                else
+                else if (Left.OutputType == NodeType.Float2)
                 {
-                    if (Left.OutputType == NodeType.Float4)
-                    {
-                        if (Right.OutputType != NodeType.Float4 && Right.OutputType != NodeType.Float) return NodeType.Invalid;
-                        return NodeType.Float4;
-                    }
-                    else if (Left.OutputType == NodeType.Float3)
-                    {
-                        if (Right.OutputType != NodeType.Float3 && Right.OutputType != NodeType.Float) return NodeType.Invalid;
-                        return NodeType.Float3;
-                    }
-                    else if (Left.OutputType == NodeType.Float2)
-                    {
-                        if (Right.OutputType != NodeType.Float2 && Right.OutputType != NodeType.Float) return NodeType.Invalid;
-                        return NodeType.Float2;
-                    }
-                    else if (Right.OutputType == NodeType.Float4)
-                    {
-                        if (Left.OutputType != NodeType.Float4 && Left.OutputType != NodeType.Float) return NodeType.Invalid;
-                        return NodeType.Float4;
-                    }
-                    else if (Right.OutputType == NodeType.Float3)
-                    {
-                        if (Left.OutputType != NodeType.Float3 && Left.OutputType != NodeType.Float) return NodeType.Invalid;
-                        return NodeType.Float3;
-                    }
-                    else if (Right.OutputType == NodeType.Float2)
-                    {
-                        if (Left.OutputType != NodeType.Float2 && Left.OutputType != NodeType.Float) return NodeType.Invalid;
-                        return NodeType.Float2;
-                    }
-
-                    return NodeType.Float;
+                    if (Right.OutputType != NodeType.Float2 && Right.OutputType != NodeType.Float) return NodeType.Invalid;
+                    return NodeType.Float2;
                 }
+                else if (Right.OutputType == NodeType.Float4)
+                {
+                    if (Left.OutputType != NodeType.Float4 && Left.OutputType != NodeType.Float) return NodeType.Invalid;
+                    return NodeType.Float4;
+                }
+                else if (Right.OutputType == NodeType.Float3)
+                {
+                    if (Left.OutputType != NodeType.Float3 && Left.OutputType != NodeType.Float) return NodeType.Invalid;
+                    return NodeType.Float3;
+                }
+                else if (Right.OutputType == NodeType.Float2)
+                {
+                    if (Left.OutputType != NodeType.Float2 && Left.OutputType != NodeType.Float) return NodeType.Invalid;
+                    return NodeType.Float2;
+                }
+
+                return NodeType.Float;
             }
         }
 
@@ -636,13 +700,14 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(params Expression[] parameters)
+        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Left == null || Right == null) throw new InvalidNodeException(this);
             var leftType = Left.OutputType;
             var rightType = Right.OutputType;
-            var left = Left.Compile(parameters);
-            var right = Right.Compile(parameters);
+            Expression left, right;
+            if (!nodeDictionary.TryGetValue(Left, out left)) left = Left.Compile(nodeDictionary, parameters);
+            if (!nodeDictionary.TryGetValue(Right, out right)) right = Right.Compile(nodeDictionary, parameters);
             if (m_Operation == BinaryOp.Cross)
             {
                 if (leftType != NodeType.Float3 || rightType != NodeType.Float3)
@@ -756,7 +821,7 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(params Expression[] parameters)
+        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             return parameters[InputNumber];
         }
@@ -778,17 +843,17 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(params Expression[] parameters)
+        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Input == null) throw new InvalidNodeException(this);
-            return Input.Compile(parameters);
+            return Input.Compile(nodeDictionary, parameters);
         }
 
-        public Expression Compile(NodeType wantedtype, params Expression[] parameters)
+        public Expression Compile(NodeType wantedtype, Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Input == null) throw new InvalidNodeException(this);
             if (Input.OutputType != wantedtype) throw new InvalidNodeException(this);
-            return Input.Compile(parameters);
+            return Input.Compile(nodeDictionary, parameters);
         }
     }
 }
