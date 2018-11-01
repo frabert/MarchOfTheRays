@@ -20,12 +20,8 @@ namespace MarchOfTheRays
 
     partial class MainForm : Form
     {
-        RichTextBox helpBox;
         Editor.NodeCanvas canvas;
-        ContextMenuStrip canvasContextMenu;
         Core.OutputNode outputNode;
-
-        ToolStripItem statusLabel;
 
         Dictionary<Core.INode, Editor.NodeElement> elements = new Dictionary<Core.INode, Editor.NodeElement>();
 
@@ -40,10 +36,8 @@ namespace MarchOfTheRays
             KeyPreview = true;
             SuspendLayout();
 
-            InitializeMenus();
-
-            var statusStrip = new StatusStrip();
-            statusLabel = statusStrip.Items.Add("Ready.");
+            var mainMenu = InitializeMenus();
+            var statusStrip = InitializeStatusStrip();
 
             var splitContainerV = new SplitContainer();
             splitContainerV.Orientation = Orientation.Vertical;
@@ -56,16 +50,8 @@ namespace MarchOfTheRays
             splitContainerH.Dock = DockStyle.Fill;
             splitContainerH.BorderStyle = BorderStyle.Fixed3D;
 
-            helpBox = new RichTextBox();
-            helpBox.ReadOnly = true;
-            helpBox.Dock = DockStyle.Fill;
-            helpBox.BorderStyle = BorderStyle.None;
-
-            var propertyBox = new PropertyGrid();
-            propertyBox.Dock = DockStyle.Fill;
-
-            splitContainerH.Panel1.Controls.Add(propertyBox);
-            splitContainerH.Panel2.Controls.Add(helpBox);
+            splitContainerH.Panel1.Controls.Add(InitializePropertyBox());
+            splitContainerH.Panel2.Controls.Add(InitializeHelpBox());
 
             canvas = new Editor.NodeCanvas();
             canvas.Dock = DockStyle.Fill;
@@ -75,41 +61,6 @@ namespace MarchOfTheRays
             splitContainerV.FixedPanel = FixedPanel.Panel2;
 
             splitContainerV.Location = new Point(0, mainMenu.Height);
-
-            canvasContextMenu = new ContextMenuStrip();
-            canvasContextMenu.Items.Add("Float constant", null, (s, e) =>
-            {
-                var controlCoords = canvas.PointToClient(Cursor.Position);
-                var worldCoords = canvas.GetWorldCoordinates(controlCoords);
-
-                AddNode(worldCoords, new Core.FloatConstantNode());
-            });
-
-            canvasContextMenu.Items.Add("Float3 constant", null, (s, e) =>
-            {
-                var controlCoords = canvas.PointToClient(Cursor.Position);
-                var worldCoords = canvas.GetWorldCoordinates(controlCoords);
-
-                AddNode(worldCoords, new Core.Float3ConstantNode());
-            });
-
-            canvasContextMenu.Items.Add("Binary operation", null, (s, e) =>
-            {
-                var controlCoords = canvas.PointToClient(Cursor.Position);
-                var worldCoords = canvas.GetWorldCoordinates(controlCoords);
-
-                AddNode(worldCoords, new Core.BinaryNode());
-            });
-
-            canvasContextMenu.Items.Add("Unary operation", null, (s, e) =>
-            {
-                var controlCoords = canvas.PointToClient(Cursor.Position);
-                var worldCoords = canvas.GetWorldCoordinates(controlCoords);
-
-                AddNode(worldCoords, new Core.UnaryNode());
-            });
-
-            canvas.ContextMenuStrip = canvasContextMenu;
 
             canvas.EdgeAdded += (s, e) =>
             {
@@ -155,29 +106,6 @@ namespace MarchOfTheRays
 
             canvas.SelectionChanged += (s, e) =>
             {
-                var selectedItems = canvas.SelectedElements.ToList();
-                if (selectedItems.Count == 1)
-                {
-                    propertyBox.SelectedObject = selectedItems[0].Tag;
-
-                    var name = propertyBox.SelectedObject.GetType().Name;
-                    var filePath = $"HelpFiles/{name}.xml";
-                    helpBox.Rtf = "";
-                    if (File.Exists(filePath))
-                    {
-                        using (var file = File.OpenRead(filePath))
-                        {
-                            var doc = new Docs.Document(file);
-                            helpBox.Rtf = doc.ToRtf();
-                        }
-                    }
-                }
-                else
-                {
-                    propertyBox.SelectedObject = null;
-                    helpBox.Rtf = "";
-                }
-
                 OnSelectionChanged();
             };
 
@@ -188,6 +116,7 @@ namespace MarchOfTheRays
             ResumeLayout();
             InitializeDocument();
             InitializeRendering();
+            InitializeContextMenu();
             NewDocument();
             splitContainerV.SplitterDistance = 500;
 
@@ -543,6 +472,13 @@ namespace MarchOfTheRays
         protected void OnRenderPreview()
         {
             RenderPreview?.Invoke(this, new EventArgs());
+        }
+
+        event EventHandler<string> StatusChange;
+
+        protected void OnStatusChange(string newStatus)
+        {
+            StatusChange?.Invoke(this, newStatus);
         }
     }
 }

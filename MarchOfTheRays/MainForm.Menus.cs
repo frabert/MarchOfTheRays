@@ -6,11 +6,9 @@ using System.Linq;
 
 namespace MarchOfTheRays
 {
-    partial class MainForm
-    {
-        MenuStrip mainMenu;
+    partial class MainForm {
 
-        void InitializeFileMenu()
+        void InitializeFileMenu(MenuStrip mainMenu)
         {
             var fileMenu = new ToolStripMenuItem("&File");
 
@@ -58,7 +56,7 @@ namespace MarchOfTheRays
             mainMenu.Items.Add(fileMenu);
         }
 
-        void InitializeEditMenu()
+        void InitializeEditMenu(MenuStrip mainMenu)
         {
             var editMenu = new ToolStripMenuItem("&Edit");
 
@@ -146,7 +144,7 @@ namespace MarchOfTheRays
             mainMenu.Items.Add(editMenu);
         }
 
-        void InitializeViewMenu()
+        void InitializeViewMenu(MenuStrip mainMenu)
         {
             var viewMenu = new ToolStripMenuItem("&View");
             var fitToScreen = new ToolStripMenuItem("Fit to screen", Resources.ZoomToFit, (s, e) =>
@@ -188,7 +186,7 @@ namespace MarchOfTheRays
             mainMenu.Items.Add(viewMenu);
         }
 
-        void InitializeRenderingMenu()
+        void InitializeRenderingMenu(MenuStrip mainMenu)
         {
             var renderingMenu = new ToolStripMenuItem("&Rendering");
             var renderPreviewWindow = new ToolStripMenuItem("Show preview window", null, (s, e) =>
@@ -232,14 +230,16 @@ namespace MarchOfTheRays
             mainMenu.Items.Add(renderingMenu);
         }
 
-        void InitializeMenus()
+        MenuStrip InitializeMenus()
         {
-            mainMenu = new MenuStrip();
+            var mainMenu = new MenuStrip();
 
-            InitializeFileMenu();
-            InitializeEditMenu();
-            InitializeViewMenu();
-            InitializeRenderingMenu();
+            InitializeFileMenu(mainMenu);
+            InitializeEditMenu(mainMenu);
+            InitializeViewMenu(mainMenu);
+            InitializeRenderingMenu(mainMenu);
+
+            return mainMenu;
         }
     }
 }

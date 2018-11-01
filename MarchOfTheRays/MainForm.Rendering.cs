@@ -44,7 +44,7 @@ namespace MarchOfTheRays
                 {
                     elem.Value.Errored = false;
                 }
-                statusLabel.Text = "Checking graph for cycles...";
+                OnStatusChange("Checking graph for cycles...");
 
                 var cycles = Core.Compiler.CheckForCycles(outputNode, elements.Keys.ToList());
                 if (cycles.Count > 0)
@@ -53,7 +53,7 @@ namespace MarchOfTheRays
                     {
                         elem.Value.Errored = cycles.Contains(elem.Key);
                     }
-                    statusLabel.Text = "Graph contains a cycle.";
+                    OnStatusChange("Graph contains a cycle.");
                     PreviewForm.Loading = false;
                     return;
                 }
@@ -79,7 +79,7 @@ namespace MarchOfTheRays
                         PreviewForm.Progress = totalProgress / total;
                     };
 
-                    statusLabel.Text = "Rendering started...";
+                    OnStatusChange("Rendering started...");
                     var img = renderer.RenderImageAsync(PreviewForm.ClientSize.Width, PreviewForm.ClientSize.Height, func, 4, newTokenSource.Token, prog);
 
                     tokenSource = newTokenSource;
@@ -92,13 +92,13 @@ namespace MarchOfTheRays
                     PreviewForm.Cursor = Cursors.Default;
 
                     PreviewForm.Loading = false;
-                    statusLabel.Text = "Ready.";
+                    OnStatusChange("Ready.");
                 }
                 catch (Core.InvalidNodeException ex)
                 {
                     elements[ex.Node].Errored = true;
                     PreviewForm.Loading = false;
-                    statusLabel.Text = "Invalid graph elements found.";
+                    OnStatusChange("Invalid graph elements found.");
                 }
             }
 

@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("MarchOfTheRays")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("March of the Rays")]
+[assembly: AssemblyDescription("Raymarching scene editor")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("MarchOfTheRays")]
-[assembly: AssemblyCopyright("Copyright ©  2018")]
+[assembly: AssemblyCompany("Francesco Bertolaccini")]
+[assembly: AssemblyProduct("March of the Rays")]
+[assembly: AssemblyCopyright("Copyright ©  2018 Francesco Bertolaccini")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
