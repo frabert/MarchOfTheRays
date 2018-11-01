@@ -1,14 +1,6 @@
 ﻿using MarchOfTheRays.Properties;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Numerics;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using WeifenLuo.WinFormsUI.Docking;
 
@@ -37,7 +29,7 @@ namespace MarchOfTheRays
 
             dockPanel = new DockPanel();
             dockPanel.Dock = DockStyle.Fill;
-            dockPanel.Theme = new VS2015DarkTheme();
+            dockPanel.Theme = new VS2015LightTheme();
             Controls.Add(dockPanel);
 
             InitializeHelpBox();
@@ -52,15 +44,32 @@ namespace MarchOfTheRays
 
             ResumeLayout();
 
-            document = new Document();
-            document.MainGraph = new Graph();
-            document.Graphs.Add(document.MainGraph);
-
-            
             InitializeDocument();
             InitializeRendering();
 
             if (Settings.Default.PreviewWindowVisible) ShowPreviewForm();
+        }
+
+        GraphEditorForm ActiveEditor
+        {
+            get
+            {
+                if (dockPanel.ActiveDocument == null)
+                {
+                    if (dockPanel.ActivePane == null)
+                    {
+                        return null;
+                    }
+                    else
+                    {
+                        return dockPanel.ActivePane.ActiveContent as GraphEditorForm;
+                    }
+                }
+                else
+                {
+                    return (GraphEditorForm)dockPanel.ActiveDocument;
+                }
+            }
         }
 
         public MainForm(string[] args) : this()

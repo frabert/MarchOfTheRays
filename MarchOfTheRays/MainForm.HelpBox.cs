@@ -24,10 +24,9 @@ namespace MarchOfTheRays
 
                 SelectionChanged += (s, e) =>
                 {
-                    var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                    if (activeDocument == null) return;
+                    if (ActiveEditor == null) return;
 
-                    var selectedItems = activeDocument.Canvas.SelectedElements.ToList();
+                    var selectedItems = ActiveEditor.Canvas.SelectedElements.ToList();
                     if (selectedItems.Count == 1)
                     {
                         var selectedItem = selectedItems[0].Tag;

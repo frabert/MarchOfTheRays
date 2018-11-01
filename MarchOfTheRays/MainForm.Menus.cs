@@ -62,16 +62,14 @@ namespace MarchOfTheRays
 
             var undo = new ToolStripMenuItem(Strings.Undo, Resources.Undo, (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                activeDocument?.Canvas.Undo();
+                ActiveEditor?.Canvas.Undo();
             });
             undo.ShortcutKeys = Keys.Control | Keys.Z;
             editMenu.DropDownItems.Add(undo);
 
             var redo = new ToolStripMenuItem(Strings.Redo, Resources.Redo, (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                activeDocument?.Canvas.Redo();
+                ActiveEditor?.Canvas.Redo();
             });
             redo.ShortcutKeys = Keys.Control | Keys.Y;
             editMenu.DropDownItems.Add(redo);
@@ -80,9 +78,8 @@ namespace MarchOfTheRays
 
             var cut = new ToolStripMenuItem(Strings.Cut, Resources.Cut, (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
                 Copy();
-                activeDocument?.Canvas.DeleteElements(x => x.Selected && !(x.Tag is Core.OutputNode));
+                ActiveEditor?.Canvas.DeleteElements(x => x.Selected && !(x.Tag is Core.OutputNode));
             });
             cut.ShortcutKeys = Keys.Control | Keys.X;
             cut.Enabled = false;
@@ -107,8 +104,7 @@ namespace MarchOfTheRays
 
             var delete = new ToolStripMenuItem(Strings.Delete, Resources.Delete, (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                activeDocument?.Canvas.DeleteElements(x => x.Selected && !(x.Tag is Core.OutputNode || x.Tag is Core.InputNode));
+                ActiveEditor?.Canvas.DeleteElements(x => x.Selected && !(x.Tag is Core.OutputNode || x.Tag is Core.InputNode));
             });
             delete.ShortcutKeys = Keys.Delete;
             delete.Enabled = false;
@@ -118,16 +114,14 @@ namespace MarchOfTheRays
 
             var selectAll = new ToolStripMenuItem(Strings.SelectAll, Resources.SelectAll, (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                activeDocument?.Canvas.SelectElements(x => true);
+                ActiveEditor?.Canvas.SelectElements(x => true);
             });
             selectAll.ShortcutKeys = Keys.Control | Keys.A;
             editMenu.DropDownItems.Add(selectAll);
 
             var deselect = new ToolStripMenuItem(Strings.Deselect, null, (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                activeDocument?.Canvas.SelectElements(x => false);
+                ActiveEditor?.Canvas.SelectElements(x => false);
             });
             deselect.ShortcutKeys = Keys.Control | Keys.D;
             deselect.Enabled = false;
@@ -140,8 +134,7 @@ namespace MarchOfTheRays
 
             SelectionChanged += (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                var canCopy = activeDocument?.Canvas.SelectedElements.Count() > 0;
+                var canCopy = ActiveEditor?.Canvas.SelectedElements.Count() > 0;
                 copy.Enabled = canCopy;
                 cut.Enabled = canCopy;
                 delete.Enabled = canCopy;
@@ -177,41 +170,36 @@ namespace MarchOfTheRays
 
             var fitToScreen = new ToolStripMenuItem(Strings.FitToScreen, Resources.ZoomToFit, (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                activeDocument?.Canvas.FitToView(_ => true);
+                ActiveEditor?.Canvas.FitToView(_ => true);
             });
             fitToScreen.ShortcutKeys = Keys.Control | Keys.Shift | Keys.W;
             viewMenu.DropDownItems.Add(fitToScreen);
 
             var fitToSelection = new ToolStripMenuItem(Strings.FitToScreen, Resources.ZoomToWidth, (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                activeDocument?.Canvas.FitToView(x => x.Selected);
+                ActiveEditor?.Canvas.FitToView(x => x.Selected);
             });
             fitToSelection.ShortcutKeys = Keys.Control | Keys.W;
             viewMenu.DropDownItems.Add(fitToSelection);
 
             var resetZoom = new ToolStripMenuItem(Strings.ResetZoom, Resources.ZoomOriginalSize, (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                activeDocument?.Canvas.ResetZoom();
-                activeDocument?.Canvas.Center();
+                ActiveEditor?.Canvas.ResetZoom();
+                ActiveEditor?.Canvas.Center();
             });
             resetZoom.ShortcutKeys = Keys.Control | Keys.D0;
             viewMenu.DropDownItems.Add(resetZoom);
 
             var zoomIn = new ToolStripMenuItem(Strings.ZoomIn, Resources.ZoomIn, (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                activeDocument?.Canvas.ZoomCenter(1.1f);
+                ActiveEditor?.Canvas.ZoomCenter(1.1f);
             });
             zoomIn.ShortcutKeys = Keys.Control | Keys.Oemplus;
             viewMenu.DropDownItems.Add(zoomIn);
 
             var zoomOut = new ToolStripMenuItem(Strings.ZoomOut, Resources.ZoomOut, (s, e) =>
             {
-                var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
-                activeDocument?.Canvas.ZoomCenter(1.0f / 1.1f);
+                ActiveEditor?.Canvas.ZoomCenter(1.0f / 1.1f);
             });
             zoomOut.ShortcutKeys = Keys.Control | Keys.OemMinus;
             viewMenu.DropDownItems.Add(zoomOut);
