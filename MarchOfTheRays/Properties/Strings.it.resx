@@ -279,6 +279,18 @@
   <data name="ShowPropertiesPanel" xml:space="preserve">
     <value>Mostra pannello p&amp;roprietà</value>
   </data>
+  <data name="CannotOpenFileCaption" xml:space="preserve">
+    <value>Errore nella lettura del file</value>
+  </data>
+  <data name="CannotOpenFileText" xml:space="preserve">
+    <value>Si è verificato un errore durante la lettura del file {0}</value>
+  </data>
+  <data name="CannotWriteFileCaption" xml:space="preserve">
+    <value>Errore nella scrittura del file</value>
+  </data>
+  <data name="CannotWriteFileText" xml:space="preserve">
+    <value>Si è verificato un errore durante la scrittura del file {0}</value>
+  </data>
   <data name="MainGraph" xml:space="preserve">
     <value>Grafo principale</value>
   </data>

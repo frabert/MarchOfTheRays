@@ -1,13 +1,12 @@
 ﻿using MarchOfTheRays.Properties;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Windows.Forms;
+using System;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace MarchOfTheRays
 {
-    partial class MainForm {
-
+    partial class MainForm
+    {
         void InitializeFileMenu(MenuStrip mainMenu)
         {
             var fileMenu = new ToolStripMenuItem(Strings.FileMenu);
@@ -64,6 +63,7 @@ namespace MarchOfTheRays
             {
                 ActiveEditor?.Canvas.Undo();
             });
+            undo.Enabled = false;
             undo.ShortcutKeys = Keys.Control | Keys.Z;
             editMenu.DropDownItems.Add(undo);
 
@@ -71,6 +71,7 @@ namespace MarchOfTheRays
             {
                 ActiveEditor?.Canvas.Redo();
             });
+            undo.Enabled = false;
             redo.ShortcutKeys = Keys.Control | Keys.Y;
             editMenu.DropDownItems.Add(redo);
 
@@ -131,15 +132,43 @@ namespace MarchOfTheRays
             {
                 paste.Enabled = CanPaste;
             };
+            
+            void UpdateUndoRedo()
+            {
+                if (ActiveEditor != null)
+                {
+                    undo.Enabled = ActiveEditor.Canvas.CanUndo;
+                    redo.Enabled = ActiveEditor.Canvas.CanRedo;
+                }
+                else
+                {
+                    undo.Enabled = false;
+                    redo.Enabled = false;
+                }
+            }
 
-            SelectionChanged += (s, e) =>
+            void UpdateSelectionTools()
             {
                 var canCopy = ActiveEditor?.Canvas.SelectedElements.Count() > 0;
                 copy.Enabled = canCopy;
                 cut.Enabled = canCopy;
                 delete.Enabled = canCopy;
                 deselect.Enabled = canCopy;
+            }
+
+            SelectionChanged += (s, e) =>
+            {
+                UpdateSelectionTools();
             };
+
+            void ActiveFormChanged(object sender, EventArgs e)
+            {
+                UpdateSelectionTools();
+                UpdateUndoRedo();
+            }
+
+            dockPanel.ActiveDocumentChanged += ActiveFormChanged;
+            dockPanel.ActivePaneChanged += ActiveFormChanged;
 
             mainMenu.Items.Add(editMenu);
         }

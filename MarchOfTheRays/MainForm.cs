@@ -74,7 +74,7 @@ namespace MarchOfTheRays
 
         public MainForm(string[] args) : this()
         {
-            // TODO: Open document at startup
+            if (args.Length > 0) Open(args[0]);
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
@@ -122,6 +122,10 @@ namespace MarchOfTheRays
 
         protected void OnDocumentOpened(string path)
         {
+            OnDocumentChanged();
+            OnGraphChanged();
+            OnSelectionChanged();
+
             DocumentOpened?.Invoke(this, path);
         }
 

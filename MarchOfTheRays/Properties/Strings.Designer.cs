@@ -124,6 +124,42 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Error while opening file.
+        /// </summary>
+        internal static string CannotOpenFileCaption {
+            get {
+                return ResourceManager.GetString("CannotOpenFileCaption", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occurred while opening {0}.
+        /// </summary>
+        internal static string CannotOpenFileText {
+            get {
+                return ResourceManager.GetString("CannotOpenFileText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Error while writing file.
+        /// </summary>
+        internal static string CannotWriteFileCaption {
+            get {
+                return ResourceManager.GetString("CannotWriteFileCaption", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occurred while writing {0}.
+        /// </summary>
+        internal static string CannotWriteFileText {
+            get {
+                return ResourceManager.GetString("CannotWriteFileText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &amp;Copy.
         /// </summary>
         internal static string Copy {

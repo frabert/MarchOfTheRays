@@ -922,6 +922,9 @@ namespace MarchOfTheRays.Editor
             commands.Redo();
         }
 
+        public bool CanUndo => commands.CanUndo;
+        public bool CanRedo => commands.CanRedo;
+
         public void ResetHistory()
         {
             commands.Clear();

@@ -1,10 +1,11 @@
 ﻿using MarchOfTheRays.Properties;
+using System;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Windows.Forms;
 using WeifenLuo.WinFormsUI.Docking;
-using System.Runtime.Serialization.Formatters.Binary;
 
 namespace MarchOfTheRays
 {
@@ -83,15 +84,24 @@ namespace MarchOfTheRays
             NewDocument();
         }
 
-        void Save(string path)
+        bool Save(string path)
         {
-            using (var stream = File.Open(path, FileMode.Create))
+            try
             {
-                var formatter = new BinaryFormatter();
-                formatter.Serialize(stream, document);
-            }
+                using (var stream = File.Open(path, FileMode.Create))
+                {
+                    var formatter = new BinaryFormatter();
+                    formatter.Serialize(stream, document);
+                }
 
-            OnDocumentSaved(path);
+                OnDocumentSaved(path);
+                return true;
+            }
+            catch (Exception)
+            {
+                MessageBox.Show(string.Format(Strings.CannotWriteFileText, path), Strings.CannotWriteFileCaption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
         }
 
         bool SaveAs()
@@ -100,8 +110,7 @@ namespace MarchOfTheRays
             saveFileDialog.Filter = $"{Strings.MtrFile}|*.mtr";
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
-                Save(saveFileDialog.FileName);
-                return true;
+                return Save(saveFileDialog.FileName);
             }
             else
             {
@@ -109,19 +118,11 @@ namespace MarchOfTheRays
             }
         }
 
-        bool Open()
+        void Open(string file)
         {
-            var ev = new DocumentClosingEventArgs();
-            OnDocumentClosing(ev);
-
-            if (ev.Cancel) return false;
-
-            var openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = $"{Strings.MtrFile}|*.mtr";
-            openFileDialog.Multiselect = false;
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            try
             {
-                using (var stream = File.OpenRead(openFileDialog.FileName))
+                using (var stream = File.OpenRead(file))
                 {
                     var formatter = new BinaryFormatter();
                     var doc = (Document)formatter.Deserialize(stream);
@@ -139,16 +140,27 @@ namespace MarchOfTheRays
                     var form = ShowGraph(document.MainGraph);
                 }
 
-                OnDocumentOpened(openFileDialog.FileName);
-                OnDocumentChanged();
-                OnGraphChanged();
-                OnSelectionChanged();
-
-                return true;
+                OnDocumentOpened(file);
             }
-            else
+            catch (Exception)
             {
-                return false;
+                MessageBox.Show(string.Format(Strings.CannotOpenFileText, file), Strings.CannotOpenFileCaption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        void Open()
+        {
+            var ev = new DocumentClosingEventArgs();
+            OnDocumentClosing(ev);
+
+            if (ev.Cancel) return;
+
+            var openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = $"{Strings.MtrFile}|*.mtr";
+            openFileDialog.Multiselect = false;
+            if (openFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                Open(openFileDialog.FileName);
             }
         }
 
@@ -198,7 +210,7 @@ namespace MarchOfTheRays
             document.Graphs.Add(document.MainGraph);
 
             var form = ShowGraph(document.MainGraph);
-            form.AddNode(PointF.Empty, new Core.InputNode() { OutputType = Core.NodeType.Float3 } );
+            form.AddNode(PointF.Empty, new Core.InputNode() { OutputType = Core.NodeType.Float3 });
             form.AddNode(new PointF(200, 0), new Core.OutputNode());
             form.Canvas.ResetHistory();
 
