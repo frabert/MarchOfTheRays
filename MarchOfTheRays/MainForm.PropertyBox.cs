@@ -10,30 +10,49 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using WeifenLuo.WinFormsUI.Docking;
 
 namespace MarchOfTheRays
 {
     partial class MainForm : Form
     {
-        PropertyGrid InitializePropertyBox()
+        void InitializePropertyBox()
         {
-            var propertyBox = new PropertyGrid();
-            propertyBox.Dock = DockStyle.Fill;
-
-            SelectionChanged += (s, e) =>
+            PropertyPanel CreatePropertyPanel()
             {
-                var selectedItems = canvas.SelectedElements.ToList();
-                if (selectedItems.Count == 1)
+                var propertyBox = new PropertyPanel();
+
+                SelectionChanged += (s, e) =>
                 {
-                    propertyBox.SelectedObject = selectedItems[0].Tag;
-                }
-                else
+                    var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
+                    if (activeDocument == null) return;
+
+                    var selectedItems = activeDocument.Canvas.SelectedElements.ToList();
+                    if (selectedItems.Count == 1)
+                    {
+                        propertyBox.PropertyGrid.SelectedObject = selectedItems[0].Tag;
+                    }
+                    else
+                    {
+                        propertyBox.PropertyGrid.SelectedObject = null;
+                    }
+                };
+
+                propertyBox.Show(dockPanel, DockState.DockRight);
+
+                return propertyBox;
+            }
+
+            var panel = CreatePropertyPanel();
+
+            ShowPropertyPanel += (s, e) =>
+            {
+                if (panel.IsDisposed)
                 {
-                    propertyBox.SelectedObject = null;
+                    panel = CreatePropertyPanel();
+                    panel.Show(dockPanel, DockState.DockRight);
                 }
             };
-
-            return propertyBox;
         }
     }
 }

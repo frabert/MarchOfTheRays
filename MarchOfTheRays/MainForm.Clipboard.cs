@@ -11,6 +11,8 @@ namespace MarchOfTheRays
         {
             var clones = new List<(Core.INode, PointF)>();
             var originalsToClones = new Dictionary<Core.INode, Core.INode>();
+            var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
+            if (activeDocument == null) return;
 
             Core.INode CloneElement(Editor.NodeElement element)
             {
@@ -31,7 +33,7 @@ namespace MarchOfTheRays
                         case Core.IUnaryNode n:
                             {
                                 if (n.Input == null) break;
-                                var inputNode = elements[n.Input];
+                                var inputNode = activeDocument.Elements[n.Input];
                                 n.Input = inputNode.Selected ? CloneElement(inputNode) : null;
                             }
                             break;
@@ -39,13 +41,13 @@ namespace MarchOfTheRays
                             {
                                 if (n.Left != null)
                                 {
-                                    var leftNode = elements[n.Left];
+                                    var leftNode = activeDocument.Elements[n.Left];
                                     n.Left = leftNode.Selected ? CloneElement(leftNode) : null;
                                 }
 
                                 if (n.Right != null)
                                 {
-                                    var rightNode = elements[n.Right];
+                                    var rightNode = activeDocument.Elements[n.Right];
                                     n.Right = rightNode.Selected ? CloneElement(rightNode) : null;
                                 }
                             }
@@ -55,7 +57,7 @@ namespace MarchOfTheRays
                 }
             }
 
-            foreach (var selectedElem in canvas.SelectedElements)
+            foreach (var selectedElem in activeDocument.Canvas.SelectedElements)
             {
                 if (selectedElem.Tag is Core.OutputNode) continue;
                 if (selectedElem.Tag is Core.InputNode) continue;
@@ -68,11 +70,14 @@ namespace MarchOfTheRays
 
         void Paste()
         {
+            var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
+            if (activeDocument == null) return;
+
             var clipboardData = (List<(Core.INode, PointF)>)Clipboard.GetData("MarchOfTheRays");
             if (clipboardData == null || clipboardData.Count == 0) return;
-            canvas.SelectElements(_ => false);
+            activeDocument.Canvas.SelectElements(_ => false);
 
-            var nodes = AddNodes(clipboardData.Select(tuple => (tuple.Item2 + new SizeF(10, 10), tuple.Item1)));
+            var nodes = activeDocument.AddNodes(clipboardData.Select(tuple => (tuple.Item2 + new SizeF(10, 10), tuple.Item1)));
             foreach (var node in nodes)
             {
                 node.Selected = true;
@@ -82,32 +87,32 @@ namespace MarchOfTheRays
 
             foreach (var (node, pos) in clipboardData)
             {
-                var dest = elements[node];
+                var dest = activeDocument.Elements[node];
                 switch (node)
                 {
                     case Core.IUnaryNode n:
                         if (n.Input != null)
                         {
-                            var source = elements[n.Input];
+                            var source = activeDocument.Elements[n.Input];
                             edges.Add((source, dest, 0));
                         }
                         break;
                     case Core.IBinaryNode n:
                         if (n.Left != null)
                         {
-                            var source = elements[n.Left];
+                            var source = activeDocument.Elements[n.Left];
                             edges.Add((source, dest, 0));
                         }
                         if (n.Right != null)
                         {
-                            var source = elements[n.Right];
+                            var source = activeDocument.Elements[n.Right];
                             edges.Add((source, dest, 1));
                         }
                         break;
                 }
             }
-            canvas.AddEdges(edges);
-            canvas.Center(clipboardData[0].Item2);
+            activeDocument.Canvas.AddEdges(edges);
+            activeDocument.Canvas.Center(clipboardData[0].Item2);
         }
 
         bool CanPaste

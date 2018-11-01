@@ -10,10 +10,11 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using WeifenLuo.WinFormsUI.Docking;
 
 namespace MarchOfTheRays
 {
-    partial class MainForm : Form
+    partial class GraphEditorForm : DockContent
     {
         void InitializeContextMenu()
         {
@@ -50,7 +51,7 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.UnaryNode());
             });
 
-            canvas.ContextMenuStrip = canvasContextMenu;
+            Canvas.ContextMenuStrip = canvasContextMenu;
         }
     }
 }

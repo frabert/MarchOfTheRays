@@ -62,9 +62,20 @@ namespace MarchOfTheRays
     }
 
     [Serializable]
+    public class Graph
+    {
+        public List<INode> Nodes = new List<INode>();
+        public Dictionary<INode, PointF> NodePositions = new Dictionary<INode, PointF>();
+        public List<OutputNode> OutputNodes = new List<OutputNode>();
+        public string Name;
+    }
+
+    [Serializable]
     public class Document
     {
-        public List<(INode, PointF)> Nodes = new List<(INode, PointF)>();
+        public List<Graph> Graphs = new List<Graph>();
+        public Graph MainGraph;
+        public Dictionary<INode, Graph> Subgraphs = new Dictionary<INode, Graph>();
         public RenderingSettings Settings = new RenderingSettings();
     }
 }

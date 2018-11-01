@@ -10,44 +10,61 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using WeifenLuo.WinFormsUI.Docking;
 
 namespace MarchOfTheRays
 {
     partial class MainForm : Form
     {
-        RichTextBox InitializeHelpBox()
+        void InitializeHelpBox()
         {
-            var helpBox = new RichTextBox();
-            helpBox.ReadOnly = true;
-            helpBox.Dock = DockStyle.Fill;
-            helpBox.BorderStyle = BorderStyle.None;
-
-            SelectionChanged += (s, e) =>
+            HelpPanel CreateHelpPanel()
             {
-                var selectedItems = canvas.SelectedElements.ToList();
-                if (selectedItems.Count == 1)
-                {
-                    var selectedItem = selectedItems[0].Tag;
+                var helpBox = new HelpPanel();
 
-                    var name = selectedItem.GetType().Name;
-                    var filePath = $"HelpFiles/{name}.xml";
-                    helpBox.Rtf = "";
-                    if (File.Exists(filePath))
+                SelectionChanged += (s, e) =>
+                {
+                    var activeDocument = (GraphEditorForm)dockPanel.ActiveDocument;
+                    if (activeDocument == null) return;
+
+                    var selectedItems = activeDocument.Canvas.SelectedElements.ToList();
+                    if (selectedItems.Count == 1)
                     {
-                        using (var file = File.OpenRead(filePath))
+                        var selectedItem = selectedItems[0].Tag;
+
+                        var name = selectedItem.GetType().Name;
+                        var filePath = $"HelpFiles/{name}.xml";
+                        helpBox.Rtf = "";
+                        if (File.Exists(filePath))
                         {
-                            var doc = new Docs.Document(file);
-                            helpBox.Rtf = doc.ToRtf();
+                            using (var file = File.OpenRead(filePath))
+                            {
+                                var doc = new Docs.Document(file);
+                                helpBox.Rtf = doc.ToRtf();
+                            }
                         }
                     }
-                }
-                else
+                    else
+                    {
+                        helpBox.Rtf = "";
+                    }
+                };
+
+                helpBox.Show(dockPanel, DockState.DockRight);
+
+                return helpBox;
+            }
+
+            var helpPanel = CreateHelpPanel();
+
+            ShowHelpPanel += (s, e) =>
+            {
+                if(helpPanel.IsDisposed)
                 {
-                    helpBox.Rtf = "";
+                    helpPanel = CreateHelpPanel();
+                    helpPanel.Show(dockPanel, DockState.DockRight);
                 }
             };
-
-            return helpBox;
         }
     }
 }

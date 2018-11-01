@@ -264,4 +264,25 @@
   <data name="ZoomOut" xml:space="preserve">
     <value>Riduci &amp;ingrandimento</value>
   </data>
+  <data name="HelpPanel" xml:space="preserve">
+    <value>Aiuto</value>
+  </data>
+  <data name="Panels" xml:space="preserve">
+    <value>&amp;Pannelli</value>
+  </data>
+  <data name="PropertiesPanel" xml:space="preserve">
+    <value>Proprietà</value>
+  </data>
+  <data name="ShowHelpPanel" xml:space="preserve">
+    <value>Mostra pannello &amp;aiuto</value>
+  </data>
+  <data name="ShowPropertiesPanel" xml:space="preserve">
+    <value>Mostra pannello p&amp;roprietà</value>
+  </data>
+  <data name="MainGraph" xml:space="preserve">
+    <value>Grafo principale</value>
+  </data>
+  <data name="ShowMainGraph" xml:space="preserve">
+    <value>Visualizza grafo principale</value>
+  </data>
 </root>

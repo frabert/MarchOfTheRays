@@ -128,6 +128,7 @@ namespace MarchOfTheRays.Core
     public interface INode : ICloneable
     {
         NodeType OutputType { get; }
+        event EventHandler OutputTypeChanged;
         Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters);
     }
 
@@ -169,6 +170,9 @@ namespace MarchOfTheRays.Core
             }
         }
 
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
         [Browsable(false)]
         public NodeType OutputType => NodeType.Float;
 
@@ -194,6 +198,9 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class Float2ConstantNode : INode
     {
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
         float m_X, m_Y;
 
         public float X
@@ -242,6 +249,9 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class Float3ConstantNode : INode
     {
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
         float m_X, m_Y, m_Z;
 
         public float X
@@ -301,6 +311,9 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class Float4ConstantNode : INode
     {
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
         float m_X, m_Y, m_Z, m_W;
 
         public float X
@@ -407,6 +420,9 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class UnaryNode : IUnaryNode
     {
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
         INode input;
 
         [Browsable(false)]
@@ -417,27 +433,40 @@ namespace MarchOfTheRays.Core
             {
                 input = value;
 
-                if (input == null
+                OutputType = CalcType();
+
+                if(input != null)
+                {
+                    input.OutputTypeChanged += (s, e) =>
+                    {
+                        OutputType = CalcType();
+                    };
+                }
+            }
+        }
+
+        NodeType CalcType()
+        {
+            if (input == null
                     || input.OutputType == NodeType.Indeterminate
-                    || input.OutputType == NodeType.Invalid) OutputType = NodeType.Indeterminate;
+                    || input.OutputType == NodeType.Invalid) return NodeType.Indeterminate;
 
-                if ((m_Operation == UnaryOp.Normalize
-                    || m_Operation == UnaryOp.X
-                    || m_Operation == UnaryOp.Y
-                    || m_Operation == UnaryOp.Z) && Input.OutputType == NodeType.Float) OutputType = NodeType.Invalid;
+            if ((m_Operation == UnaryOp.Normalize
+                || m_Operation == UnaryOp.X
+                || m_Operation == UnaryOp.Y
+                || m_Operation == UnaryOp.Z) && Input.OutputType == NodeType.Float) return NodeType.Invalid;
 
 
-                if (m_Operation == UnaryOp.Length
-                    || m_Operation == UnaryOp.X
-                    || m_Operation == UnaryOp.Y
-                    || m_Operation == UnaryOp.Z)
-                {
-                    OutputType = NodeType.Float;
-                }
-                else
-                {
-                    OutputType = Input.OutputType;
-                }
+            if (m_Operation == UnaryOp.Length
+                || m_Operation == UnaryOp.X
+                || m_Operation == UnaryOp.Y
+                || m_Operation == UnaryOp.Z)
+            {
+                return NodeType.Float;
+            }
+            else
+            {
+                return Input.OutputType;
             }
         }
 
@@ -453,8 +482,18 @@ namespace MarchOfTheRays.Core
             }
         }
 
+        NodeType outType = NodeType.Indeterminate;
+
         [Browsable(false)]
-        public NodeType OutputType { get; private set; } = NodeType.Indeterminate;
+        public NodeType OutputType
+        {
+            get => outType;
+            private set
+            {
+                outType = value;
+                OutputTypeChanged?.Invoke(this, new EventArgs());
+            }
+        }
 
         [field: NonSerialized]
         public event EventHandler OperationChanged;
@@ -598,6 +637,9 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class BinaryNode : IBinaryNode
     {
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
         INode leftIn, rightIn;
 
         [Browsable(false)]
@@ -608,6 +650,13 @@ namespace MarchOfTheRays.Core
             {
                 leftIn = value;
                 OutputType = CalcType();
+                if(leftIn != null)
+                {
+                    leftIn.OutputTypeChanged += (s, e) =>
+                    {
+                        OutputType = CalcType();
+                    };
+                }
             }
         }
 
@@ -619,6 +668,13 @@ namespace MarchOfTheRays.Core
             {
                 rightIn = value;
                 OutputType = CalcType();
+                if (rightIn != null)
+                {
+                    rightIn.OutputTypeChanged += (s, e) =>
+                    {
+                        OutputType = CalcType();
+                    };
+                }
             }
         }
 
@@ -634,8 +690,18 @@ namespace MarchOfTheRays.Core
             }
         }
 
+        NodeType outType = NodeType.Indeterminate;
+
         [Browsable(false)]
-        public NodeType OutputType { get; private set; } = NodeType.Indeterminate;
+        public NodeType OutputType
+        {
+            get => outType;
+            set
+            {
+                outType = value;
+                OutputTypeChanged?.Invoke(this, new EventArgs());
+            }
+        }
 
         NodeType CalcType()
         {
@@ -808,8 +874,13 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class InputNode : INode
     {
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
+        [Browsable(false)]
         public NodeType OutputType { get; set; }
 
+        [Browsable(false)]
         public int InputNumber { get; set; }
 
         public object Clone()
@@ -828,12 +899,85 @@ namespace MarchOfTheRays.Core
     }
 
     [Serializable]
-    public class OutputNode : IUnaryNode
+    public class CompositeUnaryNode : IUnaryNode
     {
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
         [Browsable(false)]
         public INode Input { get; set; }
 
-        public NodeType OutputType => NodeType.None;
+        [Browsable(false)]
+        public NodeType OutputType => Body == null ? NodeType.Indeterminate : Body.OutputType;
+
+        [Browsable(false)]
+        public OutputNode Body { get; set; }
+
+        public object Clone()
+        {
+            return new CompositeUnaryNode()
+            {
+                Input = Input,
+                Body = Body
+            };
+        }
+
+        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        {
+            if (Input == null || Body == null) throw new InvalidNodeException(this);
+            var arg = Input.Compile(nodeDictionary, parameters);
+            return Body.Compile(nodeDictionary, arg);
+        }
+    }
+
+    [Serializable]
+    public class CompositeBinaryNode : IBinaryNode
+    {
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
+        [Browsable(false)]
+        public NodeType OutputType => Body == null ? NodeType.Indeterminate : Body.OutputType;
+
+        [Browsable(false)]
+        public OutputNode Body { get; set; }
+
+        [Browsable(false)]
+        public INode Left { get; set; }
+
+        [Browsable(false)]
+        public INode Right { get; set; }
+
+        public object Clone()
+        {
+            return new CompositeBinaryNode()
+            {
+                Left = Left,
+                Right = Right,
+                Body = Body
+            };
+        }
+
+        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        {
+            if (Left == null || Right == null || Body == null) throw new InvalidNodeException(this);
+            var l = Left.Compile(nodeDictionary, parameters);
+            var r = Right.Compile(nodeDictionary, parameters);
+            return Body.Compile(nodeDictionary, l, r);
+        }
+    }
+
+    [Serializable]
+    public class OutputNode : IUnaryNode
+    {
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
+        [Browsable(false)]
+        public INode Input { get; set; }
+
+        [Browsable(false)]
+        public NodeType OutputType => Input == null ? NodeType.Indeterminate : Input.OutputType;
 
         public object Clone()
         {

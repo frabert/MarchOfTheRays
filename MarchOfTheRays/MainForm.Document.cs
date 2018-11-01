@@ -1,8 +1,10 @@
 ﻿using MarchOfTheRays.Properties;
-using System.Windows.Forms;
-using System.Linq;
 using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Windows.Forms;
+using WeifenLuo.WinFormsUI.Docking;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace MarchOfTheRays
 {
@@ -77,15 +79,16 @@ namespace MarchOfTheRays
                 OnDocumentClosing(ev);
                 e.Cancel = ev.Cancel;
             };
+
+            NewDocument();
         }
 
         void Save(string path)
         {
-            var nodes = canvas.Elements.Select(x => (x.Tag as Core.INode, x.Location)).ToList();
-
             using (var stream = File.Open(path, FileMode.Create))
             {
-                Serialize(stream, new Document() { Nodes = nodes, Settings = settings });
+                var formatter = new BinaryFormatter();
+                formatter.Serialize(stream, document);
             }
 
             OnDocumentSaved(path);
@@ -120,10 +123,26 @@ namespace MarchOfTheRays
             {
                 using (var stream = File.OpenRead(openFileDialog.FileName))
                 {
-                    Deserialize(stream);
+                    var formatter = new BinaryFormatter();
+                    var doc = (Document)formatter.Deserialize(stream);
+
+                    foreach (var d in dockPanel.Documents.ToList())
+                    {
+                        var f = (GraphEditorForm)d;
+                        f.Close();
+                    }
+
+                    graphForms.Clear();
+
+                    document = doc;
+
+                    var form = ShowGraph(document.MainGraph);
                 }
 
                 OnDocumentOpened(openFileDialog.FileName);
+                OnDocumentChanged();
+                OnGraphChanged();
+                OnSelectionChanged();
 
                 return true;
             }
@@ -133,6 +152,31 @@ namespace MarchOfTheRays
             }
         }
 
+        GraphEditorForm ShowGraph(Graph g)
+        {
+            GraphEditorForm editorForm;
+            if (graphForms.TryGetValue(g, out var editor) && !editor.IsDisposed)
+            {
+                editorForm = editor;
+            }
+            else
+            {
+                editorForm = new GraphEditorForm();
+                editorForm.Graph = g;
+                editorForm.Text = g.Name;
+                editorForm.Canvas.ResetHistory();
+
+                editorForm.DocumentChanged += (s, e) => OnDocumentChanged();
+                editorForm.GraphChanged += (s, e) => OnGraphChanged();
+                editorForm.SelectionChanged += (s, e) => OnSelectionChanged();
+
+                graphForms[g] = editorForm;
+            }
+            editorForm.Show(dockPanel, DockState.Document);
+
+            return editorForm;
+        }
+
         void NewDocument()
         {
             var ev = new DocumentClosingEventArgs();
@@ -140,14 +184,24 @@ namespace MarchOfTheRays
 
             if (ev.Cancel) return;
 
-            elements.Clear();
-            canvas.Clear();
-            AddNode(PointF.Empty, new Core.InputNode() { OutputType = Core.NodeType.Float3 });
+            foreach (var d in dockPanel.Documents.ToList())
+            {
+                var f = (GraphEditorForm)d;
+                f.Close();
+            }
 
-            outputNode = new Core.OutputNode();
-            AddNode(new PointF(200, 0), outputNode);
-            canvas.ResetHistory();
-            settings = new RenderingSettings();
+            graphForms.Clear();
+
+            document = new Document();
+            document.Settings = new RenderingSettings();
+            document.MainGraph = new Graph() { Name = Strings.MainGraph };
+            document.Graphs.Add(document.MainGraph);
+
+            var form = ShowGraph(document.MainGraph);
+            form.AddNode(PointF.Empty, new Core.InputNode() { OutputType = Core.NodeType.Float3 } );
+            form.AddNode(new PointF(200, 0), new Core.OutputNode());
+            form.Canvas.ResetHistory();
+
             OnDocumentOpened(null);
         }
     }

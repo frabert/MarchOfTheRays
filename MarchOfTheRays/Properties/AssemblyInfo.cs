@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Francesco Bertolaccini")]
 [assembly: AssemblyProduct("March of the Rays")]
-[assembly: AssemblyCopyright("Copyright ©  2018 Francesco Bertolaccini")]
+[assembly: AssemblyCopyright("Copyright © 2018 Francesco Bertolaccini")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

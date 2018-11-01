@@ -205,11 +205,29 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Help.
+        /// </summary>
+        internal static string HelpPanel {
+            get {
+                return ResourceManager.GetString("HelpPanel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &amp;Live preview.
         /// </summary>
         internal static string LivePreview {
             get {
                 return ResourceManager.GetString("LivePreview", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Main graph.
+        /// </summary>
+        internal static string MainGraph {
+            get {
+                return ResourceManager.GetString("MainGraph", resourceCulture);
             }
         }
         
@@ -268,6 +286,15 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to &amp;Panels.
+        /// </summary>
+        internal static string Panels {
+            get {
+                return ResourceManager.GetString("Panels", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &amp;Paste.
         /// </summary>
         internal static string Paste {
@@ -291,6 +318,15 @@ namespace MarchOfTheRays.Properties {
         internal static string PreviewFormTitle {
             get {
                 return ResourceManager.GetString("PreviewFormTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Properties.
+        /// </summary>
+        internal static string PropertiesPanel {
+            get {
+                return ResourceManager.GetString("PropertiesPanel", resourceCulture);
             }
         }
         
@@ -403,11 +439,38 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Show &amp;help panel.
+        /// </summary>
+        internal static string ShowHelpPanel {
+            get {
+                return ResourceManager.GetString("ShowHelpPanel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show main graph.
+        /// </summary>
+        internal static string ShowMainGraph {
+            get {
+                return ResourceManager.GetString("ShowMainGraph", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Show &amp;preview window.
         /// </summary>
         internal static string ShowPreviewWindow {
             get {
                 return ResourceManager.GetString("ShowPreviewWindow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Show p&amp;roperties panel.
+        /// </summary>
+        internal static string ShowPropertiesPanel {
+            get {
+                return ResourceManager.GetString("ShowPropertiesPanel", resourceCulture);
             }
         }
         

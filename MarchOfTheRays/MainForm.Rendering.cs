@@ -29,33 +29,58 @@ namespace MarchOfTheRays
 
             async Task Render()
             {
+                bool CheckCycles(Graph g)
+                {
+                    GraphEditorForm form = null;
+                    graphForms.TryGetValue(g, out form);
+
+                    if(form != null && !form.IsDisposed)
+                    {
+                        foreach(var val in form.Elements.Values)
+                        {
+                            val.Errored = false;
+                        }
+                    }
+
+                    foreach(var onode in g.OutputNodes)
+                    {
+                        var cycles = Core.Compiler.CheckForCycles(onode, g.Nodes);
+                        if (cycles.Count > 0)
+                        {
+                            if (form != null && !form.IsDisposed)
+                            {
+                                foreach (var kvp in form.Elements)
+                                {
+                                    kvp.Value.Errored = cycles.Contains(kvp.Key);
+                                }
+                            }
+                            OnStatusChange(Strings.StatusCycleFound);
+                            PreviewForm.Loading = false;
+                            return false;
+                        }
+                    }
+
+                    return true;
+                }
+
                 var renderer = new CpuRenderer.Renderer(
-                        settings.CameraPosition,
-                        settings.CameraTarget,
-                        settings.CameraUp,
-                        settings.MaximumIterations,
-                        settings.MaximumDistance,
-                        settings.Epsilon,
-                        settings.StepSize);
+                        document.Settings.CameraPosition,
+                        document.Settings.CameraTarget,
+                        document.Settings.CameraUp,
+                        document.Settings.MaximumIterations,
+                        document.Settings.MaximumDistance,
+                        document.Settings.Epsilon,
+                        document.Settings.StepSize);
 
                 PreviewForm.Loading = true;
                 PreviewForm.Progress = 0;
-                foreach (var elem in elements)
-                {
-                    elem.Value.Errored = false;
-                }
                 OnStatusChange(Strings.StatusSearchingCycles);
-
-                var cycles = Core.Compiler.CheckForCycles(outputNode, elements.Keys.ToList());
-                if (cycles.Count > 0)
+                foreach(var g in document.Graphs)
                 {
-                    foreach (var elem in elements)
+                    if (!CheckCycles(g))
                     {
-                        elem.Value.Errored = cycles.Contains(elem.Key);
+                        return;
                     }
-                    OnStatusChange(Strings.StatusCycleFound);
-                    PreviewForm.Loading = false;
-                    return;
                 }
 
                 Func<Vector3, float> func;
@@ -65,7 +90,7 @@ namespace MarchOfTheRays
                     var newTokenSource = new CancellationTokenSource();
 
                     var param = Expression.Parameter(typeof(Vector3), "pos");
-                    var body = outputNode.Compile(Core.NodeType.Float, new Dictionary<Core.INode, Expression>(), param);
+                    var body = document.MainGraph.OutputNodes[0].Compile(Core.NodeType.Float, new Dictionary<Core.INode, Expression>(), param);
                     var lambda = Expression.Lambda<Func<Vector3, float>>(body, param);
                     func = lambda.Compile();
 
@@ -96,7 +121,14 @@ namespace MarchOfTheRays
                 }
                 catch (Core.InvalidNodeException ex)
                 {
-                    elements[ex.Node].Errored = true;
+                    Graph g = null;
+                    foreach(var graph in document.Graphs)
+                    {
+                        if (graph.Nodes.Contains(ex.Node)) g = graph;
+                    }
+
+                    var editor = ShowGraph(g);
+                    editor.Elements[ex.Node].Errored = true;
                     PreviewForm.Loading = false;
                     OnStatusChange(Strings.StatusInvalidNode);
                 }
