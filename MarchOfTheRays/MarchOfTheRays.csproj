@@ -243,6 +243,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <SubType>Designer</SubType>
     </Content>
+    <None Include="Resources\Image_16x.png" />
+    <None Include="Resources\Question_16x.png" />
+    <None Include="Resources\Property_16x.png" />
     <None Include="Resources\RunPerformance_16x.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

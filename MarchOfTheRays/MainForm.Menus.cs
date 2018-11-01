@@ -178,11 +178,11 @@ namespace MarchOfTheRays
             var viewMenu = new ToolStripMenuItem(Strings.ViewMenu);
 
             var panels = new ToolStripMenuItem(Strings.Panels);
-            panels.DropDownItems.Add(Strings.ShowPropertiesPanel, null, (s, e) =>
+            panels.DropDownItems.Add(Strings.ShowPropertiesPanel, Resources.Property, (s, e) =>
             {
                 OnShowPropertyPanel();
             });
-            panels.DropDownItems.Add(Strings.ShowHelpPanel, null, (s, e) =>
+            panels.DropDownItems.Add(Strings.ShowHelpPanel, Resources.Question, (s, e) =>
             {
                 OnShowHelpPanel();
             });
@@ -239,7 +239,7 @@ namespace MarchOfTheRays
         void InitializeRenderingMenu(MenuStrip mainMenu)
         {
             var renderingMenu = new ToolStripMenuItem(Strings.RenderingMenu);
-            var renderPreviewWindow = new ToolStripMenuItem(Strings.ShowPreviewWindow, null, (s, e) =>
+            var renderPreviewWindow = new ToolStripMenuItem(Strings.ShowPreviewWindow, Resources.Image, (s, e) =>
             {
                 ShowPreviewForm();
             });
