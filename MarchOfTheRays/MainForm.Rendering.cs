@@ -44,7 +44,7 @@ namespace MarchOfTheRays
                 {
                     elem.Value.Errored = false;
                 }
-                OnStatusChange("Checking graph for cycles...");
+                OnStatusChange(Strings.StatusSearchingCycles);
 
                 var cycles = Core.Compiler.CheckForCycles(outputNode, elements.Keys.ToList());
                 if (cycles.Count > 0)
@@ -53,7 +53,7 @@ namespace MarchOfTheRays
                     {
                         elem.Value.Errored = cycles.Contains(elem.Key);
                     }
-                    OnStatusChange("Graph contains a cycle.");
+                    OnStatusChange(Strings.StatusCycleFound);
                     PreviewForm.Loading = false;
                     return;
                 }
@@ -79,7 +79,7 @@ namespace MarchOfTheRays
                         PreviewForm.Progress = totalProgress / total;
                     };
 
-                    OnStatusChange("Rendering started...");
+                    OnStatusChange(Strings.StatusRendering);
                     var img = renderer.RenderImageAsync(PreviewForm.ClientSize.Width, PreviewForm.ClientSize.Height, func, 4, newTokenSource.Token, prog);
 
                     tokenSource = newTokenSource;
@@ -92,13 +92,13 @@ namespace MarchOfTheRays
                     PreviewForm.Cursor = Cursors.Default;
 
                     PreviewForm.Loading = false;
-                    OnStatusChange("Ready.");
+                    OnStatusChange(Strings.StatusReady);
                 }
                 catch (Core.InvalidNodeException ex)
                 {
                     elements[ex.Node].Errored = true;
                     PreviewForm.Loading = false;
-                    OnStatusChange("Invalid graph elements found.");
+                    OnStatusChange(Strings.StatusInvalidNode);
                 }
             }
 
@@ -128,7 +128,7 @@ namespace MarchOfTheRays
             PreviewForm.Owner = this;
             PreviewForm.FormBorderStyle = FormBorderStyle.SizableToolWindow;
             PreviewForm.ShowInTaskbar = false;
-            PreviewForm.Text = "Preview";
+            PreviewForm.Text = Strings.PreviewFormTitle;
             PreviewForm.Size = Settings.Default.PreviewWindowSize;
             PreviewForm.BackgroundImageLayout = ImageLayout.Center;
             PreviewForm.NoActivation = true;

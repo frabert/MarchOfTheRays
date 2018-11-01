@@ -28,77 +28,75 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.Windows.Forms.GroupBox groupBox1;
-            System.Windows.Forms.GroupBox groupBox2;
-            this.label1 = new System.Windows.Forms.Label();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
+            this.cameraGroup = new System.Windows.Forms.GroupBox();
+            this.lblUp = new System.Windows.Forms.Label();
+            this.lblTarget = new System.Windows.Forms.Label();
+            this.lblPosition = new System.Windows.Forms.Label();
             this.upDirection = new MarchOfTheRays.Vector3Input();
             this.cameraTarget = new MarchOfTheRays.Vector3Input();
             this.cameraPos = new MarchOfTheRays.Vector3Input();
-            this.numIterations = new System.Windows.Forms.NumericUpDown();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label5 = new System.Windows.Forms.Label();
-            this.renderingDistance = new System.Windows.Forms.NumericUpDown();
-            this.epsilon = new System.Windows.Forms.NumericUpDown();
-            this.label6 = new System.Windows.Forms.Label();
-            this.label7 = new System.Windows.Forms.Label();
+            this.engineGroup = new System.Windows.Forms.GroupBox();
+            this.lblStep = new System.Windows.Forms.Label();
             this.stepSize = new System.Windows.Forms.NumericUpDown();
+            this.lblEps = new System.Windows.Forms.Label();
+            this.epsilon = new System.Windows.Forms.NumericUpDown();
+            this.renderingDistance = new System.Windows.Forms.NumericUpDown();
+            this.lblMaxDist = new System.Windows.Forms.Label();
+            this.lblMaxIter = new System.Windows.Forms.Label();
+            this.numIterations = new System.Windows.Forms.NumericUpDown();
             this.cancel = new System.Windows.Forms.Button();
             this.apply = new System.Windows.Forms.Button();
-            groupBox1 = new System.Windows.Forms.GroupBox();
-            groupBox2 = new System.Windows.Forms.GroupBox();
-            groupBox1.SuspendLayout();
-            groupBox2.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numIterations)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.renderingDistance)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.epsilon)).BeginInit();
+            this.cameraGroup.SuspendLayout();
+            this.engineGroup.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.stepSize)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.epsilon)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.renderingDistance)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numIterations)).BeginInit();
             this.SuspendLayout();
             // 
-            // groupBox1
+            // cameraGroup
             // 
-            groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.cameraGroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            groupBox1.Controls.Add(this.label3);
-            groupBox1.Controls.Add(this.label2);
-            groupBox1.Controls.Add(this.label1);
-            groupBox1.Controls.Add(this.upDirection);
-            groupBox1.Controls.Add(this.cameraTarget);
-            groupBox1.Controls.Add(this.cameraPos);
-            groupBox1.Location = new System.Drawing.Point(12, 12);
-            groupBox1.Name = "groupBox1";
-            groupBox1.Size = new System.Drawing.Size(377, 118);
-            groupBox1.TabIndex = 0;
-            groupBox1.TabStop = false;
-            groupBox1.Text = "Camera settings";
+            this.cameraGroup.Controls.Add(this.lblUp);
+            this.cameraGroup.Controls.Add(this.lblTarget);
+            this.cameraGroup.Controls.Add(this.lblPosition);
+            this.cameraGroup.Controls.Add(this.upDirection);
+            this.cameraGroup.Controls.Add(this.cameraTarget);
+            this.cameraGroup.Controls.Add(this.cameraPos);
+            this.cameraGroup.Location = new System.Drawing.Point(12, 12);
+            this.cameraGroup.Name = "cameraGroup";
+            this.cameraGroup.Size = new System.Drawing.Size(377, 118);
+            this.cameraGroup.TabIndex = 0;
+            this.cameraGroup.TabStop = false;
+            this.cameraGroup.Text = "Camera settings";
             // 
-            // label1
+            // lblUp
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(6, 25);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(85, 13);
-            this.label1.TabIndex = 3;
-            this.label1.Text = "Camera position:";
+            this.lblUp.AutoSize = true;
+            this.lblUp.Location = new System.Drawing.Point(6, 89);
+            this.lblUp.Name = "lblUp";
+            this.lblUp.Size = new System.Drawing.Size(67, 13);
+            this.lblUp.TabIndex = 5;
+            this.lblUp.Text = "Up direction:";
             // 
-            // label2
+            // lblTarget
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(6, 57);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(76, 13);
-            this.label2.TabIndex = 4;
-            this.label2.Text = "Camera target:";
+            this.lblTarget.AutoSize = true;
+            this.lblTarget.Location = new System.Drawing.Point(6, 57);
+            this.lblTarget.Name = "lblTarget";
+            this.lblTarget.Size = new System.Drawing.Size(76, 13);
+            this.lblTarget.TabIndex = 4;
+            this.lblTarget.Text = "Camera target:";
             // 
-            // label3
+            // lblPosition
             // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(6, 89);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(67, 13);
-            this.label3.TabIndex = 5;
-            this.label3.Text = "Up direction:";
+            this.lblPosition.AutoSize = true;
+            this.lblPosition.Location = new System.Drawing.Point(6, 25);
+            this.lblPosition.Name = "lblPosition";
+            this.lblPosition.Size = new System.Drawing.Size(85, 13);
+            this.lblPosition.TabIndex = 3;
+            this.lblPosition.Text = "Camera position:";
             // 
             // upDirection
             // 
@@ -124,24 +122,107 @@
             this.cameraPos.Size = new System.Drawing.Size(272, 26);
             this.cameraPos.TabIndex = 0;
             // 
-            // groupBox2
+            // engineGroup
             // 
-            groupBox2.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.engineGroup.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            groupBox2.Controls.Add(this.label7);
-            groupBox2.Controls.Add(this.stepSize);
-            groupBox2.Controls.Add(this.label6);
-            groupBox2.Controls.Add(this.epsilon);
-            groupBox2.Controls.Add(this.renderingDistance);
-            groupBox2.Controls.Add(this.label5);
-            groupBox2.Controls.Add(this.label4);
-            groupBox2.Controls.Add(this.numIterations);
-            groupBox2.Location = new System.Drawing.Point(12, 136);
-            groupBox2.Name = "groupBox2";
-            groupBox2.Size = new System.Drawing.Size(377, 127);
-            groupBox2.TabIndex = 1;
-            groupBox2.TabStop = false;
-            groupBox2.Text = "Rendering engine settings";
+            this.engineGroup.Controls.Add(this.lblStep);
+            this.engineGroup.Controls.Add(this.stepSize);
+            this.engineGroup.Controls.Add(this.lblEps);
+            this.engineGroup.Controls.Add(this.epsilon);
+            this.engineGroup.Controls.Add(this.renderingDistance);
+            this.engineGroup.Controls.Add(this.lblMaxDist);
+            this.engineGroup.Controls.Add(this.lblMaxIter);
+            this.engineGroup.Controls.Add(this.numIterations);
+            this.engineGroup.Location = new System.Drawing.Point(12, 136);
+            this.engineGroup.Name = "engineGroup";
+            this.engineGroup.Size = new System.Drawing.Size(377, 127);
+            this.engineGroup.TabIndex = 1;
+            this.engineGroup.TabStop = false;
+            this.engineGroup.Text = "Rendering engine settings";
+            // 
+            // lblStep
+            // 
+            this.lblStep.AutoSize = true;
+            this.lblStep.Location = new System.Drawing.Point(6, 99);
+            this.lblStep.Name = "lblStep";
+            this.lblStep.Size = new System.Drawing.Size(53, 13);
+            this.lblStep.TabIndex = 7;
+            this.lblStep.Text = "Step size:";
+            // 
+            // stepSize
+            // 
+            this.stepSize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.stepSize.DecimalPlaces = 2;
+            this.stepSize.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            65536});
+            this.stepSize.Location = new System.Drawing.Point(251, 97);
+            this.stepSize.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.stepSize.Name = "stepSize";
+            this.stepSize.Size = new System.Drawing.Size(120, 20);
+            this.stepSize.TabIndex = 6;
+            // 
+            // lblEps
+            // 
+            this.lblEps.AutoSize = true;
+            this.lblEps.Location = new System.Drawing.Point(6, 73);
+            this.lblEps.Name = "lblEps";
+            this.lblEps.Size = new System.Drawing.Size(44, 13);
+            this.lblEps.TabIndex = 5;
+            this.lblEps.Text = "Epsilon:";
+            // 
+            // epsilon
+            // 
+            this.epsilon.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.epsilon.DecimalPlaces = 5;
+            this.epsilon.Increment = new decimal(new int[] {
+            1,
+            0,
+            0,
+            196608});
+            this.epsilon.Location = new System.Drawing.Point(251, 71);
+            this.epsilon.Maximum = new decimal(new int[] {
+            1,
+            0,
+            0,
+            0});
+            this.epsilon.Name = "epsilon";
+            this.epsilon.Size = new System.Drawing.Size(120, 20);
+            this.epsilon.TabIndex = 4;
+            // 
+            // renderingDistance
+            // 
+            this.renderingDistance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.renderingDistance.DecimalPlaces = 3;
+            this.renderingDistance.Location = new System.Drawing.Point(251, 45);
+            this.renderingDistance.Name = "renderingDistance";
+            this.renderingDistance.Size = new System.Drawing.Size(120, 20);
+            this.renderingDistance.TabIndex = 3;
+            // 
+            // lblMaxDist
+            // 
+            this.lblMaxDist.AutoSize = true;
+            this.lblMaxDist.Location = new System.Drawing.Point(6, 47);
+            this.lblMaxDist.Name = "lblMaxDist";
+            this.lblMaxDist.Size = new System.Drawing.Size(144, 13);
+            this.lblMaxDist.TabIndex = 2;
+            this.lblMaxDist.Text = "Maximum rendering distance:";
+            // 
+            // lblMaxIter
+            // 
+            this.lblMaxIter.AutoSize = true;
+            this.lblMaxIter.Location = new System.Drawing.Point(6, 21);
+            this.lblMaxIter.Name = "lblMaxIter";
+            this.lblMaxIter.Size = new System.Drawing.Size(149, 13);
+            this.lblMaxIter.TabIndex = 1;
+            this.lblMaxIter.Text = "Maximum number of iterations:";
             // 
             // numIterations
             // 
@@ -165,89 +246,6 @@
             0,
             0,
             0});
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(6, 21);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(149, 13);
-            this.label4.TabIndex = 1;
-            this.label4.Text = "Maximum number of iterations:";
-            // 
-            // label5
-            // 
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(6, 47);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(144, 13);
-            this.label5.TabIndex = 2;
-            this.label5.Text = "Maximum rendering distance:";
-            // 
-            // renderingDistance
-            // 
-            this.renderingDistance.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.renderingDistance.DecimalPlaces = 3;
-            this.renderingDistance.Location = new System.Drawing.Point(251, 45);
-            this.renderingDistance.Name = "renderingDistance";
-            this.renderingDistance.Size = new System.Drawing.Size(120, 20);
-            this.renderingDistance.TabIndex = 3;
-            // 
-            // epsilon
-            // 
-            this.epsilon.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.epsilon.DecimalPlaces = 5;
-            this.epsilon.Increment = new decimal(new int[] {
-            1,
-            0,
-            0,
-            196608});
-            this.epsilon.Location = new System.Drawing.Point(251, 71);
-            this.epsilon.Maximum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.epsilon.Name = "epsilon";
-            this.epsilon.Size = new System.Drawing.Size(120, 20);
-            this.epsilon.TabIndex = 4;
-            // 
-            // label6
-            // 
-            this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(6, 73);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(44, 13);
-            this.label6.TabIndex = 5;
-            this.label6.Text = "Epsilon:";
-            // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(6, 99);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(53, 13);
-            this.label7.TabIndex = 7;
-            this.label7.Text = "Step size:";
-            // 
-            // stepSize
-            // 
-            this.stepSize.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.stepSize.DecimalPlaces = 2;
-            this.stepSize.Increment = new decimal(new int[] {
-            1,
-            0,
-            0,
-            65536});
-            this.stepSize.Location = new System.Drawing.Point(251, 97);
-            this.stepSize.Maximum = new decimal(new int[] {
-            1,
-            0,
-            0,
-            0});
-            this.stepSize.Name = "stepSize";
-            this.stepSize.Size = new System.Drawing.Size(120, 20);
-            this.stepSize.TabIndex = 6;
             // 
             // cancel
             // 
@@ -281,22 +279,22 @@
             this.ClientSize = new System.Drawing.Size(401, 317);
             this.Controls.Add(this.apply);
             this.Controls.Add(this.cancel);
-            this.Controls.Add(groupBox2);
-            this.Controls.Add(groupBox1);
+            this.Controls.Add(this.engineGroup);
+            this.Controls.Add(this.cameraGroup);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "RenderingSettingsDialog";
             this.ShowInTaskbar = false;
             this.Text = "Rendering settings";
-            groupBox1.ResumeLayout(false);
-            groupBox1.PerformLayout();
-            groupBox2.ResumeLayout(false);
-            groupBox2.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.numIterations)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.renderingDistance)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.epsilon)).EndInit();
+            this.cameraGroup.ResumeLayout(false);
+            this.cameraGroup.PerformLayout();
+            this.engineGroup.ResumeLayout(false);
+            this.engineGroup.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.stepSize)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.epsilon)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.renderingDistance)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numIterations)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -305,19 +303,21 @@
 
         private Vector3Input upDirection;
         private Vector3Input cameraPos;
-        private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Label label4;
+        private System.Windows.Forms.Label lblUp;
+        private System.Windows.Forms.Label lblPosition;
+        private System.Windows.Forms.Label lblMaxIter;
         private System.Windows.Forms.NumericUpDown numIterations;
         private System.Windows.Forms.NumericUpDown renderingDistance;
-        private System.Windows.Forms.Label label5;
-        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.Label lblMaxDist;
+        private System.Windows.Forms.Label lblEps;
         private System.Windows.Forms.NumericUpDown epsilon;
-        private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.Label lblStep;
         private System.Windows.Forms.NumericUpDown stepSize;
         private System.Windows.Forms.Button cancel;
         private System.Windows.Forms.Button apply;
         private Vector3Input cameraTarget;
+        private System.Windows.Forms.Label lblTarget;
+        private System.Windows.Forms.GroupBox cameraGroup;
+        private System.Windows.Forms.GroupBox engineGroup;
     }
 }

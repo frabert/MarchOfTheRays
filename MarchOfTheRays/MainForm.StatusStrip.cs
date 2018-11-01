@@ -18,7 +18,7 @@ namespace MarchOfTheRays
         StatusStrip InitializeStatusStrip()
         {
             var statusStrip = new StatusStrip();
-            var statusLabel = statusStrip.Items.Add("Ready.");
+            var statusLabel = statusStrip.Items.Add(Strings.StatusReady);
 
             StatusChange += (s, e) =>
             {

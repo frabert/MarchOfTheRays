@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Windows.Forms;
+using MarchOfTheRays.Properties;
 
 namespace MarchOfTheRays
 {
@@ -8,6 +9,21 @@ namespace MarchOfTheRays
         public RenderingSettingsDialog()
         {
             InitializeComponent();
+
+            cameraGroup.Text = Strings.CameraSettings;
+            lblPosition.Text = Strings.CameraPosition;
+            lblTarget.Text = Strings.CameraTarget;
+            lblUp.Text = Strings.CameraUpDirection;
+
+            engineGroup.Text = Strings.RenderingEngineSettings;
+            lblMaxIter.Text = Strings.MaxIterations;
+            lblMaxDist.Text = Strings.MaxRenderDist;
+            lblEps.Text = Strings.RenderingEpsilon;
+            lblStep.Text = Strings.StepSize;
+            apply.Text = Strings.Apply;
+            cancel.Text = Strings.Cancel;
+
+            Text = Strings.RenderSettingsTitle;
         }
 
         public RenderingSettings Value

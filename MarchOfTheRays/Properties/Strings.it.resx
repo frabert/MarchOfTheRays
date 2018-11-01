@@ -117,4 +117,151 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Apply" xml:space="preserve">
+    <value>Applica</value>
+  </data>
+  <data name="AskSaveChanges" xml:space="preserve">
+    <value>Salvare le modifiche al documento?</value>
+  </data>
+  <data name="CameraPosition" xml:space="preserve">
+    <value>Posizione:</value>
+  </data>
+  <data name="CameraSettings" xml:space="preserve">
+    <value>Impostazioni telecamera</value>
+  </data>
+  <data name="CameraTarget" xml:space="preserve">
+    <value>Obiettivo:</value>
+  </data>
+  <data name="CameraUpDirection" xml:space="preserve">
+    <value>Direzione verticale:</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Annulla</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>&amp;Copia</value>
+  </data>
+  <data name="Cut" xml:space="preserve">
+    <value>&amp;Taglia</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>&amp;Elimina</value>
+  </data>
+  <data name="Deselect" xml:space="preserve">
+    <value>&amp;Deseleziona</value>
+  </data>
+  <data name="EditMenu" xml:space="preserve">
+    <value>&amp;Modifica</value>
+  </data>
+  <data name="Exit" xml:space="preserve">
+    <value>&amp;Esci</value>
+  </data>
+  <data name="FileMenu" xml:space="preserve">
+    <value>&amp;File</value>
+  </data>
+  <data name="FitToScreen" xml:space="preserve">
+    <value>&amp;Adatta allo schermo</value>
+  </data>
+  <data name="FitToSelection" xml:space="preserve">
+    <value>Adatta alla &amp;selezione</value>
+  </data>
+  <data name="LivePreview" xml:space="preserve">
+    <value>Anteprima &amp;dinamica</value>
+  </data>
+  <data name="MaxIterations" xml:space="preserve">
+    <value>Numero massimo di iterazioni:</value>
+  </data>
+  <data name="MaxRenderDist" xml:space="preserve">
+    <value>Distanza massima di rendering:</value>
+  </data>
+  <data name="MtrFile" xml:space="preserve">
+    <value>Documento March of the Rays</value>
+  </data>
+  <data name="NewDocument" xml:space="preserve">
+    <value>&amp;Nuovo</value>
+  </data>
+  <data name="NumberInputInvalid" xml:space="preserve">
+    <value>Valore numerico non valido</value>
+  </data>
+  <data name="OpenDocument" xml:space="preserve">
+    <value>&amp;Apri</value>
+  </data>
+  <data name="Paste" xml:space="preserve">
+    <value>&amp;Incolla</value>
+  </data>
+  <data name="PngImage" xml:space="preserve">
+    <value>PNG</value>
+  </data>
+  <data name="PreviewFormTitle" xml:space="preserve">
+    <value>Anteprima</value>
+  </data>
+  <data name="Redo" xml:space="preserve">
+    <value>&amp;Ripeti</value>
+  </data>
+  <data name="RenderingEngineSettings" xml:space="preserve">
+    <value>Impostazioni motore di rendering</value>
+  </data>
+  <data name="RenderingEpsilon" xml:space="preserve">
+    <value>Epsilon:</value>
+  </data>
+  <data name="RenderingMenu" xml:space="preserve">
+    <value>&amp;Rendering</value>
+  </data>
+  <data name="RenderPreview" xml:space="preserve">
+    <value>&amp;Renderizza anteprima</value>
+  </data>
+  <data name="RenderSettings" xml:space="preserve">
+    <value>&amp;Impostazioni</value>
+  </data>
+  <data name="RenderSettingsTitle" xml:space="preserve">
+    <value>Impostazioni di rendering</value>
+  </data>
+  <data name="ResetZoom" xml:space="preserve">
+    <value>&amp;Ripristina ingrandimento</value>
+  </data>
+  <data name="SaveDocument" xml:space="preserve">
+    <value>&amp;Salva</value>
+  </data>
+  <data name="SaveDocumentAs" xml:space="preserve">
+    <value>Salva &amp;con nome</value>
+  </data>
+  <data name="SaveImage" xml:space="preserve">
+    <value>Salva immagine</value>
+  </data>
+  <data name="SelectAll" xml:space="preserve">
+    <value>&amp;Seleziona tuto</value>
+  </data>
+  <data name="ShowPreviewWindow" xml:space="preserve">
+    <value>Mostra finestra d'&amp;anteprima</value>
+  </data>
+  <data name="StatusCycleFound" xml:space="preserve">
+    <value>Il grafo contiene un ciclo.</value>
+  </data>
+  <data name="StatusInvalidNode" xml:space="preserve">
+    <value>Il grafo contiene un nodo non valido.</value>
+  </data>
+  <data name="StatusReady" xml:space="preserve">
+    <value>Pronto.</value>
+  </data>
+  <data name="StatusRendering" xml:space="preserve">
+    <value>Rendering in corso...</value>
+  </data>
+  <data name="StatusSearchingForCycles" xml:space="preserve">
+    <value>Ricerca di cicli nel grafo in corso...</value>
+  </data>
+  <data name="StepSize" xml:space="preserve">
+    <value>Dimensione passi:</value>
+  </data>
+  <data name="Undo" xml:space="preserve">
+    <value>&amp;Annulla</value>
+  </data>
+  <data name="ViewMenu" xml:space="preserve">
+    <value>&amp;Visualizza</value>
+  </data>
+  <data name="ZoomIn" xml:space="preserve">
+    <value>&amp;Aumenta ingrandimento</value>
+  </data>
+  <data name="ZoomOut" xml:space="preserve">
+    <value>Riduci &amp;ingrandimento</value>
+  </data>
 </root>

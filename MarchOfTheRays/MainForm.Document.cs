@@ -47,7 +47,7 @@ namespace MarchOfTheRays
             {
                 if (documentModified)
                 {
-                    var res = MessageBox.Show("Save changes to the file?", "March of the Rays", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+                    var res = MessageBox.Show(Strings.AskSaveChanges, "March of the Rays", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
                     if (res == DialogResult.Yes)
                     {
                         if (DocumentPath == null)
@@ -94,7 +94,7 @@ namespace MarchOfTheRays
         bool SaveAs()
         {
             var saveFileDialog = new SaveFileDialog();
-            saveFileDialog.Filter = "March of the Rays file|*.mtr";
+            saveFileDialog.Filter = $"{Strings.MtrFile}|*.mtr";
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
                 Save(saveFileDialog.FileName);
@@ -114,7 +114,7 @@ namespace MarchOfTheRays
             if (ev.Cancel) return false;
 
             var openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "March of the Rays file|*.mtr";
+            openFileDialog.Filter = $"{Strings.MtrFile}|*.mtr";
             openFileDialog.Multiselect = false;
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {

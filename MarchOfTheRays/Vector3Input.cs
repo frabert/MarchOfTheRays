@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Windows.Forms;
 using System.Windows.Forms.Design;
 using System.Windows.Forms.Design.Behavior;
+using MarchOfTheRays.Properties;
 
 namespace MarchOfTheRays
 {
@@ -42,7 +43,7 @@ namespace MarchOfTheRays
             }
             else
             {
-                ep.SetError(txt, "Invalid numeric value");
+                ep.SetError(txt, Strings.NumberInputInvalid);
             }
         }
 

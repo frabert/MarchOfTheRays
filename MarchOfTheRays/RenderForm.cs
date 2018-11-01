@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
+using MarchOfTheRays.Properties;
 
 namespace MarchOfTheRays
 {
@@ -21,12 +22,12 @@ namespace MarchOfTheRays
             progressBar.Maximum = 100;
 
             contextMenu = new ContextMenuStrip();
-            saveImage = contextMenu.Items.Add("Save image", null, (s, e) =>
+            saveImage = contextMenu.Items.Add(Strings.SaveImage, null, (s, e) =>
             {
                 if(BackgroundImage != null && !Loading)
                 {
                     var dialog = new SaveFileDialog();
-                    dialog.Filter = "PNG Image|*.png";
+                    dialog.Filter = $"{Strings.PngImage}|*.png";
                     if(dialog.ShowDialog() == DialogResult.OK)
                     {
                         BackgroundImage.Save(dialog.FileName, System.Drawing.Imaging.ImageFormat.Png);
