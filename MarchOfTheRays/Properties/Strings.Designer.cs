@@ -79,6 +79,15 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Binary operation.
+        /// </summary>
+        internal static string BinaryOperation {
+            get {
+                return ResourceManager.GetString("BinaryOperation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Position:.
         /// </summary>
         internal static string CameraPosition {
@@ -214,6 +223,15 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Expressions.
+        /// </summary>
+        internal static string Expressions {
+            get {
+                return ResourceManager.GetString("Expressions", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &amp;File.
         /// </summary>
         internal static string FileMenu {
@@ -241,11 +259,65 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 2D vector constant.
+        /// </summary>
+        internal static string Float2Constant {
+            get {
+                return ResourceManager.GetString("Float2Constant", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 3D vector constant.
+        /// </summary>
+        internal static string Float3Constant {
+            get {
+                return ResourceManager.GetString("Float3Constant", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 4D vector constant.
+        /// </summary>
+        internal static string Float4Constant {
+            get {
+                return ResourceManager.GetString("Float4Constant", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Scalar constant.
+        /// </summary>
+        internal static string FloatConstant {
+            get {
+                return ResourceManager.GetString("FloatConstant", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Help.
         /// </summary>
         internal static string HelpPanel {
             get {
                 return ResourceManager.GetString("HelpPanel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Insert custom binary node.
+        /// </summary>
+        internal static string InsertCustomBinaryNode {
+            get {
+                return ResourceManager.GetString("InsertCustomBinaryNode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Insert custom node.
+        /// </summary>
+        internal static string InsertCustomNode {
+            get {
+                return ResourceManager.GetString("InsertCustomNode", resourceCulture);
             }
         }
         
@@ -354,6 +426,15 @@ namespace MarchOfTheRays.Properties {
         internal static string PreviewFormTitle {
             get {
                 return ResourceManager.GetString("PreviewFormTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Geometric primitives.
+        /// </summary>
+        internal static string Primitives {
+            get {
+                return ResourceManager.GetString("Primitives", resourceCulture);
             }
         }
         
@@ -561,6 +642,15 @@ namespace MarchOfTheRays.Properties {
         internal static string StepSize {
             get {
                 return ResourceManager.GetString("StepSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unary operation.
+        /// </summary>
+        internal static string UnaryOperation {
+            get {
+                return ResourceManager.GetString("UnaryOperation", resourceCulture);
             }
         }
         

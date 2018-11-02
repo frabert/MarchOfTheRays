@@ -19,7 +19,13 @@ namespace MarchOfTheRays
         void InitializeContextMenu()
         {
             var canvasContextMenu = new ContextMenuStrip();
-            canvasContextMenu.Items.Add("Float constant", null, (s, e) =>
+            var expressions = new ToolStripMenuItem(Strings.Expressions);
+            var primitives = new ToolStripMenuItem(Strings.Primitives);
+            canvasContextMenu.Items.Add(expressions);
+            canvasContextMenu.Items.Add(primitives);
+
+
+            expressions.DropDownItems.Add(Strings.FloatConstant, null, (s, e) =>
             {
                 var controlCoords = Canvas.PointToClient(Cursor.Position);
                 var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
@@ -27,7 +33,7 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.FloatConstantNode());
             });
 
-            canvasContextMenu.Items.Add("Float3 constant", null, (s, e) =>
+            expressions.DropDownItems.Add(Strings.Float3Constant, null, (s, e) =>
             {
                 var controlCoords = Canvas.PointToClient(Cursor.Position);
                 var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
@@ -35,7 +41,7 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.Float3ConstantNode());
             });
 
-            canvasContextMenu.Items.Add("Binary operation", null, (s, e) =>
+            expressions.DropDownItems.Add(Strings.BinaryOperation, null, (s, e) =>
             {
                 var controlCoords = Canvas.PointToClient(Cursor.Position);
                 var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
@@ -43,7 +49,7 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.BinaryNode());
             });
 
-            canvasContextMenu.Items.Add("Unary operation", null, (s, e) =>
+            expressions.DropDownItems.Add(Strings.UnaryOperation, null, (s, e) =>
             {
                 var controlCoords = Canvas.PointToClient(Cursor.Position);
                 var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
@@ -51,7 +57,7 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.UnaryNode());
             });
 
-            canvasContextMenu.Items.Add("Custom node", null, (s, e) =>
+            canvasContextMenu.Items.Add(Strings.InsertCustomNode, null, (s, e) =>
             {
                 var controlCoords = Canvas.PointToClient(Cursor.Position);
                 var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
@@ -76,7 +82,7 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, node);
             });
 
-            canvasContextMenu.Items.Add("Custom binary node", null, (s, e) =>
+            canvasContextMenu.Items.Add(Strings.InsertCustomBinaryNode, null, (s, e) =>
             {
                 var controlCoords = Canvas.PointToClient(Cursor.Position);
                 var worldCoords = Canvas.GetWorldCoordinates(controlCoords);

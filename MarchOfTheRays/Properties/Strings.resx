@@ -297,4 +297,34 @@
   <data name="ShowMainGraph" xml:space="preserve">
     <value>Show main graph</value>
   </data>
+  <data name="BinaryOperation" xml:space="preserve">
+    <value>Binary operation</value>
+  </data>
+  <data name="Expressions" xml:space="preserve">
+    <value>Expressions</value>
+  </data>
+  <data name="Float2Constant" xml:space="preserve">
+    <value>2D vector constant</value>
+  </data>
+  <data name="Float3Constant" xml:space="preserve">
+    <value>3D vector constant</value>
+  </data>
+  <data name="Float4Constant" xml:space="preserve">
+    <value>4D vector constant</value>
+  </data>
+  <data name="FloatConstant" xml:space="preserve">
+    <value>Scalar constant</value>
+  </data>
+  <data name="InsertCustomBinaryNode" xml:space="preserve">
+    <value>Insert custom binary node</value>
+  </data>
+  <data name="InsertCustomNode" xml:space="preserve">
+    <value>Insert custom node</value>
+  </data>
+  <data name="Primitives" xml:space="preserve">
+    <value>Geometric primitives</value>
+  </data>
+  <data name="UnaryOperation" xml:space="preserve">
+    <value>Unary operation</value>
+  </data>
 </root>
