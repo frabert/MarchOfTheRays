@@ -537,7 +537,7 @@ namespace MarchOfTheRays.Editor
                     var cmd = new MoveElementsCommand(this, SelectedElements.ToList(), moveDistance);
                     commands.Add(cmd);
 
-                    foreach(var elem in SelectedElements)
+                    foreach (var elem in SelectedElements)
                     {
                         OnElementMoved(new ElementModifiedEventArgs(elem));
                     }
@@ -857,7 +857,7 @@ namespace MarchOfTheRays.Editor
             get => elements.Where(x => x.Selected);
         }
 
-        public void FitToView(Func<NodeElement, bool> predicate)
+        public void FitToView(Func<NodeElement, bool> predicate, bool zoomOutOnly = false)
         {
             var minX = float.PositiveInfinity;
             var minY = float.PositiveInfinity;
@@ -878,24 +878,32 @@ namespace MarchOfTheRays.Editor
 
             if (float.IsInfinity(minX)) return;
 
-            var center = new PointF((maxX - minX) / 2.0f + minX, (maxY - minY) / 2.0f + minY);
-            var w = maxX - minX;
-            var h = maxY - minY;
-            var ratio = w / h;
-            var targetRatio = (float)Width / (float)Height;
-            if (ratio > targetRatio)
+            if (!zoomOutOnly || (maxX - minX > Width || maxY - minY > Height))
             {
-                var scale = Width / (w * currentScale);
-                wvMatrix.ScaleW(scale, scale);
-                currentScale *= scale;
+                var center = new PointF((maxX - minX) / 2.0f + minX, (maxY - minY) / 2.0f + minY);
+                var w = maxX - minX;
+                var h = maxY - minY;
+                var ratio = w / h;
+                var targetRatio = (float)Width / (float)Height;
+                if (ratio > targetRatio)
+                {
+                    var scale = Width / (w * currentScale);
+                    wvMatrix.ScaleW(scale, scale);
+                    currentScale *= scale;
+                }
+                else
+                {
+                    var scale = Height / (h * currentScale);
+                    wvMatrix.ScaleW(scale, scale);
+                    currentScale *= scale;
+                }
+                Center(center);
             }
             else
             {
-                var scale = Height / (h * currentScale);
-                wvMatrix.ScaleW(scale, scale);
-                currentScale *= scale;
+                ResetZoom();
+                Center();
             }
-            Center(center);
         }
 
         public void SelectElements(Func<NodeElement, bool> filter)

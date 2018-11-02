@@ -182,6 +182,20 @@ namespace MarchOfTheRays
                 editorForm.GraphChanged += (s, e) => OnGraphChanged();
                 editorForm.SelectionChanged += (s, e) => OnSelectionChanged();
 
+                editorForm.NodeOpened += (s, e) =>
+                {
+                    if (e is Core.ICompositeNode && document.Subgraphs.TryGetValue(e, out var graph))
+                    {
+                        ShowGraph(graph);
+                    }
+                };
+
+                editorForm.GraphCreated += (s, e) =>
+                {
+                    document.Graphs.Add(e.graph);
+                    document.Subgraphs[e.node] = e.graph;
+                };
+
                 graphForms[g] = editorForm;
             }
             editorForm.Show(dockPanel, DockState.Document);

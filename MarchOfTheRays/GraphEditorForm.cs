@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Drawing;
 using System.Windows.Forms;
 using WeifenLuo.WinFormsUI.Docking;
@@ -9,9 +8,7 @@ namespace MarchOfTheRays
 {
     partial class GraphEditorForm : DockContent
     {
-        Editor.NodeCanvas canvas;
-
-        public Editor.NodeCanvas Canvas => canvas;
+        public Editor.NodeCanvas Canvas { get; }
 
         Graph graph;
         bool disableCanvasEvents = false;
@@ -24,12 +21,12 @@ namespace MarchOfTheRays
             {
                 graph = value;
 
-                canvas.Clear();
+                Canvas.Clear();
                 Elements.Clear();
 
                 disableCanvasEvents = true;
 
-                foreach(var node in value.Nodes)
+                foreach (var node in value.Nodes)
                 {
                     AddNode(graph.NodePositions[node], node);
                 }
@@ -62,11 +59,11 @@ namespace MarchOfTheRays
                             break;
                     }
                 }
-                canvas.AddEdges(edges);
+                Canvas.AddEdges(edges);
 
                 disableCanvasEvents = false;
 
-                canvas.ResetHistory();
+                Canvas.ResetHistory();
             }
         }
 
@@ -88,7 +85,7 @@ namespace MarchOfTheRays
 
         protected override void OnShown(EventArgs e)
         {
-            Canvas.FitToView(x => true);
+            Canvas.FitToView(x => true, true);
             base.OnShown(e);
         }
 
@@ -99,13 +96,27 @@ namespace MarchOfTheRays
             SelectionChanged?.Invoke(this, new EventArgs());
         }
 
+        public event EventHandler<Core.INode> NodeOpened;
+
+        protected void OnNodeOpened(Core.INode node)
+        {
+            NodeOpened?.Invoke(this, node);
+        }
+
+        public event EventHandler<(Core.INode node, Graph graph)> GraphCreated;
+
+        protected void OnGraphCreated(Core.INode node, Graph g)
+        {
+            GraphCreated?.Invoke(this, (node, g));
+        }
+
         public GraphEditorForm()
         {
-            canvas = new Editor.NodeCanvas();
-            canvas.Dock = DockStyle.Fill;
-            Controls.Add(canvas);
+            Canvas = new Editor.NodeCanvas();
+            Canvas.Dock = DockStyle.Fill;
+            Controls.Add(Canvas);
 
-            canvas.EdgeAdded += (s, e) =>
+            Canvas.EdgeAdded += (s, e) =>
             {
                 if (disableCanvasEvents) return;
 
@@ -121,7 +132,7 @@ namespace MarchOfTheRays
                 OnGraphChanged();
             };
 
-            canvas.EdgeRemoved += (s, e) =>
+            Canvas.EdgeRemoved += (s, e) =>
             {
                 if (disableCanvasEvents) return;
 
@@ -136,7 +147,7 @@ namespace MarchOfTheRays
                 OnGraphChanged();
             };
 
-            canvas.ElementAdded += (s, e) =>
+            Canvas.ElementAdded += (s, e) =>
             {
                 if (disableCanvasEvents) return;
 
@@ -146,7 +157,7 @@ namespace MarchOfTheRays
                 OnDocumentChanged();
             };
 
-            canvas.ElementRemoved += (s, e) =>
+            Canvas.ElementRemoved += (s, e) =>
             {
                 if (disableCanvasEvents) return;
 
@@ -156,7 +167,7 @@ namespace MarchOfTheRays
                 OnDocumentChanged();
             };
 
-            canvas.ElementMoved += (s, e) =>
+            Canvas.ElementMoved += (s, e) =>
             {
                 if (disableCanvasEvents) return;
 
@@ -164,11 +175,20 @@ namespace MarchOfTheRays
                 OnDocumentChanged();
             };
 
-            canvas.SelectionChanged += (s, e) =>
+            Canvas.SelectionChanged += (s, e) =>
             {
                 if (disableCanvasEvents) return;
 
                 OnSelectionChanged();
+            };
+
+            Canvas.MouseDoubleClick += (s, e) =>
+            {
+                var elem = Canvas.GetElementByCoords(Canvas.GetWorldCoordinates(e.Location));
+                if (elem != null)
+                {
+                    OnNodeOpened((Core.INode)elem.Tag);
+                }
             };
 
             InitializeContextMenu();
@@ -178,7 +198,7 @@ namespace MarchOfTheRays
         {
             if (node == null) throw new ArgumentNullException();
             var elem = CreateNode(location, node);
-            canvas.AddElements(elem);
+            Canvas.AddElements(elem);
             return elem;
         }
 
@@ -190,7 +210,7 @@ namespace MarchOfTheRays
             {
                 list.Add(CreateNode(location, node));
             }
-            canvas.AddElements(list);
+            Canvas.AddElements(list);
             return list;
         }
 
@@ -206,6 +226,7 @@ namespace MarchOfTheRays
                 case Core.FloatConstantNode n: elem = CreateNode(location, n); break;
                 case Core.InputNode n: elem = CreateNode(location, n); break;
                 case Core.OutputNode n: elem = CreateNode(location, n); break;
+                case Core.ICompositeNode n: elem = CreateNode(location, n); break;
                 default: throw new NotImplementedException();
             }
             return elem;
@@ -218,7 +239,7 @@ namespace MarchOfTheRays
             var elem = new Editor.NodeElement()
             {
                 Location = location,
-                Text = "Position",
+                Text = $"Input #{node.InputNumber + 1}",
                 InputCount = 0,
                 HasOutput = true,
                 Tag = node
@@ -382,6 +403,32 @@ namespace MarchOfTheRays
             };
 
             Elements.Add(node, elem);
+            return elem;
+        }
+
+        Editor.NodeElement CreateNode(PointF location, Core.ICompositeNode node)
+        {
+            if (node == null) throw new ArgumentNullException();
+            if (Elements.TryGetValue(node, out var e)) return e;
+
+            var elem = new Editor.NodeElement()
+            {
+                Text = node.Name,
+                Location = location,
+                InputCount = node is Core.CompositeUnaryNode ? 1 : 2,
+                HasOutput = true,
+                Tag = node
+            };
+
+            node.NameChanged += (_, __) =>
+            {
+                elem.Text = node.Name;
+
+                OnGraphChanged();
+            };
+
+            Elements.Add(node, elem);
+
             return elem;
         }
     }

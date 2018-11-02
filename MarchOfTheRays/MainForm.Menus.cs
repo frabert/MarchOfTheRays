@@ -204,7 +204,7 @@ namespace MarchOfTheRays
             fitToScreen.ShortcutKeys = Keys.Control | Keys.Shift | Keys.W;
             viewMenu.DropDownItems.Add(fitToScreen);
 
-            var fitToSelection = new ToolStripMenuItem(Strings.FitToScreen, Resources.ZoomToWidth, (s, e) =>
+            var fitToSelection = new ToolStripMenuItem(Strings.FitToSelection, Resources.ZoomToWidth, (s, e) =>
             {
                 ActiveEditor?.Canvas.FitToView(x => x.Selected);
             });
