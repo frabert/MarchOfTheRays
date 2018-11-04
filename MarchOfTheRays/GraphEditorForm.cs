@@ -160,6 +160,7 @@ namespace MarchOfTheRays
             Canvas = new Editor.NodeCanvas();
             Canvas.Dock = DockStyle.Fill;
             Controls.Add(Canvas);
+            DockAreas = DockAreas.Document;
 
             Canvas.EdgeAdded += (s, e) =>
             {

@@ -15,6 +15,7 @@ namespace MarchOfTheRays
         RichTextBox rtfbox;
         public HelpPanel()
         {
+            DockAreas = DockAreas.Float | DockAreas.DockBottom | DockAreas.DockLeft | DockAreas.DockRight | DockAreas.DockTop;
             Text = Strings.HelpPanel;
 
             rtfbox = new RichTextBox();
@@ -37,8 +38,8 @@ namespace MarchOfTheRays
 
         public PropertyPanel()
         {
+            DockAreas = DockAreas.Float | DockAreas.DockBottom | DockAreas.DockLeft | DockAreas.DockRight | DockAreas.DockTop;
             Text = Strings.PropertiesPanel;
-            ShowIcon = false;
 
             PropertyGrid = new PropertyGrid();
             PropertyGrid.Dock = DockStyle.Fill;

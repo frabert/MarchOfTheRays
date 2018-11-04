@@ -29,7 +29,7 @@ namespace MarchOfTheRays
 
             dockPanel = new DockPanel();
             dockPanel.Dock = DockStyle.Fill;
-            dockPanel.Theme = new VS2015LightTheme();
+            dockPanel.Theme = new VS2015DarkTheme();
             Controls.Add(dockPanel);
 
             InitializeHelpBox();
