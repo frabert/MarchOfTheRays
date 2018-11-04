@@ -18,7 +18,7 @@ namespace MarchOfTheRays.Core
         /// <param name="outputNode">The node from which to start the search</param>
         /// <param name="nodes">The graph to scan</param>
         /// <returns>A list of nodes belonging to a cycle</returns>
-        public static IList<INode> CheckForCycles(OutputNode outputNode, IList<INode> nodes)
+        public static IList<INode> CheckForCycles(OutputNode outputNode, HashSet<INode> nodes)
         {
             var colors = new Dictionary<INode, NodeColor>();
             var parents = new Dictionary<INode, INode>();

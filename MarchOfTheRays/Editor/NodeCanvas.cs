@@ -33,14 +33,14 @@ namespace MarchOfTheRays.Editor
 
     class EdgeDictionary
     {
-        Dictionary<NodeElement, List<(NodeElement destination, int index)>> forwardStars;
-        Dictionary<NodeElement, List<(NodeElement source, int index)>> backwardStars;
+        Dictionary<NodeElement, HashSet<(NodeElement destination, int index)>> forwardStars;
+        Dictionary<NodeElement, HashSet<(NodeElement source, int index)>> backwardStars;
         Dictionary<(NodeElement destination, int index), NodeElement> inwardNodes;
 
         public EdgeDictionary()
         {
-            forwardStars = new Dictionary<NodeElement, List<(NodeElement, int)>>();
-            backwardStars = new Dictionary<NodeElement, List<(NodeElement, int)>>();
+            forwardStars = new Dictionary<NodeElement, HashSet<(NodeElement, int)>>();
+            backwardStars = new Dictionary<NodeElement, HashSet<(NodeElement, int)>>();
             inwardNodes = new Dictionary<(NodeElement, int), NodeElement>();
         }
 
@@ -81,8 +81,8 @@ namespace MarchOfTheRays.Editor
 
         public void AddElement(NodeElement elem)
         {
-            forwardStars.Add(elem, new List<(NodeElement, int)>());
-            backwardStars.Add(elem, new List<(NodeElement, int)>());
+            forwardStars.Add(elem, new HashSet<(NodeElement, int)>());
+            backwardStars.Add(elem, new HashSet<(NodeElement, int)>());
         }
 
         public void RemoveElement(NodeElement elem)
@@ -291,7 +291,7 @@ namespace MarchOfTheRays.Editor
         }
         #endregion
 
-        List<NodeElement> elements = new List<NodeElement>();
+        HashSet<NodeElement> elements = new HashSet<NodeElement>();
         EdgeDictionary edges = new EdgeDictionary();
 
         CommandList commands = new CommandList();
@@ -407,7 +407,7 @@ namespace MarchOfTheRays.Editor
             commands.Add(cmd);
         }
 
-        public IReadOnlyList<NodeElement> Elements => elements;
+        public IReadOnlyCollection<NodeElement> Elements => elements;
 
         private void element_NeedsRepaint(object sender, EventArgs e)
         {

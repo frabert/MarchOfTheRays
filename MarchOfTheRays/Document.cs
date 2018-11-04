@@ -64,7 +64,7 @@ namespace MarchOfTheRays
     [Serializable]
     public class Graph
     {
-        public List<INode> Nodes = new List<INode>();
+        public HashSet<INode> Nodes = new HashSet<INode>();
         public Dictionary<INode, PointF> NodePositions = new Dictionary<INode, PointF>();
         public List<OutputNode> OutputNodes = new List<OutputNode>();
         public string Name;
@@ -73,9 +73,43 @@ namespace MarchOfTheRays
     [Serializable]
     public class Document
     {
-        public List<Graph> Graphs = new List<Graph>();
+        public HashSet<Graph> Graphs = new HashSet<Graph>();
         public Graph MainGraph;
         public Dictionary<INode, Graph> Subgraphs = new Dictionary<INode, Graph>();
         public RenderingSettings Settings = new RenderingSettings();
+
+        public PointF GetLocation(INode node)
+        {
+            foreach(var g in Graphs)
+            {
+                if(g.NodePositions.TryGetValue(node, out var pos))
+                {
+                    return pos;
+                }
+            }
+            throw new KeyNotFoundException();
+        }
+
+        public void CleanOrphanGraphs()
+        {
+            foreach (var kvp in Subgraphs.ToList())
+            {
+                var nodeExists = false;
+                foreach (var graph in Graphs)
+                {
+                    if (graph.Nodes.Contains(kvp.Key))
+                    {
+                        nodeExists = true;
+                        break;
+                    }
+                }
+
+                if (!nodeExists)
+                {
+                    Graphs.Remove(kvp.Value);
+                    Subgraphs.Remove(kvp.Key);
+                }
+            }
+        }
     }
 }

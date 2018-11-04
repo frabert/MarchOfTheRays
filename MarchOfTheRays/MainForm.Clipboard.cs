@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -7,11 +8,75 @@ namespace MarchOfTheRays
 {
     partial class MainForm
     {
+        [Serializable]
+        class ClipboardContents
+        {
+            public HashSet<Core.INode> Nodes = new HashSet<Core.INode>();
+            public Dictionary<Core.INode, PointF> Locations = new Dictionary<Core.INode, PointF>();
+            public HashSet<Graph> Graphs = new HashSet<Graph>();
+            public Dictionary<Core.INode, Graph> Subgraphs = new Dictionary<Core.INode, Graph>();
+        }
+
         void Copy()
         {
-            var clones = new List<(Core.INode, PointF)>();
+            var contents = new ClipboardContents();
+
             var originalsToClones = new Dictionary<Core.INode, Core.INode>();
             if (ActiveEditor == null) return;
+
+            void CloneGraph(Core.INode parent, Graph originalGraph)
+            {
+                if (contents.Graphs.Contains(originalGraph)) return;
+
+                var clonedGraph = new Graph
+                {
+                    Name = originalGraph.Name
+                };
+
+                var clonedNodes = new Dictionary<Core.INode, Core.INode>();
+
+                Core.INode CloneNode(Core.INode node)
+                {
+                    if (clonedNodes.TryGetValue(node, out var clone)) return clone;
+                    else
+                    {
+                        var clonedNode = (Core.INode)node.Clone();
+                        clonedNodes[node] = clonedNode;
+                        switch(clonedNode)
+                        {
+                            case Core.IUnaryNode u:
+                                {
+                                    if (u.Input == null) break;
+                                    u.Input = CloneNode(u.Input);
+                                }
+                                break;
+                            case Core.IBinaryNode b:
+                                {
+                                    if (b.Left != null) b.Left = CloneNode(b.Left);
+                                    if (b.Right != null) b.Right = CloneNode(b.Right);
+                                }
+                                break;
+                        }
+
+                        return clonedNode;
+                    }
+                }
+
+                foreach(var node in originalGraph.Nodes)
+                {
+                    var clone = CloneNode(node);
+                    clonedGraph.Nodes.Add(clone);
+                    clonedGraph.NodePositions[clone] = originalGraph.NodePositions[node];
+                }
+
+                foreach(var onode in originalGraph.OutputNodes)
+                {
+                    clonedGraph.OutputNodes.Add((Core.OutputNode)CloneNode(onode));
+                }
+
+                contents.Graphs.Add(clonedGraph);
+                contents.Subgraphs[parent] = clonedGraph;
+            }
 
             Core.INode CloneElement(Editor.NodeElement element)
             {
@@ -26,7 +91,8 @@ namespace MarchOfTheRays
                 {
                     clone = (Core.INode)original.Clone();
                     originalsToClones.Add(original, clone);
-                    clones.Add((clone, element.Location));
+                    contents.Nodes.Add(clone);
+                    contents.Locations[clone] = element.Location;
                     switch (clone)
                     {
                         case Core.IUnaryNode n:
@@ -52,6 +118,12 @@ namespace MarchOfTheRays
                             }
                             break;
                     }
+
+                    if(clone is Core.ICompositeNode)
+                    {
+                        CloneGraph(clone, document.Subgraphs[original]);
+                    }
+
                     return clone;
                 }
             }
@@ -63,7 +135,7 @@ namespace MarchOfTheRays
                 CloneElement(selectedElem);
             }
 
-            Clipboard.SetData("MarchOfTheRays", clones);
+            Clipboard.SetData("MarchOfTheRays", contents);
             OnClipboardChanged();
         }
 
@@ -71,11 +143,21 @@ namespace MarchOfTheRays
         {
             if (ActiveEditor == null) return;
 
-            var clipboardData = (List<(Core.INode, PointF)>)Clipboard.GetData("MarchOfTheRays");
-            if (clipboardData == null || clipboardData.Count == 0) return;
+            var clipboardData = (ClipboardContents)Clipboard.GetData("MarchOfTheRays");
+            if (clipboardData == null || clipboardData.Nodes.Count == 0) return;
             ActiveEditor.Canvas.SelectElements(_ => false);
 
-            var nodes = ActiveEditor.AddNodes(clipboardData.Select(tuple => (tuple.Item2 + new SizeF(10, 10), tuple.Item1)));
+            foreach(var graph in clipboardData.Graphs)
+            {
+                document.Graphs.Add(graph);
+            }
+
+            foreach(var kvp in clipboardData.Subgraphs)
+            {
+                document.Subgraphs[kvp.Key] = kvp.Value;
+            }
+
+            var nodes = ActiveEditor.AddNodes(clipboardData.Nodes.Select(node => (clipboardData.Locations[node] + new SizeF(10, 10), node)));
             foreach (var node in nodes)
             {
                 node.Selected = true;
@@ -83,7 +165,7 @@ namespace MarchOfTheRays
 
             var edges = new List<(Editor.NodeElement, Editor.NodeElement, int)>();
 
-            foreach (var (node, pos) in clipboardData)
+            foreach (var node in clipboardData.Nodes)
             {
                 var dest = ActiveEditor.Elements[node];
                 switch (node)
@@ -110,15 +192,15 @@ namespace MarchOfTheRays
                 }
             }
             ActiveEditor.Canvas.AddEdges(edges);
-            ActiveEditor.Canvas.Center(clipboardData[0].Item2);
+            //ActiveEditor.Canvas.Center(clipboardData[0].Item2);
         }
 
         bool CanPaste
         {
             get
             {
-                var clipboardData = (List<(Core.INode, PointF)>)Clipboard.GetData("MarchOfTheRays");
-                return (clipboardData != null && clipboardData.Count != 0);
+                var clipboardData = (ClipboardContents)Clipboard.GetData("MarchOfTheRays");
+                return (clipboardData != null && clipboardData.Nodes.Count != 0);
             }
         }
     }

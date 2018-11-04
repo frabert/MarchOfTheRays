@@ -1011,8 +1011,6 @@ namespace MarchOfTheRays.Core
         }
     }
 
-
-
     [Serializable]
     public class CompositeBinaryNode : IBinaryNode, ICompositeNode
     {
@@ -1027,6 +1025,8 @@ namespace MarchOfTheRays.Core
 
         void CalcType()
         {
+            if (Body == null) OutputType = NodeType.Invalid;
+
             if (Left == null)
             {
                 LeftNode.OutputType = NodeType.Indeterminate;
@@ -1127,9 +1127,9 @@ namespace MarchOfTheRays.Core
         {
             return new CompositeBinaryNode()
             {
+                Body = Body,
                 Left = Left,
                 Right = Right,
-                Body = Body,
                 Name = Name
             };
         }

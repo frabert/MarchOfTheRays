@@ -126,6 +126,7 @@ namespace MarchOfTheRays
                 {
                     var formatter = new BinaryFormatter();
                     var doc = (Document)formatter.Deserialize(stream);
+                    doc.CleanOrphanGraphs();
 
                     foreach (var d in dockPanel.Documents.ToList())
                     {
