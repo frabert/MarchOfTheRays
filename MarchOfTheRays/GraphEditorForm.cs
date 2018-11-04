@@ -110,6 +110,51 @@ namespace MarchOfTheRays
             GraphCreated?.Invoke(this, (node, g));
         }
 
+        static string OperationToLabel(Core.UnaryOp op)
+        {
+            switch(op)
+            {
+                case Core.UnaryOp.Abs: return "|x|";
+                case Core.UnaryOp.Acos: return "cos⁻¹(x)";
+                case Core.UnaryOp.Asin: return "sin⁻¹(x)";
+                case Core.UnaryOp.Atan: return "tan⁻¹(x)";
+                case Core.UnaryOp.Ceil: return "⌈x⌉";
+                case Core.UnaryOp.Cos: return "cos(x)";
+                case Core.UnaryOp.Degrees: return "rad → deg";
+                case Core.UnaryOp.Exp: return "exp(x)";
+                case Core.UnaryOp.Floor: return "⌊x⌋";
+                case Core.UnaryOp.Invert: return "-x";
+                case Core.UnaryOp.Length: return "||x\u20d1||";
+                case Core.UnaryOp.Normalize: return "x\u20d1 / (||x\u20d1||)";
+                case Core.UnaryOp.Radians: return "deg → rad";
+                case Core.UnaryOp.Sin: return "sin(x)";
+                case Core.UnaryOp.Tan: return "tan(x)";
+                case Core.UnaryOp.X: return "X";
+                case Core.UnaryOp.Y: return "Y";
+                case Core.UnaryOp.Z: return "Z";
+                default: throw new NotImplementedException();
+            }
+        }
+
+
+        static string OperationToLabel(Core.BinaryOp op)
+        {
+            switch (op)
+            {
+                case Core.BinaryOp.Add: return "x + y";
+                case Core.BinaryOp.Atan2: return "atan(x, y)";
+                case Core.BinaryOp.Cross: return "x\u20d1 ⨯ y\u20d1";
+                case Core.BinaryOp.Div: return "x / y";
+                case Core.BinaryOp.Dot: return "⟨x\u20d1, y\u20d1⟩";
+                case Core.BinaryOp.Max: return "max(x, y)";
+                case Core.BinaryOp.Min: return "min(x, y)";
+                case Core.BinaryOp.Mod: return "x mod y";
+                case Core.BinaryOp.Mul: return "x × y";
+                case Core.BinaryOp.Sub: return "x - y";
+                default: throw new NotImplementedException();
+            }
+        }
+
         public GraphEditorForm()
         {
             Canvas = new Editor.NodeCanvas();
@@ -366,7 +411,7 @@ namespace MarchOfTheRays
             if (Elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Text = node.Operation.ToString(),
+                Text = OperationToLabel(node.Operation),
                 Location = location,
                 InputCount = 2,
                 HasOutput = true,
@@ -375,7 +420,7 @@ namespace MarchOfTheRays
 
             node.OperationChanged += (_, __) =>
             {
-                elem.Text = node.Operation.ToString();
+                elem.Text = OperationToLabel(node.Operation);
                 OnGraphChanged();
             };
 
@@ -389,7 +434,7 @@ namespace MarchOfTheRays
             if (Elements.TryGetValue(node, out var e)) return e;
             var elem = new Editor.NodeElement()
             {
-                Text = node.Operation.ToString(),
+                Text = OperationToLabel(node.Operation),
                 Location = location,
                 InputCount = 1,
                 HasOutput = true,
@@ -398,7 +443,7 @@ namespace MarchOfTheRays
 
             node.OperationChanged += (_, __) =>
             {
-                elem.Text = node.Operation.ToString();
+                elem.Text = OperationToLabel(node.Operation);
                 OnGraphChanged();
             };
 

@@ -1,11 +1,76 @@
-﻿using System;
+﻿using MarchOfTheRays.Core.Properties;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Numerics;
+using System.Reflection;
+using System.Globalization;
 
 namespace MarchOfTheRays.Core
 {
+    public class LocalizedDisplayNameAttribute : DisplayNameAttribute
+    {
+        public LocalizedDisplayNameAttribute(string resourceId)
+            : base(GetMessageFromResource(resourceId))
+        { }
+
+        private static string GetMessageFromResource(string resourceId)
+        {
+            var type = typeof(Strings);
+            var prop = type.GetProperty(resourceId, BindingFlags.NonPublic | BindingFlags.Static);
+            var value = prop.GetValue(null);
+            return (string)value;
+        }
+    }
+
+    public class LocalizedEnumConverter : EnumConverter
+    {
+        public LocalizedEnumConverter(Type type) : base(type) { }
+
+        public override bool CanConvertTo(ITypeDescriptorContext context, Type destType)
+        {
+            return destType == typeof(string);
+        }
+
+        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destType)
+        {
+            var oldCulture = Strings.Culture;
+            Strings.Culture = culture;
+
+            var name = Enum.GetName(EnumType, value);
+            var type = typeof(Strings);
+            var prop = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Static);
+            var str = prop.GetValue(null);
+
+            Strings.Culture = oldCulture;
+
+            return str;
+        }
+
+        public override bool CanConvertFrom(ITypeDescriptorContext context, Type srcType)
+        {
+            return srcType == typeof(string);
+        }
+
+        public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
+        {
+            var type = typeof(Strings);
+
+            foreach (var name in Enum.GetNames(EnumType))
+            {
+                var prop = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Static);
+                var str = (string)prop.GetValue(null);
+                if(str == (string)value)
+                {
+                    return Enum.Parse(EnumType, name);
+                }
+            }
+
+            return Enum.Parse(EnumType, (string)value);
+        }
+    }
+
     public enum NodeType
     {
         Float,
@@ -166,6 +231,7 @@ namespace MarchOfTheRays.Core
     {
         float m_Value;
 
+        [LocalizedDisplayName("Value")]
         public float Value
         {
             get => m_Value;
@@ -387,6 +453,7 @@ namespace MarchOfTheRays.Core
         }
     }
 
+    [TypeConverter(typeof(LocalizedEnumConverter))]
     public enum BinaryOp
     {
         Add,
@@ -400,7 +467,8 @@ namespace MarchOfTheRays.Core
         Min,
         Max
     }
-
+    
+    [TypeConverter(typeof(LocalizedEnumConverter))]
     public enum UnaryOp
     {
         Abs,
@@ -478,6 +546,7 @@ namespace MarchOfTheRays.Core
 
         UnaryOp m_Operation;
 
+        [LocalizedDisplayName("Operation")]
         public UnaryOp Operation
         {
             get => m_Operation;
@@ -686,6 +755,7 @@ namespace MarchOfTheRays.Core
 
         BinaryOp m_Operation;
 
+        [LocalizedDisplayName("Operation")]
         public BinaryOp Operation
         {
             get => m_Operation;
@@ -980,6 +1050,7 @@ namespace MarchOfTheRays.Core
 
         string m_Name;
 
+        [LocalizedDisplayName("Name")]
         public string Name
         {
             get => m_Name;
@@ -1110,6 +1181,7 @@ namespace MarchOfTheRays.Core
 
         string m_Name;
 
+        [LocalizedDisplayName("Name")]
         public string Name
         {
             get => m_Name;

@@ -231,5 +231,73 @@ namespace MarchOfTheRays
 
             OnDocumentOpened(null);
         }
+
+        /*void ExportNode(Core.ICompositeNode node, string path)
+        {
+            var graph = document.Subgraphs[node];
+            var exportData = new ExportedNode()
+            {
+                Graph = graph,
+                Name = node.Name,
+                Type = node is Core.CompositeUnaryNode ? NodeType.Unary : NodeType.Binary
+            };
+
+            switch (node)
+            {
+                case Core.CompositeUnaryNode unode:
+                    {
+                        exportData.InputNodes.Add(unode.Input);
+                    }
+                    break;
+                case Core.CompositeBinaryNode bnode:
+                    {
+                        exportData.InputNodes.Add(bnode.LeftNode);
+                        exportData.InputNodes.Add(bnode.RightNode);
+                    }
+                    break;
+            }
+
+            try
+            {
+                using (var stream = File.Open(path, FileMode.Create))
+                {
+                    var formatter = new BinaryFormatter();
+                    formatter.Serialize(stream, exportData);
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show(string.Format(Strings.CannotWriteFileText, path), Strings.CannotWriteFileCaption, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        void ImportNode(Stream stream)
+        {
+            var formatter = new BinaryFormatter();
+            var node = (ExportedNode)formatter.Deserialize(stream);
+
+            document.Graphs.Add(node.Graph);
+
+            Core.INode importedNode;
+
+            switch (node.Type)
+            {
+                case NodeType.Unary:
+                    {
+                        importedNode = new Core.CompositeUnaryNode()
+                        {
+                            Body = node.Graph.OutputNodes[0],
+                            InputNode = node.InputNodes[0],
+                            Name = node.Name
+                        };
+                    }
+                    break;
+                case NodeType.Binary:
+                    {
+
+                    }
+                    break;
+            }
+        }*/
     }
 }

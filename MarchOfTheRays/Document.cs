@@ -112,4 +112,19 @@ namespace MarchOfTheRays
             }
         }
     }
+
+    public enum NodeType
+    {
+        Unary,
+        Binary
+    }
+
+    [Serializable]
+    public class ExportedNode
+    {
+        public NodeType Type;
+        public Graph Graph;
+        public List<InputNode> InputNodes = new List<InputNode>();
+        public string Name;
+    }
 }
