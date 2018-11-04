@@ -2,10 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Reflection;
-using System.Globalization;
 
 namespace MarchOfTheRays.Core
 {
@@ -61,7 +61,7 @@ namespace MarchOfTheRays.Core
             {
                 var prop = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Static);
                 var str = (string)prop.GetValue(null);
-                if(str == (string)value)
+                if (str == (string)value)
                 {
                     return Enum.Parse(EnumType, name);
                 }
@@ -467,7 +467,7 @@ namespace MarchOfTheRays.Core
         Min,
         Max
     }
-    
+
     [TypeConverter(typeof(LocalizedEnumConverter))]
     public enum UnaryOp
     {
@@ -588,8 +588,9 @@ namespace MarchOfTheRays.Core
                 || Input.OutputType == NodeType.Indeterminate
                 || Input.OutputType == NodeType.Invalid) throw new InvalidNodeException(this);
 
-            Expression arg;
-            if (!nodeDictionary.TryGetValue(Input, out arg)) arg = Input.Compile(nodeDictionary, parameters);
+            if (nodeDictionary.TryGetValue(this, out var result)) return result;
+
+            var arg = Input.Compile(nodeDictionary, parameters);
 
             var inputType = Input.OutputType;
             Expression<Func<float, float>> expr = null;
@@ -845,11 +846,12 @@ namespace MarchOfTheRays.Core
         public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Left == null || Right == null) throw new InvalidNodeException(this);
+            if (nodeDictionary.TryGetValue(this, out var result)) return result;
+
             var leftType = Left.OutputType;
             var rightType = Right.OutputType;
-            Expression left, right;
-            if (!nodeDictionary.TryGetValue(Left, out left)) left = Left.Compile(nodeDictionary, parameters);
-            if (!nodeDictionary.TryGetValue(Right, out right)) right = Right.Compile(nodeDictionary, parameters);
+            var left = Left.Compile(nodeDictionary, parameters);
+            var right = Right.Compile(nodeDictionary, parameters);
             if (m_Operation == BinaryOp.Cross)
             {
                 if (leftType != NodeType.Float3 || rightType != NodeType.Float3)
@@ -901,8 +903,18 @@ namespace MarchOfTheRays.Core
 
             switch (m_Operation)
             {
-                case BinaryOp.Add: return Expression.Add(left, right);
-                case BinaryOp.Sub: return Expression.Subtract(left, right);
+                case BinaryOp.Add:
+                    {
+                        result = Expression.Add(left, right);
+                        nodeDictionary[this] = result;
+                        return result;
+                    }
+                case BinaryOp.Sub:
+                    {
+                        result = Expression.Subtract(left, right);
+                        nodeDictionary[this] = result;
+                        return result;
+                    }
                 case BinaryOp.Dot:
                     {
                         if (leftType != rightType) throw new InvalidNodeException(this);
@@ -915,7 +927,9 @@ namespace MarchOfTheRays.Core
                             default: throw new InvalidNodeException(this);
                         }
                         var dot = t.GetMethod("Dot");
-                        return Expression.Call(null, dot, left, right);
+                        result = Expression.Call(null, dot, left, right);
+                        nodeDictionary[this] = result;
+                        return result;
                     }
                 case BinaryOp.Atan2:
                     expr = CompilerTools.ToExpr<float>((x, y) => (float)Math.Atan2(x, y));
@@ -936,14 +950,18 @@ namespace MarchOfTheRays.Core
                     expr = CompilerTools.ToExpr<float>((x, y) => Math.Max(x, y));
                     break;
             }
+
+
             switch (outType)
             {
-                case NodeType.Float2: return CompilerTools.MapExprFloat2(expr, left, right);
-                case NodeType.Float3: return CompilerTools.MapExprFloat3(expr, left, right);
-                case NodeType.Float4: return CompilerTools.MapExprFloat4(expr, left, right);
-                case NodeType.Float: return Expression.Invoke(expr, left, right);
+                case NodeType.Float2: result = CompilerTools.MapExprFloat2(expr, left, right); break;
+                case NodeType.Float3: result = CompilerTools.MapExprFloat3(expr, left, right); break;
+                case NodeType.Float4: result = CompilerTools.MapExprFloat4(expr, left, right); break;
+                case NodeType.Float: result = Expression.Invoke(expr, left, right); break;
                 default: throw new InvalidNodeException(this);
             }
+            nodeDictionary[this] = result;
+            return result;
         }
     }
 
@@ -1077,8 +1095,13 @@ namespace MarchOfTheRays.Core
         public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Input == null || Body == null) throw new InvalidNodeException(this);
+
+            if (nodeDictionary.TryGetValue(this, out var result)) return result;
+
             var arg = Input.Compile(nodeDictionary, parameters);
-            return Body.Compile(nodeDictionary, arg);
+            result = Body.Compile(nodeDictionary, arg);
+            nodeDictionary[this] = result;
+            return result;
         }
     }
 
@@ -1209,9 +1232,97 @@ namespace MarchOfTheRays.Core
         public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Left == null || Right == null || Body == null) throw new InvalidNodeException(this);
+            if (nodeDictionary.TryGetValue(this, out var result)) return result;
+
             var l = Left.Compile(nodeDictionary, parameters);
             var r = Right.Compile(nodeDictionary, parameters);
-            return Body.Compile(nodeDictionary, l, r);
+            result = Body.Compile(nodeDictionary, l, r);
+            nodeDictionary[this] = result;
+            return result;
+        }
+    }
+
+    [Serializable]
+    public class Float3Constructor : INAryNode
+    {
+        public int InputCount => 3;
+
+        NodeType type = NodeType.Invalid;
+
+        INode[] inputs = new INode[3];
+
+        [Browsable(false)]
+        public NodeType OutputType
+        {
+            get => type;
+            set
+            {
+                type = value;
+                OutputTypeChanged?.Invoke(this, new EventArgs());
+            }
+        }
+
+        void UpdateType()
+        {
+            if (inputs[0] == null || inputs[1] == null || inputs[2] == null
+                || inputs[0].OutputType != NodeType.Float
+                || inputs[1].OutputType != NodeType.Float
+                || inputs[2].OutputType != NodeType.Float)
+            {
+                OutputType = NodeType.Invalid;
+            }
+            else
+            {
+                OutputType = NodeType.Float3;
+            }
+        }
+
+        [field: NonSerialized]
+        public event EventHandler InputCountChanged;
+
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
+        public object Clone()
+        {
+            return new Float3Constructor()
+            {
+                inputs = new INode[] { inputs[0], inputs[1], inputs[2] },
+                type = type
+            };
+        }
+
+        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        {
+            if (OutputType == NodeType.Invalid) throw new InvalidNodeException(this);
+            if (nodeDictionary.TryGetValue(this, out var result)) return result;
+            var arg1 = inputs[0].Compile(nodeDictionary, parameters);
+            var arg2 = inputs[1].Compile(nodeDictionary, parameters);
+            var arg3 = inputs[2].Compile(nodeDictionary, parameters);
+
+            var tfloat = typeof(float);
+            var tfloat3 = typeof(Vector3);
+
+            var ctor = tfloat3.GetConstructor(new Type[] { tfloat, tfloat, tfloat });
+            result = Expression.New(ctor, arg1, arg2, arg3);
+            nodeDictionary[this] = result;
+            return result;
+        }
+
+        public INode GetInput(int i)
+        {
+            return inputs[i];
+        }
+
+        public void SetInput(int i, INode node)
+        {
+            inputs[i] = node;
+            UpdateType();
+            if (node == null) return;
+            node.OutputTypeChanged += (s, e) =>
+            {
+                if (s == inputs[i]) UpdateType();
+            };
         }
     }
 

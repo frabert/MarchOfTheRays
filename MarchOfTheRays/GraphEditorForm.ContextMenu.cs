@@ -41,6 +41,14 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.Float3ConstantNode());
             });
 
+            expressions.DropDownItems.Add(Strings.Float3Constructor, null, (s, e) =>
+            {
+                var controlCoords = Canvas.PointToClient(Cursor.Position);
+                var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
+
+                AddNode(worldCoords, new Core.Float3Constructor());
+            });
+
             expressions.DropDownItems.Add(Strings.BinaryOperation, null, (s, e) =>
             {
                 var controlCoords = Canvas.PointToClient(Cursor.Position);
@@ -63,10 +71,10 @@ namespace MarchOfTheRays
                 var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
 
                 var graph = new Graph();
-                graph.Name = "Custom node";
+                graph.Name = Strings.CustomNode;
 
                 var node = new Core.CompositeUnaryNode();
-                node.Name = "Custom node";
+                node.Name = Strings.CustomNode;
                 node.NameChanged += (s1, e1) => graph.Name = node.Name;
 
                 node.Body = new Core.OutputNode();

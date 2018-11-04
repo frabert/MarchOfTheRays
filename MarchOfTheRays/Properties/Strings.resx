@@ -316,15 +316,21 @@
     <value>Scalar constant</value>
   </data>
   <data name="InsertCustomBinaryNode" xml:space="preserve">
-    <value>Insert custom binary node</value>
+    <value>Custom binary operation</value>
   </data>
   <data name="InsertCustomNode" xml:space="preserve">
-    <value>Insert custom node</value>
+    <value>Custom unary operation</value>
   </data>
   <data name="Primitives" xml:space="preserve">
     <value>Geometric primitives</value>
   </data>
   <data name="UnaryOperation" xml:space="preserve">
     <value>Unary operation</value>
+  </data>
+  <data name="CustomNode" xml:space="preserve">
+    <value>Custom node</value>
+  </data>
+  <data name="Float3Constructor" xml:space="preserve">
+    <value>3D vector constructor</value>
   </data>
 </root>

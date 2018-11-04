@@ -178,6 +178,15 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Custom node.
+        /// </summary>
+        internal static string CustomNode {
+            get {
+                return ResourceManager.GetString("CustomNode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to C&amp;ut.
         /// </summary>
         internal static string Cut {
@@ -277,6 +286,15 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 3D vector constructor.
+        /// </summary>
+        internal static string Float3Constructor {
+            get {
+                return ResourceManager.GetString("Float3Constructor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 4D vector constant.
         /// </summary>
         internal static string Float4Constant {
@@ -304,7 +322,7 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Insert custom binary node.
+        ///   Looks up a localized string similar to Custom binary operation.
         /// </summary>
         internal static string InsertCustomBinaryNode {
             get {
@@ -313,7 +331,7 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Insert custom node.
+        ///   Looks up a localized string similar to Custom unary operation.
         /// </summary>
         internal static string InsertCustomNode {
             get {

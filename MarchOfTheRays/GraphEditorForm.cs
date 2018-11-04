@@ -57,6 +57,18 @@ namespace MarchOfTheRays
                                 edges.Add((source, dest, 1));
                             }
                             break;
+                        case Core.INAryNode n:
+                            {
+                                for(int i = 0; i < n.InputCount; i++)
+                                {
+                                    if(n.GetInput(i) != null)
+                                    {
+                                        var source = Elements[n.GetInput(i)];
+                                        edges.Add((source, dest, i));
+                                    }
+                                }
+                            }
+                            break;
                     }
                 }
                 Canvas.AddEdges(edges);
@@ -174,6 +186,9 @@ namespace MarchOfTheRays
                         if (e.DestinationIndex == 0) n.Left = src;
                         else n.Right = src;
                         break;
+                    case Core.INAryNode n:
+                        n.SetInput(e.DestinationIndex, src);
+                        break;
                 }
                 OnGraphChanged();
             };
@@ -188,6 +203,9 @@ namespace MarchOfTheRays
                     case Core.IBinaryNode n:
                         if (e.DestinationIndex == 0) n.Left = null;
                         else n.Right = null;
+                        break;
+                    case Core.INAryNode n:
+                        n.SetInput(e.DestinationIndex, null);
                         break;
                 }
                 OnGraphChanged();
@@ -273,6 +291,7 @@ namespace MarchOfTheRays
                 case Core.InputNode n: elem = CreateNode(location, n); break;
                 case Core.OutputNode n: elem = CreateNode(location, n); break;
                 case Core.ICompositeNode n: elem = CreateNode(location, n); break;
+                case Core.Float3Constructor n: elem = CreateNode(location, n); break;
                 default: throw new NotImplementedException();
             }
             return elem;
@@ -475,6 +494,24 @@ namespace MarchOfTheRays
 
             Elements.Add(node, elem);
 
+            return elem;
+        }
+
+        Editor.NodeElement CreateNode(PointF location, Core.Float3Constructor node)
+        {
+            if (node == null) throw new ArgumentNullException();
+            if (Elements.TryGetValue(node, out var e)) return e;
+
+            var elem = new Editor.NodeElement()
+            {
+                Text = "3D Vector",
+                Location = location,
+                InputCount = node.InputCount,
+                HasOutput = true,
+                Tag = node
+            };
+
+            Elements.Add(node, elem);
             return elem;
         }
     }

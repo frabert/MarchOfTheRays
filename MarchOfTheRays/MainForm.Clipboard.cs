@@ -56,6 +56,17 @@ namespace MarchOfTheRays
                                     if (b.Right != null) b.Right = CloneNode(b.Right);
                                 }
                                 break;
+                            case Core.INAryNode n:
+                                {
+                                    for(int i = 0; i < n.InputCount; i++)
+                                    {
+                                        if(n.GetInput(i) != null)
+                                        {
+                                            n.SetInput(i, CloneNode(n.GetInput(i)));
+                                        }
+                                    }
+                                }
+                                break;
                         }
 
                         return clonedNode;
@@ -114,6 +125,19 @@ namespace MarchOfTheRays
                                 {
                                     var rightNode = ActiveEditor.Elements[n.Right];
                                     n.Right = rightNode.Selected ? CloneElement(rightNode) : null;
+                                }
+                            }
+                            break;
+                        case Core.INAryNode n:
+                            {
+                                for(int i = 0; i < n.InputCount; i++)
+                                {
+                                    var inp = n.GetInput(i);
+                                    if(inp != null)
+                                    {
+                                        var node = ActiveEditor.Elements[inp];
+                                        n.SetInput(i, node.Selected ? CloneElement(node) : null);
+                                    }
                                 }
                             }
                             break;
@@ -187,6 +211,19 @@ namespace MarchOfTheRays
                         {
                             var source = ActiveEditor.Elements[n.Right];
                             edges.Add((source, dest, 1));
+                        }
+                        break;
+                    case Core.INAryNode n:
+                        {
+                            for(int i = 0; i < n.InputCount; i++)
+                            {
+                                var inp = n.GetInput(i);
+                                if(inp != null)
+                                {
+                                    var source = ActiveEditor.Elements[inp];
+                                    edges.Add((source, dest, i));
+                                }
+                            }
                         }
                         break;
                 }

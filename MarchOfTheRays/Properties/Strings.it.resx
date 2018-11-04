@@ -316,15 +316,21 @@
     <value>Costante scalare</value>
   </data>
   <data name="InsertCustomBinaryNode" xml:space="preserve">
-    <value>Inserisci nodo binario personalizzato</value>
+    <value>Operazione binaria personalizzata</value>
   </data>
   <data name="InsertCustomNode" xml:space="preserve">
-    <value>Inserisci nodo unario personalizzato</value>
+    <value>Operazione unaria personalizzata</value>
   </data>
   <data name="Primitives" xml:space="preserve">
     <value>Primitive geometriche</value>
   </data>
   <data name="UnaryOperation" xml:space="preserve">
     <value>Operazione unaria</value>
+  </data>
+  <data name="CustomNode" xml:space="preserve">
+    <value>Nodo personalizzato</value>
+  </data>
+  <data name="Float3Constructor" xml:space="preserve">
+    <value>Costruttore vettore 3D</value>
   </data>
 </root>
