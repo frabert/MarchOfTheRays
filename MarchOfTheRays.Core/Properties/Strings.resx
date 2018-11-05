@@ -156,8 +156,26 @@
   <data name="Exp" xml:space="preserve">
     <value>Exponential</value>
   </data>
+  <data name="Float" xml:space="preserve">
+    <value>Scalar</value>
+  </data>
+  <data name="Float2" xml:space="preserve">
+    <value>2D vector</value>
+  </data>
+  <data name="Float3" xml:space="preserve">
+    <value>3D vector</value>
+  </data>
+  <data name="Float4" xml:space="preserve">
+    <value>4D vector</value>
+  </data>
   <data name="Floor" xml:space="preserve">
     <value>Floor</value>
+  </data>
+  <data name="Indeterminate" xml:space="preserve">
+    <value>Indeterminate</value>
+  </data>
+  <data name="Invalid" xml:space="preserve">
+    <value>Invalid</value>
   </data>
   <data name="Invert" xml:space="preserve">
     <value>Invert</value>
@@ -180,11 +198,17 @@
   <data name="Name" xml:space="preserve">
     <value>Name</value>
   </data>
+  <data name="None" xml:space="preserve">
+    <value>None</value>
+  </data>
   <data name="Normalize" xml:space="preserve">
     <value>Normalize</value>
   </data>
   <data name="Operation" xml:space="preserve">
     <value>Operation</value>
+  </data>
+  <data name="OutputType" xml:space="preserve">
+    <value>Output type</value>
   </data>
   <data name="Radians" xml:space="preserve">
     <value>Degrees to radians</value>

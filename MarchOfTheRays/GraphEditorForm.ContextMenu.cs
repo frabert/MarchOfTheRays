@@ -96,10 +96,10 @@ namespace MarchOfTheRays
                 var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
 
                 var graph = new Graph();
-                graph.Name = "Custom binary node";
+                graph.Name = Strings.CustomNode;
 
                 var node = new Core.CompositeBinaryNode();
-                node.Name = "Custom binary node";
+                node.Name = Strings.CustomNode;
                 node.NameChanged += (s1, e1) => graph.Name = node.Name;
 
                 node.Body = new Core.OutputNode();

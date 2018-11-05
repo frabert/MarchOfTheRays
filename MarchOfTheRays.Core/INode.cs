@@ -71,6 +71,7 @@ namespace MarchOfTheRays.Core
         }
     }
 
+    [TypeConverter(typeof(LocalizedEnumConverter))]
     public enum NodeType
     {
         Float,
@@ -245,7 +246,8 @@ namespace MarchOfTheRays.Core
         [field: NonSerialized]
         public event EventHandler OutputTypeChanged;
 
-        [Browsable(false)]
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
         public NodeType OutputType => NodeType.Float;
 
         [field: NonSerialized]
@@ -295,7 +297,8 @@ namespace MarchOfTheRays.Core
             }
         }
 
-        [Browsable(false)]
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
         public NodeType OutputType => NodeType.Float2;
 
         [field: NonSerialized]
@@ -356,7 +359,8 @@ namespace MarchOfTheRays.Core
             }
         }
 
-        [Browsable(false)]
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
         public NodeType OutputType => NodeType.Float3;
 
         [field: NonSerialized]
@@ -428,7 +432,8 @@ namespace MarchOfTheRays.Core
             }
         }
 
-        [Browsable(false)]
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
         public NodeType OutputType => NodeType.Float4;
 
         [field: NonSerialized]
@@ -499,23 +504,23 @@ namespace MarchOfTheRays.Core
 
         INode input;
 
+        void InputChanged(object s, EventArgs e)
+        {
+            if (s == input) OutputType = CalcType();
+        }
+
         [Browsable(false)]
         public INode Input
         {
             get => input;
             set
             {
+                if (input != null) input.OutputTypeChanged -= InputChanged;
                 input = value;
 
                 OutputType = CalcType();
 
-                if (input != null)
-                {
-                    input.OutputTypeChanged += (s, e) =>
-                    {
-                        if (s == input) OutputType = CalcType();
-                    };
-                }
+                if (input != null) input.OutputTypeChanged += InputChanged;
             }
         }
 
@@ -559,14 +564,16 @@ namespace MarchOfTheRays.Core
 
         NodeType outType = NodeType.Indeterminate;
 
-        [Browsable(false)]
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
         public NodeType OutputType
         {
             get => outType;
             private set
             {
+                var oldType = outType;
                 outType = value;
-                OutputTypeChanged?.Invoke(this, new EventArgs());
+                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
             }
         }
 
@@ -584,9 +591,7 @@ namespace MarchOfTheRays.Core
 
         public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            if (Input == null
-                || Input.OutputType == NodeType.Indeterminate
-                || Input.OutputType == NodeType.Invalid) throw new InvalidNodeException(this);
+            if (Input == null) throw new InvalidNodeException(this);
 
             if (nodeDictionary.TryGetValue(this, out var result)) return result;
 
@@ -718,21 +723,21 @@ namespace MarchOfTheRays.Core
 
         INode leftIn, rightIn;
 
+        void InputsChanged(object s, EventArgs e)
+        {
+            if (s == leftIn || s == rightIn) OutputType = CalcType();
+        }
+
         [Browsable(false)]
         public INode Left
         {
             get => leftIn;
             set
             {
+                if (leftIn != null) leftIn.OutputTypeChanged -= InputsChanged;
                 leftIn = value;
                 OutputType = CalcType();
-                if (leftIn != null)
-                {
-                    leftIn.OutputTypeChanged += (s, e) =>
-                    {
-                        if (s == leftIn) OutputType = CalcType();
-                    };
-                }
+                if (leftIn != null) leftIn.OutputTypeChanged += InputsChanged;
             }
         }
 
@@ -742,15 +747,10 @@ namespace MarchOfTheRays.Core
             get => rightIn;
             set
             {
+                if (rightIn != null) rightIn.OutputTypeChanged -= InputsChanged;
                 rightIn = value;
                 OutputType = CalcType();
-                if (rightIn != null)
-                {
-                    rightIn.OutputTypeChanged += (s, e) =>
-                    {
-                        if (s == rightIn) OutputType = CalcType();
-                    };
-                }
+                if (rightIn != null) rightIn.OutputTypeChanged += InputsChanged;
             }
         }
 
@@ -769,14 +769,16 @@ namespace MarchOfTheRays.Core
 
         NodeType outType = NodeType.Indeterminate;
 
-        [Browsable(false)]
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
         public NodeType OutputType
         {
             get => outType;
             set
             {
+                var oldType = outType;
                 outType = value;
-                OutputTypeChanged?.Invoke(this, new EventArgs());
+                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
             }
         }
 
@@ -854,8 +856,8 @@ namespace MarchOfTheRays.Core
             var right = Right.Compile(nodeDictionary, parameters);
             if (m_Operation == BinaryOp.Cross)
             {
-                if (leftType != NodeType.Float3 || rightType != NodeType.Float3)
-                    throw new InvalidNodeException(this);
+                if (leftType != NodeType.Float3) throw new InvalidNodeException(Left);
+                if (rightType != NodeType.Float3) throw new InvalidNodeException(Right);
                 var cross = typeof(Vector3).GetMethod("Cross", new Type[] { typeof(Vector3), typeof(Vector3) });
                 return Expression.Call(null, cross, left, right);
             }
@@ -866,37 +868,37 @@ namespace MarchOfTheRays.Core
             {
                 outType = NodeType.Float4;
                 if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat4(right);
-                else if (rightType != NodeType.Float4) throw new InvalidNodeException(this);
+                else if (rightType != NodeType.Float4) throw new InvalidNodeException(Right);
             }
             else if (leftType == NodeType.Float3)
             {
                 outType = NodeType.Float3;
                 if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat3(right);
-                else if (rightType != NodeType.Float3) throw new InvalidNodeException(this);
+                else if (rightType != NodeType.Float3) throw new InvalidNodeException(Right);
             }
             else if (leftType == NodeType.Float2)
             {
                 outType = NodeType.Float2;
                 if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat2(right);
-                else if (rightType != NodeType.Float2) throw new InvalidNodeException(this);
+                else if (rightType != NodeType.Float2) throw new InvalidNodeException(Right);
             }
             else if (rightType == NodeType.Float4)
             {
                 outType = NodeType.Float4;
                 if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat4(left);
-                else if (leftType != NodeType.Float4) throw new InvalidNodeException(this);
+                else if (leftType != NodeType.Float4) throw new InvalidNodeException(Left);
             }
             else if (rightType == NodeType.Float3)
             {
                 outType = NodeType.Float3;
                 if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat3(left);
-                else if (leftType != NodeType.Float3) throw new InvalidNodeException(this);
+                else if (leftType != NodeType.Float3) throw new InvalidNodeException(Left);
             }
             else if (rightType == NodeType.Float2)
             {
                 outType = NodeType.Float2;
                 if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat2(left);
-                else if (leftType != NodeType.Float2) throw new InvalidNodeException(this);
+                else if (leftType != NodeType.Float2) throw new InvalidNodeException(Left);
             }
 
             Expression<Func<float, float, float>> expr = null;
@@ -973,14 +975,16 @@ namespace MarchOfTheRays.Core
 
         NodeType outType = NodeType.Indeterminate;
 
-        [Browsable(false)]
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
         public NodeType OutputType
         {
             get => outType;
             set
             {
+                var oldType = outType;
                 outType = value;
-                OutputTypeChanged?.Invoke(this, new EventArgs());
+                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
             }
         }
 
@@ -1027,6 +1031,11 @@ namespace MarchOfTheRays.Core
             }
         }
 
+        void InputChanged(object s, EventArgs e)
+        {
+            if (s == inode) CalcType();
+        }
+
         INode inode;
 
         [Browsable(false)]
@@ -1035,33 +1044,46 @@ namespace MarchOfTheRays.Core
             get => inode;
             set
             {
+                if (inode != null) inode.OutputTypeChanged -= InputChanged;
                 inode = value;
                 CalcType();
-                if (inode != null)
-                {
-                    inode.OutputTypeChanged += (s, e) =>
-                    {
-                        if (s == inode) CalcType();
-                    };
-                }
+                if (inode != null) inode.OutputTypeChanged += InputChanged;
             }
         }
 
         NodeType outType = NodeType.Indeterminate;
 
-        [Browsable(false)]
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
         public NodeType OutputType
         {
             get => outType;
             private set
             {
+                var oldType = outType;
                 outType = value;
-                OutputTypeChanged?.Invoke(this, new EventArgs());
+                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
             }
         }
 
+        OutputNode onode;
+
         [Browsable(false)]
-        public OutputNode Body { get; set; }
+        public OutputNode Body
+        {
+            get => onode;
+            set
+            {
+                onode = value;
+                if (onode != null)
+                {
+                    onode.OutputTypeChanged += (s, e) =>
+                    {
+                        if (s == onode) CalcType();
+                    };
+                }
+            }
+        }
 
         [Browsable(false)]
         public InputNode InputNode { get; private set; }
@@ -1144,21 +1166,21 @@ namespace MarchOfTheRays.Core
 
         INode lnode, rnode;
 
+        void InputsChanged(object sender, EventArgs e)
+        {
+            if (sender == lnode || sender == rnode) CalcType();
+        }
+
         [Browsable(false)]
         public INode Left
         {
             get => lnode;
             set
             {
+                if (lnode != null) lnode.OutputTypeChanged -= InputsChanged;
                 lnode = value;
                 CalcType();
-                if (lnode != null)
-                {
-                    lnode.OutputTypeChanged += (s, e) =>
-                    {
-                        if (s == lnode) CalcType();
-                    };
-                }
+                if (lnode != null) lnode.OutputTypeChanged += InputsChanged;
             }
         }
 
@@ -1168,33 +1190,46 @@ namespace MarchOfTheRays.Core
             get => rnode;
             set
             {
+                if (rnode != null) rnode.OutputTypeChanged -= InputsChanged;
                 rnode = value;
                 CalcType();
-                if (rnode != null)
-                {
-                    rnode.OutputTypeChanged += (s, e) =>
-                    {
-                        if (s == rnode) CalcType();
-                    };
-                }
+                if (rnode != null) rnode.OutputTypeChanged += InputsChanged;
             }
         }
 
         NodeType outType = NodeType.Indeterminate;
 
-        [Browsable(false)]
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
         public NodeType OutputType
         {
             get => outType;
             private set
             {
+                var oldType = outType;
                 outType = value;
-                OutputTypeChanged?.Invoke(this, new EventArgs());
+                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
             }
         }
 
+        OutputNode onode;
+
         [Browsable(false)]
-        public OutputNode Body { get; set; }
+        public OutputNode Body
+        {
+            get => onode;
+            set
+            {
+                onode = value;
+                if (onode != null)
+                {
+                    onode.OutputTypeChanged += (s, e) =>
+                    {
+                        if (s == onode) CalcType();
+                    };
+                }
+            }
+        }
 
         [Browsable(false)]
         public InputNode LeftNode { get; private set; }
@@ -1231,7 +1266,8 @@ namespace MarchOfTheRays.Core
 
         public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            if (Left == null || Right == null || Body == null) throw new InvalidNodeException(this);
+            if (Left == null || Right == null || Body == null)
+                throw new InvalidNodeException(this);
             if (nodeDictionary.TryGetValue(this, out var result)) return result;
 
             var l = Left.Compile(nodeDictionary, parameters);
@@ -1247,18 +1283,20 @@ namespace MarchOfTheRays.Core
     {
         public int InputCount => 3;
 
-        NodeType type = NodeType.Invalid;
+        NodeType outType = NodeType.Invalid;
 
         INode[] inputs = new INode[3];
 
-        [Browsable(false)]
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
         public NodeType OutputType
         {
-            get => type;
+            get => outType;
             set
             {
-                type = value;
-                OutputTypeChanged?.Invoke(this, new EventArgs());
+                var oldType = outType;
+                outType = value;
+                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
             }
         }
 
@@ -1288,7 +1326,7 @@ namespace MarchOfTheRays.Core
             return new Float3Constructor()
             {
                 inputs = new INode[] { inputs[0], inputs[1], inputs[2] },
-                type = type
+                outType = outType
             };
         }
 
@@ -1338,6 +1376,11 @@ namespace MarchOfTheRays.Core
             else OutputType = Input.OutputType;
         }
 
+        void InputChanged(object s, EventArgs e)
+        {
+            if (s == input) CalcType();
+        }
+
         INode input;
 
         [Browsable(false)]
@@ -1346,28 +1389,25 @@ namespace MarchOfTheRays.Core
             get => input;
             set
             {
+                if (input != null) input.OutputTypeChanged -= InputChanged;
                 input = value;
                 CalcType();
-                if (input != null)
-                {
-                    input.OutputTypeChanged += (s, e) =>
-                    {
-                        if (s == input) CalcType();
-                    };
-                }
+                if (input != null) input.OutputTypeChanged += InputChanged;
             }
         }
 
         NodeType outType = NodeType.Indeterminate;
 
-        [Browsable(false)]
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
         public NodeType OutputType
         {
             get => outType;
             private set
             {
+                var oldType = outType;
                 outType = value;
-                OutputTypeChanged?.Invoke(this, new EventArgs());
+                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
             }
         }
 
@@ -1381,15 +1421,19 @@ namespace MarchOfTheRays.Core
 
         public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            if (Input == null) throw new InvalidNodeException(this);
+            if (Input == null)
+                throw new InvalidNodeException(this);
             return Input.Compile(nodeDictionary, parameters);
         }
 
         public Expression Compile(NodeType wantedtype, Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            if (Input == null) throw new InvalidNodeException(this);
-            if (Input.OutputType != wantedtype) throw new InvalidNodeException(this);
-            return Input.Compile(nodeDictionary, parameters);
+            if (Input == null)
+                throw new InvalidNodeException(this);
+            var compiledInput = Input.Compile(nodeDictionary, parameters);
+            if (Input.OutputType != wantedtype)
+                throw new InvalidNodeException(Input);
+            return compiledInput;
         }
     }
 }

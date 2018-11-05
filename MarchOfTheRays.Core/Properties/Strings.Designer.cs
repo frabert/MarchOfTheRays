@@ -178,11 +178,65 @@ namespace MarchOfTheRays.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Scalar.
+        /// </summary>
+        internal static string Float {
+            get {
+                return ResourceManager.GetString("Float", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 2D vector.
+        /// </summary>
+        internal static string Float2 {
+            get {
+                return ResourceManager.GetString("Float2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 3D vector.
+        /// </summary>
+        internal static string Float3 {
+            get {
+                return ResourceManager.GetString("Float3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 4D vector.
+        /// </summary>
+        internal static string Float4 {
+            get {
+                return ResourceManager.GetString("Float4", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Floor.
         /// </summary>
         internal static string Floor {
             get {
                 return ResourceManager.GetString("Floor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Indeterminate.
+        /// </summary>
+        internal static string Indeterminate {
+            get {
+                return ResourceManager.GetString("Indeterminate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Invalid.
+        /// </summary>
+        internal static string Invalid {
+            get {
+                return ResourceManager.GetString("Invalid", resourceCulture);
             }
         }
         
@@ -250,6 +304,15 @@ namespace MarchOfTheRays.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to None.
+        /// </summary>
+        internal static string None {
+            get {
+                return ResourceManager.GetString("None", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Normalize.
         /// </summary>
         internal static string Normalize {
@@ -264,6 +327,15 @@ namespace MarchOfTheRays.Core.Properties {
         internal static string Operation {
             get {
                 return ResourceManager.GetString("Operation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Output type.
+        /// </summary>
+        internal static string OutputType {
+            get {
+                return ResourceManager.GetString("OutputType", resourceCulture);
             }
         }
         
