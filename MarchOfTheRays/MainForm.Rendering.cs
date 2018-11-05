@@ -91,6 +91,10 @@ namespace MarchOfTheRays
 
                     var param = Expression.Parameter(typeof(Vector3), "pos");
                     var body = document.MainGraph.OutputNodes[0].Compile(Core.NodeType.Float, new Dictionary<Core.INode, Expression>(), param);
+                    var sb = new System.Text.StringBuilder();
+                    var linq2glsl = new Linq2Glsl.GlslVisitor(sb);
+                    linq2glsl.Visit(body);
+                    var str = sb.ToString();
                     var lambda = Expression.Lambda<Func<Vector3, float>>(body, param);
                     func = lambda.Compile();
 

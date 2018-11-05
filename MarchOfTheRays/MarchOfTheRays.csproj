@@ -171,6 +171,10 @@
       <Project>{99f687b5-5d8b-45b2-9dc2-addd534c70ba}</Project>
       <Name>MarchOfTheRays.Docs</Name>
     </ProjectReference>
+    <ProjectReference Include="..\MarchOfTheRays.Linq2Glsl\MarchOfTheRays.Linq2Glsl.csproj">
+      <Project>{dff0adb4-7687-44a7-b4c0-ef2930dcde88}</Project>
+      <Name>MarchOfTheRays.Linq2Glsl</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Copy_16x.png" />

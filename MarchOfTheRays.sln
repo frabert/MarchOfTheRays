@@ -5,11 +5,13 @@ VisualStudioVersion = 15.0.28010.2046
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarchOfTheRays", "MarchOfTheRays\MarchOfTheRays.csproj", "{CAF559C4-6D9B-4C4E-B6FF-0DC69327E87D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarchOfTheRays.Core", "MarchOfTheRays.Core\MarchOfTheRays.Core.csproj", "{90FB95D4-2D1B-43B1-88B5-D196CEB08A13}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarchOfTheRays.Core", "MarchOfTheRays.Core\MarchOfTheRays.Core.csproj", "{90FB95D4-2D1B-43B1-88B5-D196CEB08A13}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarchOfTheRays.Docs", "MarchOfTheRays.Docs\MarchOfTheRays.Docs.csproj", "{99F687B5-5D8B-45B2-9DC2-ADDD534C70BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarchOfTheRays.Docs", "MarchOfTheRays.Docs\MarchOfTheRays.Docs.csproj", "{99F687B5-5D8B-45B2-9DC2-ADDD534C70BA}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarchOfTheRays.CpuRenderer", "MarchOfTheRays.CpuRenderer\MarchOfTheRays.CpuRenderer.csproj", "{BDBB4495-86A3-483D-95CD-9E212BBF671A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarchOfTheRays.Linq2Glsl", "MarchOfTheRays.Linq2Glsl\MarchOfTheRays.Linq2Glsl.csproj", "{DFF0ADB4-7687-44A7-B4C0-EF2930DCDE88}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{BDBB4495-86A3-483D-95CD-9E212BBF671A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BDBB4495-86A3-483D-95CD-9E212BBF671A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDBB4495-86A3-483D-95CD-9E212BBF671A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DFF0ADB4-7687-44A7-B4C0-EF2930DCDE88}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFF0ADB4-7687-44A7-B4C0-EF2930DCDE88}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFF0ADB4-7687-44A7-B4C0-EF2930DCDE88}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFF0ADB4-7687-44A7-B4C0-EF2930DCDE88}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
