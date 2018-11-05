@@ -15,6 +15,19 @@ namespace MarchOfTheRays
             public Dictionary<Core.INode, PointF> Locations = new Dictionary<Core.INode, PointF>();
             public HashSet<Graph> Graphs = new HashSet<Graph>();
             public Dictionary<Core.INode, Graph> Subgraphs = new Dictionary<Core.INode, Graph>();
+
+            public void InitializeEvents()
+            {
+                foreach(var node in Nodes)
+                {
+                    node.InitializeEvents();
+                }
+
+                foreach(var graph in Graphs)
+                {
+                    graph.InitializeEvents();
+                }
+            }
         }
 
         void Copy()
@@ -230,13 +243,14 @@ namespace MarchOfTheRays
             }
             ActiveEditor.Canvas.AddEdges(edges);
             //ActiveEditor.Canvas.Center(clipboardData[0].Item2);
+            OnSelectionChanged();
         }
 
         bool CanPaste
         {
             get
             {
-                var clipboardData = (ClipboardContents)Clipboard.GetData("MarchOfTheRays");
+                var clipboardData = Clipboard.GetData("MarchOfTheRays") as ClipboardContents;
                 return (clipboardData != null && clipboardData.Nodes.Count != 0);
             }
         }

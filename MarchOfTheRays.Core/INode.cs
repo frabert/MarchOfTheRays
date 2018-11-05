@@ -196,6 +196,7 @@ namespace MarchOfTheRays.Core
         NodeType OutputType { get; }
         event EventHandler OutputTypeChanged;
         Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters);
+        void InitializeEvents();
     }
 
     public interface IUnaryNode : INode
@@ -267,6 +268,11 @@ namespace MarchOfTheRays.Core
             nodeDictionary[this] = expr;
             return expr;
         }
+
+        public void InitializeEvents()
+        {
+
+        }
     }
 
     [Serializable]
@@ -318,6 +324,11 @@ namespace MarchOfTheRays.Core
             var expr = Expression.Constant(new Vector2(m_X, m_Y));
             nodeDictionary[this] = expr;
             return expr;
+        }
+
+        public void InitializeEvents()
+        {
+
         }
     }
 
@@ -381,6 +392,11 @@ namespace MarchOfTheRays.Core
             var expr = Expression.Constant(new Vector3(m_X, m_Y, m_Z));
             nodeDictionary[this] = expr;
             return expr;
+        }
+
+        public void InitializeEvents()
+        {
+
         }
     }
 
@@ -455,6 +471,11 @@ namespace MarchOfTheRays.Core
             var expr = Expression.Constant(new Vector4(m_X, m_Y, m_Z, m_W));
             nodeDictionary[this] = expr;
             return expr;
+        }
+
+        public void InitializeEvents()
+        {
+
         }
     }
 
@@ -713,6 +734,11 @@ namespace MarchOfTheRays.Core
             nodeDictionary[this] = res;
             return res;
         }
+
+        public void InitializeEvents()
+        {
+            if (input != null) input.OutputTypeChanged += InputChanged;
+        }
     }
 
     [Serializable]
@@ -965,6 +991,12 @@ namespace MarchOfTheRays.Core
             nodeDictionary[this] = result;
             return result;
         }
+
+        public void InitializeEvents()
+        {
+            if (leftIn != null) leftIn.OutputTypeChanged += InputsChanged;
+            if (rightIn != null) rightIn.OutputTypeChanged += InputsChanged;
+        }
     }
 
     [Serializable]
@@ -1003,6 +1035,11 @@ namespace MarchOfTheRays.Core
         public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             return parameters[InputNumber];
+        }
+
+        public void InitializeEvents()
+        {
+
         }
     }
 
@@ -1124,6 +1161,11 @@ namespace MarchOfTheRays.Core
             result = Body.Compile(nodeDictionary, arg);
             nodeDictionary[this] = result;
             return result;
+        }
+
+        public void InitializeEvents()
+        {
+            if (inode != null) inode.OutputTypeChanged += InputChanged;
         }
     }
 
@@ -1276,6 +1318,12 @@ namespace MarchOfTheRays.Core
             nodeDictionary[this] = result;
             return result;
         }
+
+        public void InitializeEvents()
+        {
+            if (lnode != null) lnode.OutputTypeChanged += InputsChanged;
+            if (rnode != null) rnode.OutputTypeChanged += InputsChanged;
+        }
     }
 
     [Serializable]
@@ -1313,6 +1361,11 @@ namespace MarchOfTheRays.Core
             {
                 OutputType = NodeType.Float3;
             }
+        }
+
+        void InputsChanged(object s, EventArgs e)
+        {
+            UpdateType();
         }
 
         [field: NonSerialized]
@@ -1354,13 +1407,18 @@ namespace MarchOfTheRays.Core
 
         public void SetInput(int i, INode node)
         {
+            if (inputs[i] != null) inputs[i].OutputTypeChanged -= InputsChanged;
             inputs[i] = node;
             UpdateType();
-            if (node == null) return;
-            node.OutputTypeChanged += (s, e) =>
+            if (node == null) node.OutputTypeChanged += InputsChanged;
+        }
+
+        public void InitializeEvents()
+        {
+            for(int i = 0; i < inputs.Length; i++)
             {
-                if (s == inputs[i]) UpdateType();
-            };
+                if (inputs[i] != null) inputs[i].OutputTypeChanged += InputsChanged;
+            }
         }
     }
 
@@ -1434,6 +1492,11 @@ namespace MarchOfTheRays.Core
             if (Input.OutputType != wantedtype)
                 throw new InvalidNodeException(Input);
             return compiledInput;
+        }
+
+        public void InitializeEvents()
+        {
+            if (input != null) input.OutputTypeChanged += InputChanged;
         }
     }
 }
