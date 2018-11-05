@@ -54,7 +54,7 @@ namespace MarchOfTheRays
                 var controlCoords = Canvas.PointToClient(Cursor.Position);
                 var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
 
-                AddNode(worldCoords, new Core.BinaryNode());
+                AddNode(worldCoords, new Core.BinaryOperationNode());
             });
 
             expressions.DropDownItems.Add(Strings.UnaryOperation, null, (s, e) =>
@@ -62,7 +62,7 @@ namespace MarchOfTheRays
                 var controlCoords = Canvas.PointToClient(Cursor.Position);
                 var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
 
-                AddNode(worldCoords, new Core.UnaryNode());
+                AddNode(worldCoords, new Core.UnaryOperationNode());
             });
 
             canvasContextMenu.Items.Add(Strings.InsertCustomNode, null, (s, e) =>

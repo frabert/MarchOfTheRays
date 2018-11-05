@@ -83,103 +83,6 @@ namespace MarchOfTheRays.Core
         None
     }
 
-    static class CompilerTools
-    {
-        public static Expression<Func<T, T>> ToExpr<T>(Expression<Func<T, T>> f)
-        {
-            return f;
-        }
-
-        public static Expression<Func<T, T, T>> ToExpr<T>(Expression<Func<T, T, T>> f)
-        {
-            return f;
-        }
-
-        public static Expression MapExprFloat2(Expression<Func<float, float>> f, Expression inp)
-        {
-            var vec2ctor = typeof(Vector2).GetConstructor(new Type[] { typeof(float), typeof(float) });
-            var x = Expression.Field(inp, "X");
-            var y = Expression.Field(inp, "Y");
-            return Expression.New(vec2ctor, Expression.Invoke(f, x), Expression.Invoke(f, y));
-        }
-
-        public static Expression MapExprFloat2(Expression<Func<float, float, float>> f, Expression l, Expression r)
-        {
-            var vec2ctor = typeof(Vector2).GetConstructor(new Type[] { typeof(float), typeof(float) });
-            var lx = Expression.Field(l, "X");
-            var ly = Expression.Field(l, "Y");
-
-            var rx = Expression.Field(r, "X");
-            var ry = Expression.Field(r, "Y");
-            return Expression.New(vec2ctor, Expression.Invoke(f, lx, rx), Expression.Invoke(f, ly, ry));
-        }
-
-        public static Expression MapExprFloat3(Expression<Func<float, float>> f, Expression inp)
-        {
-            var vec3ctor = typeof(Vector3).GetConstructor(new Type[] { typeof(float), typeof(float), typeof(float) });
-            var x = Expression.Field(inp, "X");
-            var y = Expression.Field(inp, "Y");
-            var z = Expression.Field(inp, "Z");
-            return Expression.New(vec3ctor, Expression.Invoke(f, x), Expression.Invoke(f, y), Expression.Invoke(f, z));
-        }
-
-        public static Expression MapExprFloat3(Expression<Func<float, float, float>> f, Expression l, Expression r)
-        {
-            var vec3ctor = typeof(Vector3).GetConstructor(new Type[] { typeof(float), typeof(float), typeof(float) });
-            var lx = Expression.Field(l, "X");
-            var ly = Expression.Field(l, "Y");
-            var lz = Expression.Field(l, "Z");
-
-            var rx = Expression.Field(r, "X");
-            var ry = Expression.Field(r, "Y");
-            var rz = Expression.Field(r, "Z");
-            return Expression.New(vec3ctor, Expression.Invoke(f, lx, rx), Expression.Invoke(f, ly, ry), Expression.Invoke(f, lz, rz));
-        }
-
-        public static Expression MapExprFloat4(Expression<Func<float, float>> f, Expression inp)
-        {
-            var vec4ctor = typeof(Vector4).GetConstructor(new Type[] { typeof(float), typeof(float), typeof(float), typeof(float) });
-            var x = Expression.Field(inp, "X");
-            var y = Expression.Field(inp, "Y");
-            var z = Expression.Field(inp, "Z");
-            var w = Expression.Field(inp, "W");
-            return Expression.New(vec4ctor, Expression.Invoke(f, x), Expression.Invoke(f, y), Expression.Invoke(f, z), Expression.Invoke(f, w));
-        }
-
-        public static Expression MapExprFloat4(Expression<Func<float, float, float>> f, Expression l, Expression r)
-        {
-            var vec4ctor = typeof(Vector4).GetConstructor(new Type[] { typeof(float), typeof(float), typeof(float), typeof(float) });
-            var lx = Expression.Field(l, "X");
-            var ly = Expression.Field(l, "Y");
-            var lz = Expression.Field(l, "Z");
-            var lw = Expression.Field(l, "W");
-
-            var rx = Expression.Field(r, "X");
-            var ry = Expression.Field(r, "Y");
-            var rz = Expression.Field(r, "Z");
-            var rw = Expression.Field(r, "W");
-            return Expression.New(vec4ctor, Expression.Invoke(f, lx, rx), Expression.Invoke(f, ly, ry), Expression.Invoke(f, lz, rz), Expression.Invoke(f, lw, rw));
-        }
-
-        public static Expression FloatToFloat2(Expression a)
-        {
-            var vec2ctor = typeof(Vector2).GetConstructor(new Type[] { typeof(float) });
-            return Expression.New(vec2ctor, a);
-        }
-
-        public static Expression FloatToFloat3(Expression a)
-        {
-            var vec3ctor = typeof(Vector3).GetConstructor(new Type[] { typeof(float) });
-            return Expression.New(vec3ctor, a);
-        }
-
-        public static Expression FloatToFloat4(Expression a)
-        {
-            var vec4ctor = typeof(Vector4).GetConstructor(new Type[] { typeof(float) });
-            return Expression.New(vec4ctor, a);
-        }
-    }
-
     public class InvalidNodeException : Exception
     {
         public INode Node { get; private set; }
@@ -199,10 +102,73 @@ namespace MarchOfTheRays.Core
         void InitializeEvents();
     }
 
+    public abstract class Node : INode
+    {
+        NodeType outType = NodeType.Indeterminate;
+
+        [ReadOnly(true)]
+        [LocalizedDisplayName("OutputType")]
+        public virtual NodeType OutputType
+        {
+            get => outType;
+            protected set
+            {
+                var oldType = outType;
+                outType = value;
+                if (oldType != outType) OutputTypeChanged?.Invoke(this, new EventArgs());
+            }
+        }
+
+        [field: NonSerialized]
+        public event EventHandler OutputTypeChanged;
+
+        public abstract Node Clone();
+
+        public abstract Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters);
+
+        public virtual void InitializeEvents() { }
+
+        object ICloneable.Clone()
+        {
+            return Clone();
+        }
+    }
+
     public interface IUnaryNode : INode
     {
         [Browsable(false)]
         INode Input { get; set; }
+    }
+
+    public abstract class UnaryNode : Node, IUnaryNode
+    {
+        INode input;
+
+        [Browsable(false)]
+        public INode Input
+        {
+            get => input;
+            set
+            {
+                if (input != null) input.OutputTypeChanged -= InputChanged;
+                input = value;
+                if (input != null) input.OutputTypeChanged += InputChanged;
+                OnInputChanged();
+            }
+        }
+
+        void InputChanged(object s, EventArgs e)
+        {
+            if (s == input) OnInputChanged();
+        }
+
+        public override void InitializeEvents()
+        {
+            if (input != null) input.OutputTypeChanged += InputChanged;
+            base.InitializeEvents();
+        }
+
+        protected abstract void OnInputChanged();
     }
 
     public interface IBinaryNode : INode
@@ -211,6 +177,49 @@ namespace MarchOfTheRays.Core
         INode Left { get; set; }
         [Browsable(false)]
         INode Right { get; set; }
+    }
+
+    public abstract class BinaryNode : Node, IBinaryNode
+    {
+        INode left, right;
+
+        [Browsable(false)]
+        public INode Left
+        {
+            get => left;
+            set
+            {
+                if (left != null) left.OutputTypeChanged -= InputChanged;
+                left = value;
+                if (left != null) left.OutputTypeChanged += InputChanged;
+                OnInputsChanged();
+            }
+        }
+
+        [Browsable(false)]
+        public INode Right
+        {
+            get => right;
+            set
+            {
+                right = value;
+                OnInputsChanged();
+            }
+        }
+
+        void InputChanged(object sender, EventArgs e)
+        {
+            if (sender == left || sender == right) OnInputsChanged();
+        }
+
+        protected abstract void OnInputsChanged();
+
+        public override void InitializeEvents()
+        {
+            if (left != null) left.OutputTypeChanged += InputChanged;
+            if (right != null) right.OutputTypeChanged += InputChanged;
+            base.InitializeEvents();
+        }
     }
 
     public interface INAryNode : INode
@@ -229,8 +238,13 @@ namespace MarchOfTheRays.Core
     }
 
     [Serializable]
-    public class FloatConstantNode : INode
+    public class FloatConstantNode : Node
     {
+        public FloatConstantNode()
+        {
+            OutputType = NodeType.Float;
+        }
+
         float m_Value;
 
         [LocalizedDisplayName("Value")]
@@ -245,16 +259,9 @@ namespace MarchOfTheRays.Core
         }
 
         [field: NonSerialized]
-        public event EventHandler OutputTypeChanged;
-
-        [ReadOnly(true)]
-        [LocalizedDisplayName("OutputType")]
-        public NodeType OutputType => NodeType.Float;
-
-        [field: NonSerialized]
         public event EventHandler ValueChanged;
 
-        public object Clone()
+        public override Node Clone()
         {
             return new FloatConstantNode()
             {
@@ -262,24 +269,21 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             var expr = Expression.Constant(m_Value);
             nodeDictionary[this] = expr;
             return expr;
         }
-
-        public void InitializeEvents()
-        {
-
-        }
     }
 
     [Serializable]
-    public class Float2ConstantNode : INode
+    public class Float2ConstantNode : Node
     {
-        [field: NonSerialized]
-        public event EventHandler OutputTypeChanged;
+        public Float2ConstantNode()
+        {
+            OutputType = NodeType.Float2;
+        }
 
         float m_X, m_Y;
 
@@ -303,14 +307,10 @@ namespace MarchOfTheRays.Core
             }
         }
 
-        [ReadOnly(true)]
-        [LocalizedDisplayName("OutputType")]
-        public NodeType OutputType => NodeType.Float2;
-
         [field: NonSerialized]
         public event EventHandler ValueChanged;
 
-        public object Clone()
+        public override Node Clone()
         {
             return new Float2ConstantNode()
             {
@@ -319,24 +319,21 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             var expr = Expression.Constant(new Vector2(m_X, m_Y));
             nodeDictionary[this] = expr;
             return expr;
         }
-
-        public void InitializeEvents()
-        {
-
-        }
     }
 
     [Serializable]
-    public class Float3ConstantNode : INode
+    public class Float3ConstantNode : Node
     {
-        [field: NonSerialized]
-        public event EventHandler OutputTypeChanged;
+        public Float3ConstantNode()
+        {
+            OutputType = NodeType.Float3;
+        }
 
         float m_X, m_Y, m_Z;
 
@@ -370,14 +367,10 @@ namespace MarchOfTheRays.Core
             }
         }
 
-        [ReadOnly(true)]
-        [LocalizedDisplayName("OutputType")]
-        public NodeType OutputType => NodeType.Float3;
-
         [field: NonSerialized]
         public event EventHandler ValueChanged;
 
-        public object Clone()
+        public override Node Clone()
         {
             return new Float3ConstantNode()
             {
@@ -387,16 +380,11 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             var expr = Expression.Constant(new Vector3(m_X, m_Y, m_Z));
             nodeDictionary[this] = expr;
             return expr;
-        }
-
-        public void InitializeEvents()
-        {
-
         }
     }
 
@@ -518,38 +506,13 @@ namespace MarchOfTheRays.Core
     }
 
     [Serializable]
-    public class UnaryNode : IUnaryNode
+    public class UnaryOperationNode : UnaryNode
     {
-        [field: NonSerialized]
-        public event EventHandler OutputTypeChanged;
-
-        INode input;
-
-        void InputChanged(object s, EventArgs e)
-        {
-            if (s == input) OutputType = CalcType();
-        }
-
-        [Browsable(false)]
-        public INode Input
-        {
-            get => input;
-            set
-            {
-                if (input != null) input.OutputTypeChanged -= InputChanged;
-                input = value;
-
-                OutputType = CalcType();
-
-                if (input != null) input.OutputTypeChanged += InputChanged;
-            }
-        }
-
         NodeType CalcType()
         {
-            if (input == null
-                    || input.OutputType == NodeType.Indeterminate
-                    || input.OutputType == NodeType.Invalid) return NodeType.Indeterminate;
+            if (Input == null
+                    || Input.OutputType == NodeType.Indeterminate
+                    || Input.OutputType == NodeType.Invalid) return NodeType.Indeterminate;
 
             if ((m_Operation == UnaryOp.Normalize
                 || m_Operation == UnaryOp.X
@@ -579,38 +542,24 @@ namespace MarchOfTheRays.Core
             set
             {
                 m_Operation = value;
+                CalcType();
                 OperationChanged?.Invoke(this, new EventArgs());
-            }
-        }
-
-        NodeType outType = NodeType.Indeterminate;
-
-        [ReadOnly(true)]
-        [LocalizedDisplayName("OutputType")]
-        public NodeType OutputType
-        {
-            get => outType;
-            private set
-            {
-                var oldType = outType;
-                outType = value;
-                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
             }
         }
 
         [field: NonSerialized]
         public event EventHandler OperationChanged;
 
-        public object Clone()
+        public override Node Clone()
         {
-            return new UnaryNode()
+            return new UnaryOperationNode()
             {
                 Input = Input,
                 m_Operation = m_Operation
             };
         }
 
-        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Input == null) throw new InvalidNodeException(this);
 
@@ -735,51 +684,15 @@ namespace MarchOfTheRays.Core
             return res;
         }
 
-        public void InitializeEvents()
+        protected override void OnInputChanged()
         {
-            if (input != null) input.OutputTypeChanged += InputChanged;
+            OutputType = CalcType();
         }
     }
 
     [Serializable]
-    public class BinaryNode : IBinaryNode
+    public class BinaryOperationNode : BinaryNode
     {
-        [field: NonSerialized]
-        public event EventHandler OutputTypeChanged;
-
-        INode leftIn, rightIn;
-
-        void InputsChanged(object s, EventArgs e)
-        {
-            if (s == leftIn || s == rightIn) OutputType = CalcType();
-        }
-
-        [Browsable(false)]
-        public INode Left
-        {
-            get => leftIn;
-            set
-            {
-                if (leftIn != null) leftIn.OutputTypeChanged -= InputsChanged;
-                leftIn = value;
-                OutputType = CalcType();
-                if (leftIn != null) leftIn.OutputTypeChanged += InputsChanged;
-            }
-        }
-
-        [Browsable(false)]
-        public INode Right
-        {
-            get => rightIn;
-            set
-            {
-                if (rightIn != null) rightIn.OutputTypeChanged -= InputsChanged;
-                rightIn = value;
-                OutputType = CalcType();
-                if (rightIn != null) rightIn.OutputTypeChanged += InputsChanged;
-            }
-        }
-
         BinaryOp m_Operation;
 
         [LocalizedDisplayName("Operation")]
@@ -790,21 +703,6 @@ namespace MarchOfTheRays.Core
             {
                 m_Operation = value;
                 OperationChanged?.Invoke(this, new EventArgs());
-            }
-        }
-
-        NodeType outType = NodeType.Indeterminate;
-
-        [ReadOnly(true)]
-        [LocalizedDisplayName("OutputType")]
-        public NodeType OutputType
-        {
-            get => outType;
-            set
-            {
-                var oldType = outType;
-                outType = value;
-                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
             }
         }
 
@@ -861,9 +759,9 @@ namespace MarchOfTheRays.Core
         [field: NonSerialized]
         public event EventHandler OperationChanged;
 
-        public object Clone()
+        public override Node Clone()
         {
-            return new BinaryNode()
+            return new BinaryOperationNode()
             {
                 Left = Left,
                 Right = Right,
@@ -871,7 +769,7 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Left == null || Right == null) throw new InvalidNodeException(this);
             if (nodeDictionary.TryGetValue(this, out var result)) return result;
@@ -992,38 +890,30 @@ namespace MarchOfTheRays.Core
             return result;
         }
 
-        public void InitializeEvents()
+        protected override void OnInputsChanged()
         {
-            if (leftIn != null) leftIn.OutputTypeChanged += InputsChanged;
-            if (rightIn != null) rightIn.OutputTypeChanged += InputsChanged;
+            OutputType = CalcType();
         }
     }
 
     [Serializable]
-    public class InputNode : INode
+    public class InputNode : Node
     {
-        [field: NonSerialized]
-        public event EventHandler OutputTypeChanged;
-
-        NodeType outType = NodeType.Indeterminate;
-
         [ReadOnly(true)]
         [LocalizedDisplayName("OutputType")]
-        public NodeType OutputType
+        public new NodeType OutputType
         {
-            get => outType;
+            get => base.OutputType;
             set
             {
-                var oldType = outType;
-                outType = value;
-                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
+                base.OutputType = value;
             }
         }
 
         [Browsable(false)]
         public int InputNumber { get; set; }
 
-        public object Clone()
+        public override Node Clone()
         {
             return new InputNode()
             {
@@ -1032,24 +922,17 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             return parameters[InputNumber];
-        }
-
-        public void InitializeEvents()
-        {
-
         }
     }
 
     [Serializable]
-    public class CompositeUnaryNode : IUnaryNode, ICompositeNode
+    public class CompositeUnaryNode : UnaryNode, ICompositeNode
     {
-        [field: NonSerialized]
-        public event EventHandler OutputTypeChanged;
-
         public CompositeUnaryNode()
+            : base()
         {
             InputNode = new InputNode() { OutputType = NodeType.Indeterminate };
         }
@@ -1065,41 +948,6 @@ namespace MarchOfTheRays.Core
             {
                 InputNode.OutputType = Input.OutputType;
                 OutputType = Body.OutputType;
-            }
-        }
-
-        void InputChanged(object s, EventArgs e)
-        {
-            if (s == inode) CalcType();
-        }
-
-        INode inode;
-
-        [Browsable(false)]
-        public INode Input
-        {
-            get => inode;
-            set
-            {
-                if (inode != null) inode.OutputTypeChanged -= InputChanged;
-                inode = value;
-                CalcType();
-                if (inode != null) inode.OutputTypeChanged += InputChanged;
-            }
-        }
-
-        NodeType outType = NodeType.Indeterminate;
-
-        [ReadOnly(true)]
-        [LocalizedDisplayName("OutputType")]
-        public NodeType OutputType
-        {
-            get => outType;
-            private set
-            {
-                var oldType = outType;
-                outType = value;
-                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
             }
         }
 
@@ -1141,7 +989,7 @@ namespace MarchOfTheRays.Core
         [field: NonSerialized]
         public event EventHandler NameChanged;
 
-        public object Clone()
+        public override Node Clone()
         {
             return new CompositeUnaryNode()
             {
@@ -1151,7 +999,7 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Input == null || Body == null) throw new InvalidNodeException(this);
 
@@ -1163,18 +1011,27 @@ namespace MarchOfTheRays.Core
             return result;
         }
 
-        public void InitializeEvents()
+        public override void InitializeEvents()
         {
-            if (inode != null) inode.OutputTypeChanged += InputChanged;
+            if (onode != null)
+            {
+                onode.OutputTypeChanged += (s, e) =>
+                {
+                    if (s == onode) CalcType();
+                };
+            }
+            base.InitializeEvents();
+        }
+
+        protected override void OnInputChanged()
+        {
+            CalcType();
         }
     }
 
     [Serializable]
-    public class CompositeBinaryNode : IBinaryNode, ICompositeNode
+    public class CompositeBinaryNode : BinaryNode, ICompositeNode
     {
-        [field: NonSerialized]
-        public event EventHandler OutputTypeChanged;
-
         public CompositeBinaryNode()
         {
             LeftNode = new InputNode() { OutputType = NodeType.Indeterminate };
@@ -1191,7 +1048,7 @@ namespace MarchOfTheRays.Core
             }
             else
             {
-                LeftNode.OutputType = lnode.OutputType;
+                LeftNode.OutputType = Left.OutputType;
             }
 
             if (Right == null)
@@ -1200,58 +1057,10 @@ namespace MarchOfTheRays.Core
             }
             else
             {
-                RightNode.OutputType = rnode.OutputType;
+                RightNode.OutputType = Right.OutputType;
             }
 
             OutputType = Body.OutputType;
-        }
-
-        INode lnode, rnode;
-
-        void InputsChanged(object sender, EventArgs e)
-        {
-            if (sender == lnode || sender == rnode) CalcType();
-        }
-
-        [Browsable(false)]
-        public INode Left
-        {
-            get => lnode;
-            set
-            {
-                if (lnode != null) lnode.OutputTypeChanged -= InputsChanged;
-                lnode = value;
-                CalcType();
-                if (lnode != null) lnode.OutputTypeChanged += InputsChanged;
-            }
-        }
-
-        [Browsable(false)]
-        public INode Right
-        {
-            get => rnode;
-            set
-            {
-                if (rnode != null) rnode.OutputTypeChanged -= InputsChanged;
-                rnode = value;
-                CalcType();
-                if (rnode != null) rnode.OutputTypeChanged += InputsChanged;
-            }
-        }
-
-        NodeType outType = NodeType.Indeterminate;
-
-        [ReadOnly(true)]
-        [LocalizedDisplayName("OutputType")]
-        public NodeType OutputType
-        {
-            get => outType;
-            private set
-            {
-                var oldType = outType;
-                outType = value;
-                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
-            }
         }
 
         OutputNode onode;
@@ -1295,7 +1104,7 @@ namespace MarchOfTheRays.Core
         [field: NonSerialized]
         public event EventHandler NameChanged;
 
-        public object Clone()
+        public override Node Clone()
         {
             return new CompositeBinaryNode()
             {
@@ -1306,7 +1115,7 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Left == null || Right == null || Body == null)
                 throw new InvalidNodeException(this);
@@ -1319,34 +1128,30 @@ namespace MarchOfTheRays.Core
             return result;
         }
 
-        public void InitializeEvents()
+        protected override void OnInputsChanged()
         {
-            if (lnode != null) lnode.OutputTypeChanged += InputsChanged;
-            if (rnode != null) rnode.OutputTypeChanged += InputsChanged;
+            CalcType();
+        }
+
+        public override void InitializeEvents()
+        {
+            if (onode != null)
+            {
+                onode.OutputTypeChanged += (s, e) =>
+                {
+                    if(s == onode) CalcType();
+                };
+            }
+            base.InitializeEvents();
         }
     }
 
     [Serializable]
-    public class Float3Constructor : INAryNode
+    public class Float3Constructor : Node, INAryNode
     {
         public int InputCount => 3;
 
-        NodeType outType = NodeType.Invalid;
-
         INode[] inputs = new INode[3];
-
-        [ReadOnly(true)]
-        [LocalizedDisplayName("OutputType")]
-        public NodeType OutputType
-        {
-            get => outType;
-            set
-            {
-                var oldType = outType;
-                outType = value;
-                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
-            }
-        }
 
         void UpdateType()
         {
@@ -1371,19 +1176,16 @@ namespace MarchOfTheRays.Core
         [field: NonSerialized]
         public event EventHandler InputCountChanged;
 
-        [field: NonSerialized]
-        public event EventHandler OutputTypeChanged;
-
-        public object Clone()
+        public override Node Clone()
         {
             return new Float3Constructor()
             {
                 inputs = new INode[] { inputs[0], inputs[1], inputs[2] },
-                outType = outType
+                OutputType = OutputType
             };
         }
 
-        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (OutputType == NodeType.Invalid) throw new InvalidNodeException(this);
             if (nodeDictionary.TryGetValue(this, out var result)) return result;
@@ -1413,63 +1215,26 @@ namespace MarchOfTheRays.Core
             if (node == null) node.OutputTypeChanged += InputsChanged;
         }
 
-        public void InitializeEvents()
+        public override void InitializeEvents()
         {
-            for(int i = 0; i < inputs.Length; i++)
+            for (int i = 0; i < inputs.Length; i++)
             {
                 if (inputs[i] != null) inputs[i].OutputTypeChanged += InputsChanged;
             }
+            base.InitializeEvents();
         }
     }
 
     [Serializable]
-    public class OutputNode : IUnaryNode
+    public class OutputNode : UnaryNode
     {
-        [field: NonSerialized]
-        public event EventHandler OutputTypeChanged;
-
         void CalcType()
         {
             if (Input == null) OutputType = NodeType.Indeterminate;
             else OutputType = Input.OutputType;
         }
 
-        void InputChanged(object s, EventArgs e)
-        {
-            if (s == input) CalcType();
-        }
-
-        INode input;
-
-        [Browsable(false)]
-        public INode Input
-        {
-            get => input;
-            set
-            {
-                if (input != null) input.OutputTypeChanged -= InputChanged;
-                input = value;
-                CalcType();
-                if (input != null) input.OutputTypeChanged += InputChanged;
-            }
-        }
-
-        NodeType outType = NodeType.Indeterminate;
-
-        [ReadOnly(true)]
-        [LocalizedDisplayName("OutputType")]
-        public NodeType OutputType
-        {
-            get => outType;
-            private set
-            {
-                var oldType = outType;
-                outType = value;
-                if (outType != oldType) OutputTypeChanged?.Invoke(this, new EventArgs());
-            }
-        }
-
-        public object Clone()
+        public override Node Clone()
         {
             return new OutputNode()
             {
@@ -1477,7 +1242,7 @@ namespace MarchOfTheRays.Core
             };
         }
 
-        public Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
             if (Input == null)
                 throw new InvalidNodeException(this);
@@ -1494,9 +1259,9 @@ namespace MarchOfTheRays.Core
             return compiledInput;
         }
 
-        public void InitializeEvents()
+        protected override void OnInputChanged()
         {
-            if (input != null) input.OutputTypeChanged += InputChanged;
+            CalcType();
         }
     }
 }

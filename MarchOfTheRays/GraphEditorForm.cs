@@ -284,8 +284,8 @@ namespace MarchOfTheRays
             Editor.NodeElement elem;
             switch (node)
             {
-                case Core.UnaryNode n: elem = CreateNode(location, n); break;
-                case Core.BinaryNode n: elem = CreateNode(location, n); break;
+                case Core.UnaryOperationNode n: elem = CreateNode(location, n); break;
+                case Core.BinaryOperationNode n: elem = CreateNode(location, n); break;
                 case Core.Float3ConstantNode n: elem = CreateNode(location, n); break;
                 case Core.FloatConstantNode n: elem = CreateNode(location, n); break;
                 case Core.InputNode n: elem = CreateNode(location, n); break;
@@ -425,7 +425,7 @@ namespace MarchOfTheRays
             return elem;
         }
 
-        Editor.NodeElement CreateNode(PointF location, Core.BinaryNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.BinaryOperationNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (Elements.TryGetValue(node, out var e)) return e;
@@ -448,7 +448,7 @@ namespace MarchOfTheRays
             return elem;
         }
 
-        Editor.NodeElement CreateNode(PointF location, Core.UnaryNode node)
+        Editor.NodeElement CreateNode(PointF location, Core.UnaryOperationNode node)
         {
             if (node == null) throw new ArgumentNullException();
             if (Elements.TryGetValue(node, out var e)) return e;
