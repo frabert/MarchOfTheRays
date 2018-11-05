@@ -161,6 +161,9 @@ namespace MarchOfTheRays
                 UpdateSelectionTools();
             };
 
+            DocumentChanged += (s, e) => UpdateUndoRedo();
+            GraphChanged += (s, e) => UpdateUndoRedo();
+
             void ActiveFormChanged(object sender, EventArgs e)
             {
                 UpdateSelectionTools();
