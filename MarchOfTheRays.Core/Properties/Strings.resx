@@ -174,11 +174,17 @@
   <data name="Indeterminate" xml:space="preserve">
     <value>Indeterminate</value>
   </data>
+  <data name="InputType" xml:space="preserve">
+    <value>Input type</value>
+  </data>
   <data name="Invalid" xml:space="preserve">
     <value>Invalid</value>
   </data>
   <data name="Invert" xml:space="preserve">
     <value>Invert</value>
+  </data>
+  <data name="LeftInputType" xml:space="preserve">
+    <value>Left input type</value>
   </data>
   <data name="Length" xml:space="preserve">
     <value>Length</value>
@@ -212,6 +218,9 @@
   </data>
   <data name="Radians" xml:space="preserve">
     <value>Degrees to radians</value>
+  </data>
+  <data name="RightInputType" xml:space="preserve">
+    <value>Right input type</value>
   </data>
   <data name="Sin" xml:space="preserve">
     <value>Sin</value>

@@ -232,6 +232,15 @@ namespace MarchOfTheRays.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Input type.
+        /// </summary>
+        internal static string InputType {
+            get {
+                return ResourceManager.GetString("InputType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid.
         /// </summary>
         internal static string Invalid {
@@ -246,6 +255,15 @@ namespace MarchOfTheRays.Core.Properties {
         internal static string Invert {
             get {
                 return ResourceManager.GetString("Invert", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Left input type.
+        /// </summary>
+        internal static string LeftInputType {
+            get {
+                return ResourceManager.GetString("LeftInputType", resourceCulture);
             }
         }
         
@@ -345,6 +363,15 @@ namespace MarchOfTheRays.Core.Properties {
         internal static string Radians {
             get {
                 return ResourceManager.GetString("Radians", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Right input type.
+        /// </summary>
+        internal static string RightInputType {
+            get {
+                return ResourceManager.GetString("RightInputType", resourceCulture);
             }
         }
         

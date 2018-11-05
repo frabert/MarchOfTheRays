@@ -174,11 +174,17 @@
   <data name="Indeterminate" xml:space="preserve">
     <value>Indeterminato</value>
   </data>
+  <data name="InputType" xml:space="preserve">
+    <value>Tipo di entrata</value>
+  </data>
   <data name="Invalid" xml:space="preserve">
     <value>Invalido</value>
   </data>
   <data name="Invert" xml:space="preserve">
     <value>Inverso</value>
+  </data>
+  <data name="LeftInputType" xml:space="preserve">
+    <value>Tipo di entrata sinistra</value>
   </data>
   <data name="Length" xml:space="preserve">
     <value>Norma</value>
@@ -212,6 +218,9 @@
   </data>
   <data name="Radians" xml:space="preserve">
     <value>Da gradi a radianti</value>
+  </data>
+  <data name="RightInputType" xml:space="preserve">
+    <value>Tipo di entrata destra</value>
   </data>
   <data name="Sin" xml:space="preserve">
     <value>Seno</value>

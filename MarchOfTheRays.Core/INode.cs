@@ -157,6 +157,9 @@ namespace MarchOfTheRays.Core
             }
         }
 
+        [LocalizedDisplayName("InputType")]
+        public NodeType InputType => input == null ? NodeType.None : input.OutputType;
+
         void InputChanged(object s, EventArgs e)
         {
             if (s == input) OnInputChanged();
@@ -206,6 +209,12 @@ namespace MarchOfTheRays.Core
                 OnInputsChanged();
             }
         }
+
+        [LocalizedDisplayName("LeftInputType")]
+        public NodeType LeftInputType => left == null ? NodeType.None : left.OutputType;
+
+        [LocalizedDisplayName("RightInputType")]
+        public NodeType RightInputType => right == null ? NodeType.None : right.OutputType;
 
         void InputChanged(object sender, EventArgs e)
         {
@@ -577,7 +586,7 @@ namespace MarchOfTheRays.Core
                 case NodeType.Float2: t = typeof(Vector2); break;
                 case NodeType.Float3: t = typeof(Vector3); break;
                 case NodeType.Float4: t = typeof(Vector4); break;
-                default: throw new InvalidNodeException(this);
+                default: throw new InvalidNodeException(Input);
             }
 
             switch (m_Operation)
@@ -678,7 +687,7 @@ namespace MarchOfTheRays.Core
                         res = CompilerTools.MapExprFloat4(expr, arg);
                         break;
                     }
-                default: throw new InvalidNodeException(this);
+                default: throw new InvalidNodeException(Input);
             }
             nodeDictionary[this] = res;
             return res;
@@ -850,7 +859,7 @@ namespace MarchOfTheRays.Core
                             case NodeType.Float2: t = typeof(Vector2); break;
                             case NodeType.Float3: t = typeof(Vector3); break;
                             case NodeType.Float4: t = typeof(Vector4); break;
-                            default: throw new InvalidNodeException(this);
+                            default: throw new InvalidNodeException(Left);
                         }
                         var dot = t.GetMethod("Dot");
                         result = Expression.Call(null, dot, left, right);
@@ -1244,18 +1253,15 @@ namespace MarchOfTheRays.Core
 
         public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            if (Input == null)
-                throw new InvalidNodeException(this);
+            if (Input == null) throw new InvalidNodeException(this);
             return Input.Compile(nodeDictionary, parameters);
         }
 
         public Expression Compile(NodeType wantedtype, Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            if (Input == null)
-                throw new InvalidNodeException(this);
+            if (Input == null) throw new InvalidNodeException(this);
             var compiledInput = Input.Compile(nodeDictionary, parameters);
-            if (Input.OutputType != wantedtype)
-                throw new InvalidNodeException(Input);
+            if (Input.OutputType != wantedtype) throw new InvalidNodeException(Input);
             return compiledInput;
         }
 
