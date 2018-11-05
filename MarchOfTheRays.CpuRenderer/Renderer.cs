@@ -55,7 +55,7 @@ namespace MarchOfTheRays.CpuRenderer
                     break; // If you use windows and the shader isn't working properly, change this to continue;
 
                 dist = distFunc(pos); // Evalulate the distance at the current point
-                totalDist += dist * STEP_SIZE;
+                totalDist += (dist * STEP_SIZE) * STEP_SIZE;
                 pos += (dist * STEP_SIZE) * rayDir; // Advance the point forwards in the ray direction by the distance
 
             }
