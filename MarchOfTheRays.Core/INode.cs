@@ -577,16 +577,48 @@ namespace MarchOfTheRays.Core
             var arg = Input.Compile(nodeDictionary, parameters);
 
             var inputType = Input.OutputType;
-            Expression<Func<float, float>> expr = null;
-            Type t = null;
+
+            Expression res;
 
             switch (inputType)
             {
-                case NodeType.Float: break;
-                case NodeType.Float2: t = typeof(Vector2); break;
-                case NodeType.Float3: t = typeof(Vector3); break;
-                case NodeType.Float4: t = typeof(Vector4); break;
-                default: throw new InvalidNodeException(Input);
+                case NodeType.Float:
+                    {
+                        switch(m_Operation)
+                        {
+                            case UnaryOp.Abs: res = CompilerTools.CallMath("Abs", arg); break;
+                            case UnaryOp.Acos: res = CompilerTools.CallMathEx("Acos", arg); break;
+                            case UnaryOp.Asin: res = CompilerTools.CallMathEx("Asin", arg); break;
+                            case UnaryOp.Atan: res = CompilerTools.CallMathEx("Atan", arg); break;
+                            case UnaryOp.Ceil: res = CompilerTools.CallMathEx("Ceil", arg); break;
+                            case UnaryOp.Cos: res = CompilerTools.CallMathEx("Cos", arg); break;
+                            case UnaryOp.Exp: res = CompilerTools.CallMathEx("Exp", arg); break;
+                            case UnaryOp.Floor: res = CompilerTools.CallMathEx("Floor", arg); break;
+                            case UnaryOp.Sin: res = CompilerTools.CallMathEx("Sin", arg); break;
+                            case UnaryOp.Tan: res = CompilerTools.CallMathEx("Tan", arg); break;
+                            default: throw new NotImplementedException();
+                        }
+                    }
+                    break;
+                case NodeType.Float3:
+                    {
+                        switch (m_Operation)
+                        {
+                            case UnaryOp.Abs: res = CompilerTools.CallMathExV("Abs", arg); break;
+                            case UnaryOp.Acos: res = CompilerTools.CallMathExV("Acos", arg); break;
+                            case UnaryOp.Asin: res = CompilerTools.CallMathExV("Asin", arg); break;
+                            case UnaryOp.Atan: res = CompilerTools.CallMathExV("Atan", arg); break;
+                            case UnaryOp.Ceil: res = CompilerTools.CallMathExV("Ceil", arg); break;
+                            case UnaryOp.Cos: res = CompilerTools.CallMathExV("Cos", arg); break;
+                            case UnaryOp.Exp: res = CompilerTools.CallMathExV("Exp", arg); break;
+                            case UnaryOp.Floor: res = CompilerTools.CallMathExV("Floor", arg); break;
+                            case UnaryOp.Sin: res = CompilerTools.CallMathExV("Sin", arg); break;
+                            case UnaryOp.Tan: res = CompilerTools.CallMathExV("Tan", arg); break;
+                            default: throw new NotImplementedException();
+                        }
+                    }
+                    break;
+                default: throw new NotImplementedException();
             }
 
             switch (m_Operation)
@@ -634,7 +666,7 @@ namespace MarchOfTheRays.Core
                     {
                         Expression e;
                         if (inputType == NodeType.Float) e = Expression.Invoke(CompilerTools.ToExpr<float>(x => Math.Abs(x)), arg);
-                        e = Expression.Call(arg, t.GetMethod("Length"));
+                        else e = Expression.Call(arg, t.GetMethod("Length"));
                         nodeDictionary[this] = e;
                         return e;
                     }
@@ -664,31 +696,6 @@ namespace MarchOfTheRays.Core
                     }
             }
 
-            Expression res;
-            switch (inputType)
-            {
-                case NodeType.Float:
-                    {
-                        res = Expression.Invoke(expr, arg);
-                        break;
-                    }
-                case NodeType.Float2:
-                    {
-                        res = CompilerTools.MapExprFloat2(expr, arg);
-                        break;
-                    }
-                case NodeType.Float3:
-                    {
-                        res = CompilerTools.MapExprFloat3(expr, arg);
-                        break;
-                    }
-                case NodeType.Float4:
-                    {
-                        res = CompilerTools.MapExprFloat4(expr, arg);
-                        break;
-                    }
-                default: throw new InvalidNodeException(Input);
-            }
             nodeDictionary[this] = res;
             return res;
         }

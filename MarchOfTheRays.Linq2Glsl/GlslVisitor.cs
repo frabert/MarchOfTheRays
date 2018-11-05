@@ -132,8 +132,39 @@ namespace MarchOfTheRays.Linq2Glsl
                     switch (node.Method.Name)
                     {
                         case "Abs":
-                            sb.Append("abs(");
+                        case "Acos":
+                        case "Asin":
+                        case "Atan":
+                        case "Cos":
+                        case "Exp":
+                        case "Floor":
+                        case "Sin":
+                        case "Sqrt":
+                        case "Tan":
+                            sb.Append(node.Method.Name.ToLower());
+                            sb.Append("(");
                             Visit(node.Arguments[0]);
+                            sb.Append(")");
+                            break;
+                        case "Ceiling":
+                            sb.Append("ceil(");
+                            Visit(node.Arguments[0]);
+                            sb.Append(")");
+                            break;
+                        case "Atan2":
+                            sb.Append("atan(");
+                            Visit(node.Arguments[0]);
+                            sb.Append(", ");
+                            Visit(node.Arguments[1]);
+                            sb.Append(")");
+                            break;
+                        case "Min":
+                        case "Max":
+                            sb.Append(node.Method.Name.ToLower());
+                            sb.Append("(");
+                            Visit(node.Arguments[0]);
+                            sb.Append(", ");
+                            Visit(node.Arguments[1]);
                             sb.Append(")");
                             break;
                         default:

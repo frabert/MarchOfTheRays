@@ -100,6 +100,49 @@ namespace MarchOfTheRays.Core
             var vec4ctor = typeof(Vector4).GetConstructor(new Type[] { typeof(float) });
             return Expression.New(vec4ctor, a);
         }
+
+
+        public static Expression CallMath(string name, Expression a1)
+        {
+            var type = typeof(Math);
+            var method = type.GetMethod(name, new Type[] { typeof(float) });
+            return Expression.Call(method, a1);
+        }
+
+        public static Expression CallMath(string name, Expression a1, Expression a2)
+        {
+            var type = typeof(Math);
+            var method = type.GetMethod(name, new Type[] { typeof(float), typeof(float) });
+            return Expression.Call(method, a1, a2);
+        }
+
+        public static Expression CallMathEx(string name, Expression a1)
+        {
+            var type = typeof(MathExtensions);
+            var method = type.GetMethod(name, new Type[] { typeof(float) });
+            return Expression.Call(method, a1);
+        }
+
+        public static Expression CallMathEx(string name, Expression a1, Expression a2)
+        {
+            var type = typeof(MathExtensions);
+            var method = type.GetMethod(name, new Type[] { typeof(float), typeof(float) });
+            return Expression.Call(method, a1, a2);
+        }
+
+        public static Expression CallMathExV(string name, Expression a1)
+        {
+            var type = typeof(MathExtensions);
+            var method = type.GetMethod(name, new Type[] { typeof(Vector3) });
+            return Expression.Call(method, a1);
+        }
+
+        public static Expression CallMathExV(string name, Expression a1, Expression a2)
+        {
+            var type = typeof(MathExtensions);
+            var method = type.GetMethod(name, new Type[] { typeof(Vector3), typeof(Vector3) });
+            return Expression.Call(method, a1, a2);
+        }
     }
 
     public static class Compiler
