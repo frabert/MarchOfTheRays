@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Numerics;
@@ -23,7 +24,6 @@ namespace MarchOfTheRays.Linq2Glsl
             {
                 case ExpressionType.Add: sb.Append(" + "); break;
                 case ExpressionType.Divide: sb.Append(" / "); break;
-                case ExpressionType.Modulo: sb.Append(" % "); break;
                 case ExpressionType.Multiply: sb.Append(" * "); break;
                 case ExpressionType.Subtract: sb.Append(" - "); break;
                 default: throw new NotImplementedException();
@@ -35,7 +35,6 @@ namespace MarchOfTheRays.Linq2Glsl
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
-
             if (node.Value is float f)
             {
                 sb.AppendFormat(CultureInfo.InvariantCulture, "{0:0.0######}", f);
@@ -70,24 +69,28 @@ namespace MarchOfTheRays.Linq2Glsl
             return node;
         }
 
+        void VisitArguments(IReadOnlyCollection<Expression> args)
+        {
+            bool first = true;
+            foreach(var arg in args)
+            {
+                if(first)
+                {
+                    first = false;
+                } else
+                {
+                    sb.Append(", ");
+                }
+                Visit(arg);
+            }
+        }
+
         protected override Expression VisitNew(NewExpression node)
         {
             if (node.Type == typeof(Vector3))
             {
-                bool first = true;
                 sb.Append("vec3(");
-                foreach (var arg in node.Arguments)
-                {
-                    if (!first)
-                    {
-                        sb.Append(", ");
-                    }
-                    else
-                    {
-                        first = false;
-                    }
-                    Visit(arg);
-                }
+                VisitArguments(node.Arguments);
                 sb.Append(")");
             }
             else
@@ -132,49 +135,42 @@ namespace MarchOfTheRays.Linq2Glsl
                     switch (node.Method.Name)
                     {
                         case "Abs":
-                        case "Acos":
-                        case "Asin":
-                        case "Atan":
-                        case "Cos":
-                        case "Exp":
-                        case "Floor":
-                        case "Sin":
-                        case "Sqrt":
-                        case "Tan":
-                            sb.Append(node.Method.Name.ToLower());
-                            sb.Append("(");
-                            Visit(node.Arguments[0]);
-                            sb.Append(")");
-                            break;
-                        case "Ceiling":
-                            sb.Append("ceil(");
-                            Visit(node.Arguments[0]);
-                            sb.Append(")");
-                            break;
-                        case "Atan2":
-                            sb.Append("atan(");
-                            Visit(node.Arguments[0]);
-                            sb.Append(", ");
-                            Visit(node.Arguments[1]);
-                            sb.Append(")");
-                            break;
                         case "Min":
                         case "Max":
                             sb.Append(node.Method.Name.ToLower());
                             sb.Append("(");
-                            Visit(node.Arguments[0]);
-                            sb.Append(", ");
-                            Visit(node.Arguments[1]);
+                            VisitArguments(node.Arguments);
                             sb.Append(")");
                             break;
                         default:
                             throw new NotImplementedException();
                     }
                 }
+                else if (node.Method.DeclaringType == typeof(Core.MathExtensions) || node.Method.DeclaringType == typeof(Vector3))
+                {
+                    sb.Append(node.Method.Name.ToLower());
+                    sb.Append("(");
+                    VisitArguments(node.Arguments);
+                    sb.Append(")");
+                }
                 else
                 {
                     throw new NotImplementedException();
                 }
+            }
+            return node;
+        }
+
+        protected override Expression VisitUnary(UnaryExpression node)
+        {
+            switch(node.NodeType)
+            {
+                case ExpressionType.Negate:
+                    sb.Append("(-");
+                    Visit(node.Operand);
+                    sb.Append(")");
+                    break;
+                default: throw new NotImplementedException();
             }
             return node;
         }

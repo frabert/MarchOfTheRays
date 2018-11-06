@@ -143,6 +143,22 @@ namespace MarchOfTheRays.Core
             var method = type.GetMethod(name, new Type[] { typeof(Vector3), typeof(Vector3) });
             return Expression.Call(method, a1, a2);
         }
+
+        public static Expression CallVector(string name, Expression a)
+        {
+            var type = typeof(Vector3);
+            var method = type.GetMethod(name, new Type[] { typeof(Vector3) });
+            return Expression.Call(method, a);
+        }
+
+        public static Expression CallVector(string name, Expression a, Expression b)
+        {
+            var type = typeof(Vector3);
+            var method = type.GetMethod(name, new Type[] { typeof(Vector3), typeof(Vector3) });
+            return Expression.Call(method, a);
+        }
+
+        
     }
 
     public static class Compiler
