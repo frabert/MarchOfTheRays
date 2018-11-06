@@ -163,5 +163,12 @@ namespace MarchOfTheRays
         {
             ShowHelpPanel?.Invoke(this, new EventArgs());
         }
+
+        event EventHandler<(byte[] data, string name)> NodeImported;
+
+        protected void OnNodeImported(byte[] data, string name)
+        {
+            NodeImported?.Invoke(this, (data, name));
+        }
     }
 }

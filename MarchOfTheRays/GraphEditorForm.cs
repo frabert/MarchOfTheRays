@@ -122,6 +122,13 @@ namespace MarchOfTheRays
             GraphCreated?.Invoke(this, (node, g));
         }
 
+        public event EventHandler<(byte[] data, string name)> NodeImported;
+
+        protected void OnNodeImported(byte[] data, string name)
+        {
+            NodeImported?.Invoke(this, (data, name));
+        }
+
         static string OperationToLabel(Core.UnaryOp op)
         {
             switch(op)

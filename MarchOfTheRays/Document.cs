@@ -138,9 +138,8 @@ namespace MarchOfTheRays
     [Serializable]
     public class ExportedNode
     {
-        public NodeType Type;
-        public Graph Graph;
-        public List<InputNode> InputNodes = new List<InputNode>();
-        public string Name;
+        public ICompositeNode Node;
+        public HashSet<Graph> Graphs = new HashSet<Graph>();
+        public Dictionary<INode, Graph> Subgraphs = new Dictionary<INode, Graph>();
     }
 }
