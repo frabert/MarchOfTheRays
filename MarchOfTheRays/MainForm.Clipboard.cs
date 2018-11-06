@@ -250,7 +250,8 @@ namespace MarchOfTheRays
         {
             get
             {
-                var clipboardData = Clipboard.GetData("MarchOfTheRays") as ClipboardContents;
+                var data = Clipboard.GetData("MarchOfTheRays");
+                var clipboardData = data as ClipboardContents;
                 return (clipboardData != null && clipboardData.Nodes.Count != 0);
             }
         }
