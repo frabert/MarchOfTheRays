@@ -102,6 +102,7 @@ namespace MarchOfTheRays.Core
         void InitializeEvents();
     }
 
+    [Serializable]
     public abstract class Node : INode
     {
         NodeType outType = NodeType.Indeterminate;
@@ -140,6 +141,7 @@ namespace MarchOfTheRays.Core
         INode Input { get; set; }
     }
 
+    [Serializable]
     public abstract class UnaryNode : Node, IUnaryNode
     {
         INode input;
@@ -182,6 +184,7 @@ namespace MarchOfTheRays.Core
         INode Right { get; set; }
     }
 
+    [Serializable]
     public abstract class BinaryNode : Node, IBinaryNode
     {
         INode left, right;
