@@ -367,15 +367,6 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Intersection.
-        /// </summary>
-        internal static string Intersection {
-            get {
-                return ResourceManager.GetString("Intersection", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to &amp;Live preview.
         /// </summary>
         internal static string LivePreview {
@@ -655,15 +646,6 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Solid operations.
-        /// </summary>
-        internal static string SolidOperations {
-            get {
-                return ResourceManager.GetString("SolidOperations", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Sphere.
         /// </summary>
         internal static string Sphere {
@@ -727,15 +709,6 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Subtraction.
-        /// </summary>
-        internal static string Subtraction {
-            get {
-                return ResourceManager.GetString("Subtraction", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Unary operation.
         /// </summary>
         internal static string UnaryOperation {
@@ -750,15 +723,6 @@ namespace MarchOfTheRays.Properties {
         internal static string Undo {
             get {
                 return ResourceManager.GetString("Undo", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Union.
-        /// </summary>
-        internal static string Union {
-            get {
-                return ResourceManager.GetString("Union", resourceCulture);
             }
         }
         

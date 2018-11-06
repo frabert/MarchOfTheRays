@@ -333,4 +333,31 @@
   <data name="Float3Constructor" xml:space="preserve">
     <value>Costruttore vettore 3D</value>
   </data>
+  <data name="ExportNode" xml:space="preserve">
+    <value>&amp;Esporta nodo</value>
+  </data>
+  <data name="ImportNode" xml:space="preserve">
+    <value>&amp;Importa nodo</value>
+  </data>
+  <data name="NodeFile" xml:space="preserve">
+    <value>Nodo March of the Rays</value>
+  </data>
+  <data name="Box" xml:space="preserve">
+    <value>Parallelepipedo</value>
+  </data>
+  <data name="Sphere" xml:space="preserve">
+    <value>Sfera</value>
+  </data>
+  <data name="Intersection" xml:space="preserve">
+    <value>Intersezione</value>
+  </data>
+  <data name="SolidOperations" xml:space="preserve">
+    <value>Operazioni solide</value>
+  </data>
+  <data name="Subtraction" xml:space="preserve">
+    <value>Sottrazione</value>
+  </data>
+  <data name="Union" xml:space="preserve">
+    <value>Unione</value>
+  </data>
 </root>

@@ -348,16 +348,4 @@
   <data name="Sphere" xml:space="preserve">
     <value>Sphere</value>
   </data>
-  <data name="Intersection" xml:space="preserve">
-    <value>Intersection</value>
-  </data>
-  <data name="SolidOperations" xml:space="preserve">
-    <value>Solid operations</value>
-  </data>
-  <data name="Subtraction" xml:space="preserve">
-    <value>Subtraction</value>
-  </data>
-  <data name="Union" xml:space="preserve">
-    <value>Union</value>
-  </data>
 </root>
