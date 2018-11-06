@@ -581,7 +581,7 @@ namespace MarchOfTheRays.Core
 
             var inputType = Input.OutputType;
             Type t;
-            switch(inputType)
+            switch (inputType)
             {
                 case NodeType.Float: t = typeof(float); break;
                 case NodeType.Float2: t = typeof(Vector2); break;
@@ -592,7 +592,7 @@ namespace MarchOfTheRays.Core
 
             Expression MathExpr(string name, Type c = null)
             {
-                c = c == null ? (t == typeof(float) ? typeof(Math) : t) : c ;
+                c = c == null ? (t == typeof(float) ? typeof(Math) : t) : c;
                 var method = c.GetMethod(name, new Type[] { t });
                 if (method == null) throw new InvalidNodeException(this);
                 return Expression.Call(method, arg);
@@ -616,7 +616,7 @@ namespace MarchOfTheRays.Core
 
             Expression res;
 
-            switch(m_Operation)
+            switch (m_Operation)
             {
                 case UnaryOp.Abs: res = MathExpr("Abs"); break;
                 case UnaryOp.Acos: res = MathExpr("Acos", mathEx); break;
@@ -785,7 +785,7 @@ namespace MarchOfTheRays.Core
             }
 
             Type t;
-            switch(opType)
+            switch (opType)
             {
                 case NodeType.Float: t = typeof(float); break;
                 case NodeType.Float2: t = typeof(Vector2); break;
@@ -802,12 +802,24 @@ namespace MarchOfTheRays.Core
                 return Expression.Call(method, left, right);
             }
 
+            Expression TryExpr(Func<Expression, Expression, Expression> f)
+            {
+                try
+                {
+                    return f(left, right);
+                }
+                catch (InvalidOperationException)
+                {
+                    throw new InvalidNodeException(this);
+                }
+            }
+
             switch (m_Operation)
             {
-                case BinaryOp.Add: result = Expression.Add(left, right); break;
-                case BinaryOp.Div: result = Expression.Divide(left, right); break;
-                case BinaryOp.Mul: result = Expression.Multiply(left, right); break;
-                case BinaryOp.Sub: result = Expression.Subtract(left, right); break;
+                case BinaryOp.Add: result = TryExpr(Expression.Add); break;
+                case BinaryOp.Div: result = TryExpr(Expression.Divide); break;
+                case BinaryOp.Mul: result = TryExpr(Expression.Multiply); break;
+                case BinaryOp.Sub: result = TryExpr(Expression.Subtract); break;
                 case BinaryOp.Dot: result = MathExpr("Dot"); break;
                 case BinaryOp.Atan2: result = MathExpr("Atan", typeof(MathExtensions)); break;
                 case BinaryOp.Max: result = MathExpr("Max"); break;
