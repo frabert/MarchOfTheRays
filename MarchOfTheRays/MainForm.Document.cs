@@ -252,8 +252,15 @@ namespace MarchOfTheRays
             var graph = document.Subgraphs[node];
             var exportData = new ExportedNode()
             {
-                Node = node
+                Node = (Core.ICompositeNode)node.Clone()
             };
+
+            // Delete inputs so that they don't get referenced in the exported file
+            switch(exportData.Node)
+            {
+                case Core.CompositeBinaryNode b: b.Left = null; b.Right = null; break;
+                case Core.CompositeUnaryNode u: u.Input = null; break;
+            }
 
             exportData.Subgraphs.Add(node, graph);
             exportData.Graphs.Add(graph);
