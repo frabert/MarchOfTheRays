@@ -11,7 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarchOfTheRays.Docs", "Marc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarchOfTheRays.CpuRenderer", "MarchOfTheRays.CpuRenderer\MarchOfTheRays.CpuRenderer.csproj", "{BDBB4495-86A3-483D-95CD-9E212BBF671A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarchOfTheRays.Linq2Glsl", "MarchOfTheRays.Linq2Glsl\MarchOfTheRays.Linq2Glsl.csproj", "{DFF0ADB4-7687-44A7-B4C0-EF2930DCDE88}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MarchOfTheRays.Linq2Glsl", "MarchOfTheRays.Linq2Glsl\MarchOfTheRays.Linq2Glsl.csproj", "{DFF0ADB4-7687-44A7-B4C0-EF2930DCDE88}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B6C50330-0BF5-45D2-A468-8E4F092AD629}"
+	ProjectSection(SolutionItems) = preProject
+		SwizzleGen.fsx = SwizzleGen.fsx
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
