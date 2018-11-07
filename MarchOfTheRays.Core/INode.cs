@@ -607,7 +607,7 @@ namespace MarchOfTheRays.Core
 
             Expression FieldExpr(string Name)
             {
-                var field = t.GetField("X");
+                var field = t.GetField(Name);
                 if (field == null) throw new InvalidNodeException(this);
                 return Expression.Field(arg, field);
             }
