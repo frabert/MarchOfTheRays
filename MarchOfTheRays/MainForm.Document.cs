@@ -1,5 +1,6 @@
 ﻿using MarchOfTheRays.Properties;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -79,6 +80,14 @@ namespace MarchOfTheRays
                 var ev = new DocumentClosingEventArgs();
                 OnDocumentClosing(ev);
                 e.Cancel = ev.Cancel;
+            };
+
+            NodeImported += (s, e) =>
+            {
+                using(var stream = new MemoryStream(e.data))
+                {
+                    ImportNode(stream, e.name);
+                }
             };
 
             NewDocument();
@@ -198,6 +207,11 @@ namespace MarchOfTheRays
                     document.Subgraphs[e.node] = e.graph;
                 };
 
+                editorForm.NodeImported += (s, e) =>
+                {
+                    OnNodeImported(e.data, e.name);
+                };
+
                 graphForms[g] = editorForm;
             }
             editorForm.Show(dockPanel, DockState.Document);
@@ -233,72 +247,61 @@ namespace MarchOfTheRays
             OnDocumentOpened(null);
         }
 
-        /*void ExportNode(Core.ICompositeNode node, string path)
+        void ExportNode(Core.ICompositeNode node, Stream stream)
         {
             var graph = document.Subgraphs[node];
             var exportData = new ExportedNode()
             {
-                Graph = graph,
-                Name = node.Name,
-                Type = node is Core.CompositeUnaryNode ? NodeType.Unary : NodeType.Binary
+                Node = node
             };
 
-            switch (node)
+            exportData.Subgraphs.Add(node, graph);
+            exportData.Graphs.Add(graph);
+
+            var toEvaluate = new Queue<Core.INode>();
+            toEvaluate.Enqueue(node);
+            foreach (var n in graph.Nodes)
             {
-                case Core.CompositeUnaryNode unode:
-                    {
-                        exportData.InputNodes.Add(unode.Input);
-                    }
-                    break;
-                case Core.CompositeBinaryNode bnode:
-                    {
-                        exportData.InputNodes.Add(bnode.LeftNode);
-                        exportData.InputNodes.Add(bnode.RightNode);
-                    }
-                    break;
+                toEvaluate.Enqueue(n);
             }
 
-            try
+            while (toEvaluate.Count > 0)
             {
-                using (var stream = File.Open(path, FileMode.Create))
+                var n = toEvaluate.Dequeue();
+                if (document.Subgraphs.TryGetValue(n, out var g) && !exportData.Graphs.Contains(g))
                 {
-                    var formatter = new BinaryFormatter();
-                    formatter.Serialize(stream, exportData);
+                    exportData.Graphs.Add(g);
+                    exportData.Subgraphs[n] = g;
+                    foreach(var _n in g.Nodes)
+                    {
+                        toEvaluate.Enqueue(_n);
+                    }
                 }
             }
-            catch (Exception)
-            {
-                MessageBox.Show(string.Format(Strings.CannotWriteFileText, path), Strings.CannotWriteFileCaption, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+
+            var formatter = new BinaryFormatter();
+            formatter.Serialize(stream, exportData);
         }
 
-        void ImportNode(Stream stream)
+        void ImportNode(Stream s, string name = null)
         {
             var formatter = new BinaryFormatter();
-            var node = (ExportedNode)formatter.Deserialize(stream);
+            var data = formatter.Deserialize(s) as ExportedNode;
 
-            document.Graphs.Add(node.Graph);
+            if (name != null) data.Node.Name = name;
 
-            Core.INode importedNode;
-
-            switch (node.Type)
+            foreach (var g in data.Graphs)
             {
-                case NodeType.Unary:
-                    {
-                        importedNode = new Core.CompositeUnaryNode()
-                        {
-                            Body = node.Graph.OutputNodes[0],
-                            InputNode = node.InputNodes[0],
-                            Name = node.Name
-                        };
-                    }
-                    break;
-                case NodeType.Binary:
-                    {
-
-                    }
-                    break;
+                g.InitializeEvents();
+                document.Graphs.Add(g);
             }
-        }*/
+
+            foreach (var kvp in data.Subgraphs)
+            {
+                document.Subgraphs[kvp.Key] = kvp.Value;
+            }
+
+            ActiveEditor?.AddNode(PointF.Empty, data.Node);
+        }
     }
 }

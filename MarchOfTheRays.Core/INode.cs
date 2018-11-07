@@ -580,65 +580,62 @@ namespace MarchOfTheRays.Core
             var arg = Input.Compile(nodeDictionary, parameters);
 
             var inputType = Input.OutputType;
+            Type t;
+            switch (inputType)
+            {
+                case NodeType.Float: t = typeof(float); break;
+                case NodeType.Float2: t = typeof(Vector2); break;
+                case NodeType.Float3: t = typeof(Vector3); break;
+                case NodeType.Float4: t = typeof(Vector4); break;
+                default: throw new InvalidNodeException(this);
+            }
+
+            Expression MathExpr(string name, Type c = null)
+            {
+                c = c == null ? (t == typeof(float) ? typeof(Math) : t) : c;
+                var method = c.GetMethod(name, new Type[] { t });
+                if (method == null) throw new InvalidNodeException(this);
+                return Expression.Call(method, arg);
+            }
+
+            Expression InstanceExpr(string Name)
+            {
+                var method = t.GetMethod(Name);
+                if (method == null) throw new InvalidNodeException(this);
+                return Expression.Call(arg, method);
+            }
+
+            Expression FieldExpr(string Name)
+            {
+                var field = t.GetField("X");
+                if (field == null) throw new InvalidNodeException(this);
+                return Expression.Field(arg, field);
+            }
+
+            var mathEx = typeof(MathExtensions);
 
             Expression res;
 
-            switch (inputType)
+            switch (m_Operation)
             {
-                case NodeType.Float:
-                    {
-                        switch (m_Operation)
-                        {
-                            case UnaryOp.Abs: res = CompilerTools.CallMath("Abs", arg); break;
-                            case UnaryOp.Acos: res = CompilerTools.CallMathEx("Acos", arg); break;
-                            case UnaryOp.Asin: res = CompilerTools.CallMathEx("Asin", arg); break;
-                            case UnaryOp.Atan: res = CompilerTools.CallMathEx("Atan", arg); break;
-                            case UnaryOp.Ceil: res = CompilerTools.CallMathEx("Ceil", arg); break;
-                            case UnaryOp.Cos: res = CompilerTools.CallMathEx("Cos", arg); break;
-                            case UnaryOp.Exp: res = CompilerTools.CallMathEx("Exp", arg); break;
-                            case UnaryOp.Floor: res = CompilerTools.CallMathEx("Floor", arg); break;
-                            case UnaryOp.Sin: res = CompilerTools.CallMathEx("Sin", arg); break;
-                            case UnaryOp.Tan: res = CompilerTools.CallMathEx("Tan", arg); break;
-                            case UnaryOp.Degrees: res = CompilerTools.CallMathEx("Degrees", arg); break;
-                            case UnaryOp.Radians: res = CompilerTools.CallMathEx("Radians", arg); break;
-                            case UnaryOp.Length: res = CompilerTools.CallMath("Abs", arg); break;
-                            case UnaryOp.Invert: res = Expression.Negate(arg); break;
-                            default: throw new InvalidOperationException();
-                        }
-                    }
-                    break;
-                case NodeType.Float3:
-                    {
-                        switch (m_Operation)
-                        {
-                            case UnaryOp.Abs: res = CompilerTools.CallVector("Abs", arg); break;
-                            case UnaryOp.Acos: res = CompilerTools.CallMathExV("Acos", arg); break;
-                            case UnaryOp.Asin: res = CompilerTools.CallMathExV("Asin", arg); break;
-                            case UnaryOp.Atan: res = CompilerTools.CallMathExV("Atan", arg); break;
-                            case UnaryOp.Ceil: res = CompilerTools.CallMathExV("Ceil", arg); break;
-                            case UnaryOp.Cos: res = CompilerTools.CallMathExV("Cos", arg); break;
-                            case UnaryOp.Exp: res = CompilerTools.CallMathExV("Exp", arg); break;
-                            case UnaryOp.Floor: res = CompilerTools.CallMathExV("Floor", arg); break;
-                            case UnaryOp.Sin: res = CompilerTools.CallMathExV("Sin", arg); break;
-                            case UnaryOp.Tan: res = CompilerTools.CallMathExV("Tan", arg); break;
-                            case UnaryOp.Invert: res = Expression.Negate(arg); break;
-                            case UnaryOp.Normalize: res = CompilerTools.CallVector("Normalize", arg); break;
-                            case UnaryOp.Degrees: res = CompilerTools.CallMathExV("Degrees", arg); break;
-                            case UnaryOp.Radians: res = CompilerTools.CallMathExV("Radians", arg); break;
-                            case UnaryOp.Length:
-                                {
-                                    var type = typeof(Vector3);
-                                    var method = type.GetMethod("Length");
-                                    res = Expression.Call(arg, method);
-                                }
-                                break;
-                            case UnaryOp.X: res = Expression.Field(arg, "X"); break;
-                            case UnaryOp.Y: res = Expression.Field(arg, "Y"); break;
-                            case UnaryOp.Z: res = Expression.Field(arg, "Z"); break;
-                            default: throw new NotImplementedException();
-                        }
-                    }
-                    break;
+                case UnaryOp.Abs: res = MathExpr("Abs"); break;
+                case UnaryOp.Acos: res = MathExpr("Acos", mathEx); break;
+                case UnaryOp.Asin: res = MathExpr("Asin", mathEx); break;
+                case UnaryOp.Atan: res = MathExpr("Atan", mathEx); break;
+                case UnaryOp.Ceil: res = MathExpr("Ceil", mathEx); break;
+                case UnaryOp.Cos: res = MathExpr("Cos", mathEx); break;
+                case UnaryOp.Degrees: res = MathExpr("Degrees", mathEx); break;
+                case UnaryOp.Exp: res = MathExpr("Exp", mathEx); break;
+                case UnaryOp.Floor: res = MathExpr("Floor", mathEx); break;
+                case UnaryOp.Invert: res = Expression.Negate(arg); break;
+                case UnaryOp.Length: res = InstanceExpr("Length"); break;
+                case UnaryOp.Normalize: res = MathExpr("Normalize"); break;
+                case UnaryOp.Radians: res = MathExpr("Radians", mathEx); break;
+                case UnaryOp.Sin: res = MathExpr("Sin", mathEx); break;
+                case UnaryOp.Tan: res = MathExpr("Tan", mathEx); break;
+                case UnaryOp.X: res = FieldExpr("X"); break;
+                case UnaryOp.Y: res = FieldExpr("Y"); break;
+                case UnaryOp.Z: res = FieldExpr("Z"); break;
                 default: throw new NotImplementedException();
             }
 
@@ -748,77 +745,87 @@ namespace MarchOfTheRays.Core
                 return Expression.Call(null, cross, left, right);
             }
 
-            NodeType outType = NodeType.Float;
+            NodeType opType = NodeType.Float;
 
             if (leftType == NodeType.Float4)
             {
-                outType = NodeType.Float4;
+                opType = NodeType.Float4;
                 if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat4(right);
                 else if (rightType != NodeType.Float4) throw new InvalidNodeException(Right);
             }
             else if (leftType == NodeType.Float3)
             {
-                outType = NodeType.Float3;
+                opType = NodeType.Float3;
                 if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat3(right);
                 else if (rightType != NodeType.Float3) throw new InvalidNodeException(Right);
             }
             else if (leftType == NodeType.Float2)
             {
-                outType = NodeType.Float2;
+                opType = NodeType.Float2;
                 if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat2(right);
                 else if (rightType != NodeType.Float2) throw new InvalidNodeException(Right);
             }
             else if (rightType == NodeType.Float4)
             {
-                outType = NodeType.Float4;
+                opType = NodeType.Float4;
                 if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat4(left);
                 else if (leftType != NodeType.Float4) throw new InvalidNodeException(Left);
             }
             else if (rightType == NodeType.Float3)
             {
-                outType = NodeType.Float3;
+                opType = NodeType.Float3;
                 if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat3(left);
                 else if (leftType != NodeType.Float3) throw new InvalidNodeException(Left);
             }
             else if (rightType == NodeType.Float2)
             {
-                outType = NodeType.Float2;
+                opType = NodeType.Float2;
                 if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat2(left);
                 else if (leftType != NodeType.Float2) throw new InvalidNodeException(Left);
             }
 
+            Type t;
+            switch (opType)
+            {
+                case NodeType.Float: t = typeof(float); break;
+                case NodeType.Float2: t = typeof(Vector2); break;
+                case NodeType.Float3: t = typeof(Vector3); break;
+                case NodeType.Float4: t = typeof(Vector4); break;
+                default: throw new NotImplementedException();
+            }
+
+            Expression MathExpr(string name, Type c = null)
+            {
+                c = c == null ? (t == typeof(float) ? typeof(Math) : t) : c;
+                var method = c.GetMethod(name, new Type[] { t, t });
+                if (method == null) throw new InvalidNodeException(this);
+                return Expression.Call(method, left, right);
+            }
+
+            Expression TryExpr(Func<Expression, Expression, Expression> f)
+            {
+                try
+                {
+                    return f(left, right);
+                }
+                catch (InvalidOperationException)
+                {
+                    throw new InvalidNodeException(this);
+                }
+            }
+
             switch (m_Operation)
             {
-                case BinaryOp.Add: result = Expression.Add(left, right); break;
-                case BinaryOp.Div: result = Expression.Divide(left, right); break;
-                case BinaryOp.Mul: result = Expression.Multiply(left, right); break;
-                case BinaryOp.Sub: result = Expression.Subtract(left, right); break;
-                case BinaryOp.Dot: result = CompilerTools.CallVector("Dot", left, right); break;
-                case BinaryOp.Cross: result = CompilerTools.CallVector("Cross", left, right); break;
-                default:
-                    {
-                        if (outType == NodeType.Float)
-                        {
-                            switch (m_Operation)
-                            {
-                                case BinaryOp.Atan2: result = CompilerTools.CallMathEx("Atan", left, right); break;
-                                case BinaryOp.Max: result = CompilerTools.CallMath("Max", left, right); break;
-                                case BinaryOp.Min: result = CompilerTools.CallMath("Min", left, right); break;
-                                case BinaryOp.Mod: result = CompilerTools.CallMathEx("Mod", left, right); break;
-                            }
-                        }
-                        else if (outType == NodeType.Float3)
-                        {
-                            switch (m_Operation)
-                            {
-                                case BinaryOp.Atan2: result = CompilerTools.CallMathExV("Atan", left, right); break;
-                                case BinaryOp.Max: result = CompilerTools.CallVector("Max", left, right); break;
-                                case BinaryOp.Min: result = CompilerTools.CallVector("Min", left, right); break;
-                                case BinaryOp.Mod: result = CompilerTools.CallMathExV("Mod", left, right); break;
-                            }
-                        }
-                    }
-                    break;
+                case BinaryOp.Add: result = TryExpr(Expression.Add); break;
+                case BinaryOp.Div: result = TryExpr(Expression.Divide); break;
+                case BinaryOp.Mul: result = TryExpr(Expression.Multiply); break;
+                case BinaryOp.Sub: result = TryExpr(Expression.Subtract); break;
+                case BinaryOp.Dot: result = MathExpr("Dot"); break;
+                case BinaryOp.Atan2: result = MathExpr("Atan", typeof(MathExtensions)); break;
+                case BinaryOp.Max: result = MathExpr("Max"); break;
+                case BinaryOp.Min: result = MathExpr("Min"); break;
+                case BinaryOp.Mod: result = MathExpr("Mod", typeof(MathExtensions)); break;
+                default: throw new NotImplementedException();
             }
 
             nodeDictionary[this] = result;

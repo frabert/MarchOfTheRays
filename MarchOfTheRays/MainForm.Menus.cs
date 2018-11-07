@@ -39,6 +39,49 @@ namespace MarchOfTheRays
             });
             menuSaveAs.ShortcutKeys = Keys.Shift | Keys.Control | Keys.S;
 
+            var menuImportNode = new ToolStripMenuItem(Strings.ImportNode, null, (s, e) =>
+            {
+                var ofd = new OpenFileDialog();
+                ofd.Filter = $"{Strings.NodeFile}|*.mtrn";
+
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    using (var stream = System.IO.File.OpenRead(ofd.FileName))
+                    {
+                        ImportNode(stream);
+                    }
+                }
+            });
+            menuImportNode.ShortcutKeys = Keys.Control | Keys.I;
+
+            var menuExportNode = new ToolStripMenuItem(Strings.ExportNode, null, (s, e) =>
+            {
+                var sfd = new SaveFileDialog();
+                sfd.Filter = $"{Strings.NodeFile}|*.mtrn";
+
+                if(sfd.ShowDialog() == DialogResult.OK)
+                {
+                    var selectedNode = ActiveEditor?.Canvas.SelectedElements.First().Tag as Core.ICompositeNode;
+                    using(var stream = System.IO.File.Open(sfd.FileName, System.IO.FileMode.Create))
+                    {
+                        ExportNode(selectedNode, stream);
+                    }
+                }
+            });
+            menuExportNode.Enabled = false;
+            menuExportNode.ShortcutKeys = Keys.Control | Keys.E;
+
+            void UpdateImportExport(object sender, EventArgs e)
+            {
+                menuImportNode.Enabled = ActiveEditor != null;
+                menuExportNode.Enabled = ActiveEditor != null && ActiveEditor.Canvas.SelectedElements.Count() == 1 && ActiveEditor.Canvas.SelectedElements.First().Tag as Core.ICompositeNode != null;
+            }
+
+            SelectionChanged += UpdateImportExport;
+            dockPanel.ActiveContentChanged += UpdateImportExport;
+            dockPanel.ActiveDocumentChanged += UpdateImportExport;
+            dockPanel.ActivePaneChanged += UpdateImportExport;
+
             var menuExit = new ToolStripMenuItem(Strings.Exit, Resources.Exit, (s, e) =>
             {
                 Close();
@@ -49,6 +92,9 @@ namespace MarchOfTheRays
             fileMenu.DropDownItems.Add(menuOpen);
             fileMenu.DropDownItems.Add(menuSave);
             fileMenu.DropDownItems.Add(menuSaveAs);
+            fileMenu.DropDownItems.Add(new ToolStripSeparator());
+            fileMenu.DropDownItems.Add(menuImportNode);
+            fileMenu.DropDownItems.Add(menuExportNode);
             fileMenu.DropDownItems.Add(new ToolStripSeparator());
             fileMenu.DropDownItems.Add(menuExit);
 

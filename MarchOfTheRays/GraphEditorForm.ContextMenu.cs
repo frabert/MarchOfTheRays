@@ -21,9 +21,35 @@ namespace MarchOfTheRays
             var canvasContextMenu = new ContextMenuStrip();
             var expressions = new ToolStripMenuItem(Strings.Expressions);
             var primitives = new ToolStripMenuItem(Strings.Primitives);
+            var solidOps = new ToolStripMenuItem(Strings.SolidOperations);
             canvasContextMenu.Items.Add(expressions);
             canvasContextMenu.Items.Add(primitives);
+            canvasContextMenu.Items.Add(solidOps);
 
+            primitives.DropDownItems.Add(Strings.Sphere, null, (s, e) =>
+            {
+                OnNodeImported(Resources.Sphere, Strings.Sphere);
+            });
+
+            primitives.DropDownItems.Add(Strings.Box, null, (s, e) =>
+            {
+                OnNodeImported(Resources.Box, Strings.Box);
+            });
+
+            solidOps.DropDownItems.Add(Strings.Union, null, (s, e) =>
+            {
+                OnNodeImported(Resources.Union, Strings.Union);
+            });
+
+            solidOps.DropDownItems.Add(Strings.Intersection, null, (s, e) =>
+            {
+                OnNodeImported(Resources.Intersection, Strings.Intersection);
+            });
+
+            solidOps.DropDownItems.Add(Strings.Subtraction, null, (s, e) =>
+            {
+                OnNodeImported(Resources.Subtraction, Strings.Subtraction);
+            });
 
             expressions.DropDownItems.Add(Strings.FloatConstant, null, (s, e) =>
             {
