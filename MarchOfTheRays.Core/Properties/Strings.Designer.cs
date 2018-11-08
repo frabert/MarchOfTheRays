@@ -394,6 +394,15 @@ namespace MarchOfTheRays.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Components.
+        /// </summary>
+        internal static string SwizzleType {
+            get {
+                return ResourceManager.GetString("SwizzleType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Tan.
         /// </summary>
         internal static string Tan {

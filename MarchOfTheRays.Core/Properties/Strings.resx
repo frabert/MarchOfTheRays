@@ -228,6 +228,9 @@
   <data name="Sub" xml:space="preserve">
     <value>Subtraction</value>
   </data>
+  <data name="SwizzleType" xml:space="preserve">
+    <value>Components</value>
+  </data>
   <data name="Tan" xml:space="preserve">
     <value>Tan</value>
   </data>

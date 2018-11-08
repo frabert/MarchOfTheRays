@@ -91,6 +91,14 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.UnaryOperationNode());
             });
 
+            expressions.DropDownItems.Add("Swizzle", null, (s, e) =>
+            {
+                var controlCoords = Canvas.PointToClient(Cursor.Position);
+                var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
+
+                AddNode(worldCoords, new Core.SwizzleNode());
+            });
+
             canvasContextMenu.Items.Add(Strings.InsertCustomNode, null, (s, e) =>
             {
                 var controlCoords = Canvas.PointToClient(Cursor.Position);

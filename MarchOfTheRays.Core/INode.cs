@@ -839,6 +839,84 @@ namespace MarchOfTheRays.Core
     }
 
     [Serializable]
+    public class SwizzleNode : UnaryNode
+    {
+        SwizzleType m_SwizzleType;
+
+        [LocalizedDisplayName("SwizzleType")]
+        public SwizzleType SwizzleType
+        {
+            get => m_SwizzleType;
+            set
+            {
+                m_SwizzleType = value;
+                CalcType();
+                SwizzleTypeChanged?.Invoke(this, new EventArgs());
+            }
+        }
+
+        [field: NonSerialized]
+        public event EventHandler SwizzleTypeChanged;
+
+        void CalcType()
+        {
+            if (Input == null) OutputType = NodeType.Indeterminate;
+            else
+            {
+                var swizzleString = Enum.GetName(typeof(SwizzleType), m_SwizzleType);
+                switch (swizzleString.Length)
+                {
+                    case 2: OutputType = NodeType.Float2; break;
+                    case 3: OutputType = NodeType.Float3; break;
+                    case 4: OutputType = NodeType.Float4; break;
+                }
+            }
+        }
+
+        public override Node Clone()
+        {
+            return new SwizzleNode()
+            {
+                Input = Input,
+                OutputType = OutputType,
+                SwizzleType = SwizzleType
+            };
+        }
+
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        {
+            if (Input == null) throw new InvalidNodeException(this);
+            if (nodeDictionary.TryGetValue(this, out var res)) return res;
+
+            var tswizzle = typeof(Swizzle);
+            Type inputType;
+            switch (Input.OutputType)
+            {
+                case NodeType.Float2: inputType = typeof(Vector2); break;
+                case NodeType.Float3: inputType = typeof(Vector3); break;
+                case NodeType.Float4: inputType = typeof(Vector4); break;
+                default: throw new InvalidNodeException(Input);
+            }
+            var name = Enum.GetName(typeof(SwizzleType), SwizzleType);
+
+            var method = tswizzle.GetMethod(name, new Type[] { inputType });
+
+            if (method == null) throw new InvalidNodeException(Input);
+
+            var arg = Input.Compile(nodeDictionary, parameters);
+
+            res = Expression.Call(method, arg);
+            nodeDictionary[this] = res;
+            return res;
+        }
+
+        protected override void OnInputChanged()
+        {
+            CalcType();
+        }
+    }
+
+    [Serializable]
     public class InputNode : Node
     {
         [ReadOnly(true)]

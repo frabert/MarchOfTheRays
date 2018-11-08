@@ -360,4 +360,7 @@
   <data name="Union" xml:space="preserve">
     <value>Union</value>
   </data>
+  <data name="Swizzle" xml:space="preserve">
+    <value>Swizzle</value>
+  </data>
 </root>
