@@ -7,10 +7,17 @@ using System.Text;
 
 namespace MarchOfTheRays.Linq2Glsl
 {
+    /// <summary>
+    /// Converts a Linq expression into a GLSL expression
+    /// </summary>
     public class GlslVisitor : ExpressionVisitor
     {
         StringBuilder sb;
 
+        /// <summary>
+        /// Creates a new GlslVisitor which will output the resulting expression in the specified StringBuilder
+        /// </summary>
+        /// <param name="builder">The StringBuilder which will contain the resulting expression</param>
         public GlslVisitor(StringBuilder builder)
         {
             sb = builder;

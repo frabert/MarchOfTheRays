@@ -262,11 +262,11 @@ namespace MarchOfTheRays
                 case Core.CompositeUnaryNode u: u.Input = null; break;
             }
 
-            exportData.Subgraphs.Add(node, graph);
+            exportData.Subgraphs.Add(exportData.Node, graph);
             exportData.Graphs.Add(graph);
 
             var toEvaluate = new Queue<Core.INode>();
-            toEvaluate.Enqueue(node);
+            toEvaluate.Enqueue(exportData.Node);
             foreach (var n in graph.Nodes)
             {
                 toEvaluate.Enqueue(n);
