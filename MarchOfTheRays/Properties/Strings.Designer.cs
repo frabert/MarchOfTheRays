@@ -736,6 +736,15 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Swizzle.
+        /// </summary>
+        internal static string Swizzle {
+            get {
+                return ResourceManager.GetString("Swizzle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unary operation.
         /// </summary>
         internal static string UnaryOperation {

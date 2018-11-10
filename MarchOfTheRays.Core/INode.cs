@@ -580,118 +580,65 @@ namespace MarchOfTheRays.Core
             var arg = Input.Compile(nodeDictionary, parameters);
 
             var inputType = Input.OutputType;
-            Expression<Func<float, float>> expr = null;
-            Type t = null;
-
+            Type t;
             switch (inputType)
             {
-                case NodeType.Float: break;
+                case NodeType.Float: t = typeof(float); break;
                 case NodeType.Float2: t = typeof(Vector2); break;
                 case NodeType.Float3: t = typeof(Vector3); break;
                 case NodeType.Float4: t = typeof(Vector4); break;
-                default: throw new InvalidNodeException(Input);
+                default: throw new InvalidNodeException(this);
             }
+
+            Expression MathExpr(string name, Type c = null)
+            {
+                c = c == null ? (t == typeof(float) ? typeof(Math) : t) : c;
+                var method = c.GetMethod(name, new Type[] { t });
+                if (method == null) throw new InvalidNodeException(this);
+                return Expression.Call(method, arg);
+            }
+
+            Expression InstanceExpr(string Name)
+            {
+                var method = t.GetMethod(Name);
+                if (method == null) throw new InvalidNodeException(this);
+                return Expression.Call(arg, method);
+            }
+
+            Expression FieldExpr(string Name)
+            {
+                var field = t.GetField(Name);
+                if (field == null) throw new InvalidNodeException(this);
+                return Expression.Field(arg, field);
+            }
+
+            var mathEx = typeof(MathExtensions);
+
+            Expression res;
 
             switch (m_Operation)
             {
-                case UnaryOp.Abs:
-                    expr = CompilerTools.ToExpr<float>(x => Math.Abs(x));
-                    break;
-                case UnaryOp.Acos:
-                    expr = CompilerTools.ToExpr<float>(x => (float)Math.Acos(x));
-                    break;
-                case UnaryOp.Asin:
-                    expr = CompilerTools.ToExpr<float>(x => (float)Math.Asin(x));
-                    break;
-                case UnaryOp.Atan:
-                    expr = CompilerTools.ToExpr<float>(x => (float)Math.Atan(x));
-                    break;
-                case UnaryOp.Ceil:
-                    expr = CompilerTools.ToExpr<float>(x => (float)Math.Ceiling(x));
-                    break;
-                case UnaryOp.Cos:
-                    expr = CompilerTools.ToExpr<float>(x => (float)Math.Cos(x));
-                    break;
-                case UnaryOp.Degrees:
-                    expr = CompilerTools.ToExpr<float>(x => (float)((180 * x) / Math.PI));
-                    break;
-                case UnaryOp.Exp:
-                    expr = CompilerTools.ToExpr<float>(x => (float)Math.Exp(x));
-                    break;
-                case UnaryOp.Floor:
-                    expr = CompilerTools.ToExpr<float>(x => (float)Math.Floor(x));
-                    break;
-                case UnaryOp.Invert:
-                    expr = CompilerTools.ToExpr<float>(x => -x);
-                    break;
-                case UnaryOp.Radians:
-                    expr = CompilerTools.ToExpr<float>(x => (float)((Math.PI * x) / 180.0f));
-                    break;
-                case UnaryOp.Sin:
-                    expr = CompilerTools.ToExpr<float>(x => (float)Math.Sin(x));
-                    break;
-                case UnaryOp.Tan:
-                    expr = CompilerTools.ToExpr<float>(x => (float)Math.Tan(x));
-                    break;
-                case UnaryOp.Length:
-                    {
-                        Expression e;
-                        if (inputType == NodeType.Float) e = Expression.Invoke(CompilerTools.ToExpr<float>(x => Math.Abs(x)), arg);
-                        e = Expression.Call(arg, t.GetMethod("Length"));
-                        nodeDictionary[this] = e;
-                        return e;
-                    }
-                case UnaryOp.Normalize:
-                    {
-                        var e = Expression.Call(null, t.GetMethod("Normalize"), arg);
-                        nodeDictionary[this] = e;
-                        return e;
-                    }
-                case UnaryOp.X:
-                    {
-                        var e = Expression.Field(arg, "X");
-                        nodeDictionary[this] = e;
-                        return e;
-                    }
-                case UnaryOp.Y:
-                    {
-                        var e = Expression.Field(arg, "Y");
-                        nodeDictionary[this] = e;
-                        return e;
-                    }
-                case UnaryOp.Z:
-                    {
-                        var e = Expression.Field(arg, "Z");
-                        nodeDictionary[this] = e;
-                        return e;
-                    }
+                case UnaryOp.Abs: res = MathExpr("Abs"); break;
+                case UnaryOp.Acos: res = MathExpr("Acos", mathEx); break;
+                case UnaryOp.Asin: res = MathExpr("Asin", mathEx); break;
+                case UnaryOp.Atan: res = MathExpr("Atan", mathEx); break;
+                case UnaryOp.Ceil: res = MathExpr("Ceil", mathEx); break;
+                case UnaryOp.Cos: res = MathExpr("Cos", mathEx); break;
+                case UnaryOp.Degrees: res = MathExpr("Degrees", mathEx); break;
+                case UnaryOp.Exp: res = MathExpr("Exp", mathEx); break;
+                case UnaryOp.Floor: res = MathExpr("Floor", mathEx); break;
+                case UnaryOp.Invert: res = Expression.Negate(arg); break;
+                case UnaryOp.Length: res = InstanceExpr("Length"); break;
+                case UnaryOp.Normalize: res = MathExpr("Normalize"); break;
+                case UnaryOp.Radians: res = MathExpr("Radians", mathEx); break;
+                case UnaryOp.Sin: res = MathExpr("Sin", mathEx); break;
+                case UnaryOp.Tan: res = MathExpr("Tan", mathEx); break;
+                case UnaryOp.X: res = FieldExpr("X"); break;
+                case UnaryOp.Y: res = FieldExpr("Y"); break;
+                case UnaryOp.Z: res = FieldExpr("Z"); break;
+                default: throw new NotImplementedException();
             }
 
-            Expression res;
-            switch (inputType)
-            {
-                case NodeType.Float:
-                    {
-                        res = Expression.Invoke(expr, arg);
-                        break;
-                    }
-                case NodeType.Float2:
-                    {
-                        res = CompilerTools.MapExprFloat2(expr, arg);
-                        break;
-                    }
-                case NodeType.Float3:
-                    {
-                        res = CompilerTools.MapExprFloat3(expr, arg);
-                        break;
-                    }
-                case NodeType.Float4:
-                    {
-                        res = CompilerTools.MapExprFloat4(expr, arg);
-                        break;
-                    }
-                default: throw new InvalidNodeException(Input);
-            }
             nodeDictionary[this] = res;
             return res;
         }
@@ -794,110 +741,93 @@ namespace MarchOfTheRays.Core
             {
                 if (leftType != NodeType.Float3) throw new InvalidNodeException(Left);
                 if (rightType != NodeType.Float3) throw new InvalidNodeException(Right);
-                var cross = typeof(Vector3).GetMethod("Cross", new Type[] { typeof(Vector3), typeof(Vector3) });
+                var cross = typeof(Vector3).GetMethod("Cross");
                 return Expression.Call(null, cross, left, right);
             }
 
-            NodeType outType = NodeType.Float;
+            NodeType opType = NodeType.Float;
 
             if (leftType == NodeType.Float4)
             {
-                outType = NodeType.Float4;
+                opType = NodeType.Float4;
                 if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat4(right);
                 else if (rightType != NodeType.Float4) throw new InvalidNodeException(Right);
             }
             else if (leftType == NodeType.Float3)
             {
-                outType = NodeType.Float3;
+                opType = NodeType.Float3;
                 if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat3(right);
                 else if (rightType != NodeType.Float3) throw new InvalidNodeException(Right);
             }
             else if (leftType == NodeType.Float2)
             {
-                outType = NodeType.Float2;
+                opType = NodeType.Float2;
                 if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat2(right);
                 else if (rightType != NodeType.Float2) throw new InvalidNodeException(Right);
             }
             else if (rightType == NodeType.Float4)
             {
-                outType = NodeType.Float4;
+                opType = NodeType.Float4;
                 if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat4(left);
                 else if (leftType != NodeType.Float4) throw new InvalidNodeException(Left);
             }
             else if (rightType == NodeType.Float3)
             {
-                outType = NodeType.Float3;
+                opType = NodeType.Float3;
                 if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat3(left);
                 else if (leftType != NodeType.Float3) throw new InvalidNodeException(Left);
             }
             else if (rightType == NodeType.Float2)
             {
-                outType = NodeType.Float2;
+                opType = NodeType.Float2;
                 if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat2(left);
                 else if (leftType != NodeType.Float2) throw new InvalidNodeException(Left);
             }
 
-            Expression<Func<float, float, float>> expr = null;
+            Type t;
+            switch (opType)
+            {
+                case NodeType.Float: t = typeof(float); break;
+                case NodeType.Float2: t = typeof(Vector2); break;
+                case NodeType.Float3: t = typeof(Vector3); break;
+                case NodeType.Float4: t = typeof(Vector4); break;
+                default: throw new NotImplementedException();
+            }
+
+            Expression MathExpr(string name, Type c = null)
+            {
+                c = c == null ? (t == typeof(float) ? typeof(Math) : t) : c;
+                var method = c.GetMethod(name, new Type[] { t, t });
+                if (method == null) throw new InvalidNodeException(this);
+                return Expression.Call(method, left, right);
+            }
+
+            Expression TryExpr(Func<Expression, Expression, Expression> f)
+            {
+                try
+                {
+                    return f(left, right);
+                }
+                catch (InvalidOperationException)
+                {
+                    throw new InvalidNodeException(this);
+                }
+            }
 
             switch (m_Operation)
             {
-                case BinaryOp.Add:
-                    {
-                        result = Expression.Add(left, right);
-                        nodeDictionary[this] = result;
-                        return result;
-                    }
-                case BinaryOp.Sub:
-                    {
-                        result = Expression.Subtract(left, right);
-                        nodeDictionary[this] = result;
-                        return result;
-                    }
-                case BinaryOp.Dot:
-                    {
-                        if (leftType != rightType) throw new InvalidNodeException(this);
-                        Type t = null;
-                        switch (leftType)
-                        {
-                            case NodeType.Float2: t = typeof(Vector2); break;
-                            case NodeType.Float3: t = typeof(Vector3); break;
-                            case NodeType.Float4: t = typeof(Vector4); break;
-                            default: throw new InvalidNodeException(Left);
-                        }
-                        var dot = t.GetMethod("Dot");
-                        result = Expression.Call(null, dot, left, right);
-                        nodeDictionary[this] = result;
-                        return result;
-                    }
-                case BinaryOp.Atan2:
-                    expr = CompilerTools.ToExpr<float>((x, y) => (float)Math.Atan2(x, y));
-                    break;
-                case BinaryOp.Div:
-                    expr = CompilerTools.ToExpr<float>((x, y) => x / y);
-                    break;
-                case BinaryOp.Mul:
-                    expr = CompilerTools.ToExpr<float>((x, y) => x * y);
-                    break;
-                case BinaryOp.Mod:
-                    expr = CompilerTools.ToExpr<float>((x, y) => x - y * (float)Math.Floor(x / y));
-                    break;
-                case BinaryOp.Min:
-                    expr = CompilerTools.ToExpr<float>((x, y) => Math.Min(x, y));
-                    break;
-                case BinaryOp.Max:
-                    expr = CompilerTools.ToExpr<float>((x, y) => Math.Max(x, y));
-                    break;
+                case BinaryOp.Add: result = TryExpr(Expression.Add); break;
+                case BinaryOp.Div: result = TryExpr(Expression.Divide); break;
+                case BinaryOp.Mul: result = TryExpr(Expression.Multiply); break;
+                case BinaryOp.Sub: result = TryExpr(Expression.Subtract); break;
+                case BinaryOp.Dot: result = MathExpr("Dot"); break;
+                case BinaryOp.Atan2: result = MathExpr("Atan", typeof(MathExtensions)); break;
+                case BinaryOp.Max: result = MathExpr("Max"); break;
+                case BinaryOp.Min: result = MathExpr("Min"); break;
+                case BinaryOp.Mod: result = MathExpr("Mod", typeof(MathExtensions)); break;
+                default: throw new NotImplementedException();
             }
 
-
-            switch (outType)
-            {
-                case NodeType.Float2: result = CompilerTools.MapExprFloat2(expr, left, right); break;
-                case NodeType.Float3: result = CompilerTools.MapExprFloat3(expr, left, right); break;
-                case NodeType.Float4: result = CompilerTools.MapExprFloat4(expr, left, right); break;
-                case NodeType.Float: result = Expression.Invoke(expr, left, right); break;
-                default: throw new InvalidNodeException(this);
-            }
             nodeDictionary[this] = result;
             return result;
         }
@@ -905,6 +835,84 @@ namespace MarchOfTheRays.Core
         protected override void OnInputsChanged()
         {
             OutputType = CalcType();
+        }
+    }
+
+    [Serializable]
+    public class SwizzleNode : UnaryNode
+    {
+        SwizzleType m_SwizzleType;
+
+        [LocalizedDisplayName("SwizzleType")]
+        public SwizzleType SwizzleType
+        {
+            get => m_SwizzleType;
+            set
+            {
+                m_SwizzleType = value;
+                CalcType();
+                SwizzleTypeChanged?.Invoke(this, new EventArgs());
+            }
+        }
+
+        [field: NonSerialized]
+        public event EventHandler SwizzleTypeChanged;
+
+        void CalcType()
+        {
+            if (Input == null) OutputType = NodeType.Indeterminate;
+            else
+            {
+                var swizzleString = Enum.GetName(typeof(SwizzleType), m_SwizzleType);
+                switch (swizzleString.Length)
+                {
+                    case 2: OutputType = NodeType.Float2; break;
+                    case 3: OutputType = NodeType.Float3; break;
+                    case 4: OutputType = NodeType.Float4; break;
+                }
+            }
+        }
+
+        public override Node Clone()
+        {
+            return new SwizzleNode()
+            {
+                Input = Input,
+                OutputType = OutputType,
+                SwizzleType = SwizzleType
+            };
+        }
+
+        public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
+        {
+            if (Input == null) throw new InvalidNodeException(this);
+            if (nodeDictionary.TryGetValue(this, out var res)) return res;
+
+            var tswizzle = typeof(Swizzle);
+            Type inputType;
+            switch (Input.OutputType)
+            {
+                case NodeType.Float2: inputType = typeof(Vector2); break;
+                case NodeType.Float3: inputType = typeof(Vector3); break;
+                case NodeType.Float4: inputType = typeof(Vector4); break;
+                default: throw new InvalidNodeException(Input);
+            }
+            var name = Enum.GetName(typeof(SwizzleType), SwizzleType);
+
+            var method = tswizzle.GetMethod(name, new Type[] { inputType });
+
+            if (method == null) throw new InvalidNodeException(Input);
+
+            var arg = Input.Compile(nodeDictionary, parameters);
+
+            res = Expression.Call(method, arg);
+            nodeDictionary[this] = res;
+            return res;
+        }
+
+        protected override void OnInputChanged()
+        {
+            CalcType();
         }
     }
 
@@ -1151,7 +1159,7 @@ namespace MarchOfTheRays.Core
             {
                 onode.OutputTypeChanged += (s, e) =>
                 {
-                    if(s == onode) CalcType();
+                    if (s == onode) CalcType();
                 };
             }
             base.InitializeEvents();
