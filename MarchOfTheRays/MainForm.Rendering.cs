@@ -14,6 +14,8 @@ namespace MarchOfTheRays
     {
         RenderForm PreviewForm { get; set; }
 
+        Dictionary<Graph, GraphEditorForm> graphForms = new Dictionary<Graph, GraphEditorForm>();
+
         void InitializeRendering()
         {
             Task previousPreviewTask = null;
@@ -83,8 +85,6 @@ namespace MarchOfTheRays
                     }
                 }
 
-                Func<Vector3, float> func;
-
                 try
                 {
                     var newTokenSource = new CancellationTokenSource();
@@ -92,7 +92,7 @@ namespace MarchOfTheRays
                     var param = Expression.Parameter(typeof(Vector3), "pos");
                     var body = document.MainGraph.OutputNodes[0].Compile(Core.NodeType.Float, new Dictionary<Core.INode, Expression>(), param);
                     var lambda = Expression.Lambda<Func<Vector3, float>>(body, param);
-                    func = lambda.Compile();
+                    var func = lambda.Compile();
 
                     float totalProgress = 0;
                     float total = PreviewForm.ClientSize.Width * PreviewForm.ClientSize.Height;

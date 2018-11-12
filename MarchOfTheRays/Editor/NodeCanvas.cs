@@ -7,6 +7,9 @@ using System.Windows.Forms;
 
 namespace MarchOfTheRays.Editor
 {
+    /// <summary>
+    /// Provides data for the <see cref="NodeCanvas.EdgeAdded"/> and <see cref="NodeCanvas.EdgeRemoved"/> events
+    /// </summary>
     class EdgeModifiedEventArgs : EventArgs
     {
         public EdgeModifiedEventArgs(NodeElement source, NodeElement destination, int index)
@@ -16,11 +19,25 @@ namespace MarchOfTheRays.Editor
             DestinationIndex = index;
         }
 
+        /// <summary>
+        /// The source element of the edge
+        /// </summary>
         public NodeElement Source { get; private set; }
+
+        /// <summary>
+        /// The destination element of the edge
+        /// </summary>
         public NodeElement Destination { get; private set; }
+
+        /// <summary>
+        /// The input index of the destination element
+        /// </summary>
         public int DestinationIndex { get; private set; }
     }
 
+    /// <summary>
+    /// Provides data for the <see cref="NodeCanvas.ElementAdded"/>, <see cref="NodeCanvas.ElementMoved"/> and <see cref="NodeCanvas.ElementRemoved"/> events
+    /// </summary>
     class ElementModifiedEventArgs : EventArgs
     {
         public ElementModifiedEventArgs(NodeElement elem)
@@ -31,6 +48,9 @@ namespace MarchOfTheRays.Editor
         public NodeElement Element { get; private set; }
     }
 
+    /// <summary>
+    /// Stores a graph of <see cref="NodeElement"/>
+    /// </summary>
     class EdgeDictionary
     {
         Dictionary<NodeElement, HashSet<(NodeElement destination, int index)>> forwardStars;
@@ -51,6 +71,11 @@ namespace MarchOfTheRays.Editor
             inwardNodes.Clear();
         }
 
+        /// <summary>
+        /// Returns an enumeration of edges that start from <paramref name="source"/>
+        /// </summary>
+        /// <param name="source">The element of which to enumerate the outward edges</param>
+        /// <returns>An enumeration of the outward edges of <paramref name="source"/></returns>
         public IEnumerable<(NodeElement destination, int index)> ForwardStar(NodeElement source)
         {
             if (forwardStars.TryGetValue(source, out var list))
@@ -59,6 +84,11 @@ namespace MarchOfTheRays.Editor
             }
         }
 
+        /// <summary>
+        /// Returns an enumerations of edges that have <paramref name="destination"/> as their destination
+        /// </summary>
+        /// <param name="destination">The element of which to enumerate the inward edges</param>
+        /// <returns>An enumeration of the inward nodes of <paramref name="destination"/></returns>
         public IEnumerable<(NodeElement source, int index)> BackwardStar(NodeElement destination)
         {
             if (backwardStars.TryGetValue(destination, out var list))
@@ -67,6 +97,12 @@ namespace MarchOfTheRays.Editor
             }
         }
 
+        /// <summary>
+        /// Returns a list of the elements that have an edge that start from them and end on <paramref name="destination"/> at <paramref name="index"/>
+        /// </summary>
+        /// <param name="destination">The element on which the edges must end</param>
+        /// <param name="index">The index on which the edges must end</param>
+        /// <returns>An enumeration of the incident nodes on at the specified element and index</returns>
         public NodeElement IncidentNode(NodeElement destination, int index)
         {
             if (inwardNodes.TryGetValue((destination, index), out var e))
@@ -79,12 +115,20 @@ namespace MarchOfTheRays.Editor
             }
         }
 
+        /// <summary>
+        /// Adds an element to the graph
+        /// </summary>
+        /// <param name="elem">The element to be added to the graph</param>
         public void AddElement(NodeElement elem)
         {
             forwardStars.Add(elem, new HashSet<(NodeElement, int)>());
             backwardStars.Add(elem, new HashSet<(NodeElement, int)>());
         }
 
+        /// <summary>
+        /// Removes an element (and all of its outward and inward edges) from the graph
+        /// </summary>
+        /// <param name="elem">The element to be removed from the graph</param>
         public void RemoveElement(NodeElement elem)
         {
             foreach (var (destination, index) in forwardStars[elem])
@@ -101,6 +145,12 @@ namespace MarchOfTheRays.Editor
             backwardStars.Remove(elem);
         }
 
+        /// <summary>
+        /// Adds an edge to the graph
+        /// </summary>
+        /// <param name="source">The starting element</param>
+        /// <param name="destination">The end element</param>
+        /// <param name="index">The index of the end element's input</param>
         public void AddEdge(NodeElement source, NodeElement destination, int index)
         {
             forwardStars[source].Add((destination, index));
@@ -110,6 +160,11 @@ namespace MarchOfTheRays.Editor
             EdgeAdded?.Invoke(this, new EdgeModifiedEventArgs(source, destination, index));
         }
 
+        /// <summary>
+        /// Removes an edge from the graph
+        /// </summary>
+        /// <param name="destination">The destination of the edge to remove</param>
+        /// <param name="index">The index of <paramref name="destination"/>'s input</param>
         public void RemoveEdge(NodeElement destination, int index)
         {
             var source = inwardNodes[(destination, index)];
@@ -120,6 +175,9 @@ namespace MarchOfTheRays.Editor
             EdgeRemoved?.Invoke(this, new EdgeModifiedEventArgs(source, destination, index));
         }
 
+        /// <summary>
+        /// Enumerates all the edges in the graph
+        /// </summary>
         public IEnumerable<(NodeElement source, NodeElement destination, int index)> Edges
         {
             get
@@ -131,10 +189,20 @@ namespace MarchOfTheRays.Editor
             }
         }
 
+        /// <summary>
+        /// Called whenever an edge is added to the graph
+        /// </summary>
         public event EventHandler<EdgeModifiedEventArgs> EdgeAdded;
+
+        /// <summary>
+        /// Called whenever an edge is removed from the graph
+        /// </summary>
         public event EventHandler<EdgeModifiedEventArgs> EdgeRemoved;
     }
 
+    /// <summary>
+    /// A control used to draw a graph structure via nodes
+    /// </summary>
     class NodeCanvas : UserControl
     {
         #region Commands
@@ -320,7 +388,7 @@ namespace MarchOfTheRays.Editor
                 OnEdgeRemoved(e);
             };
         }
-
+        
         static float lerp(float a, float b, float x)
         {
             return (1 - x) * a + x * b;
@@ -328,12 +396,12 @@ namespace MarchOfTheRays.Editor
 
         static PointF lerp(PointF a, PointF b, float x)
         {
-            return new PointF((1 - x) * a.X + x * b.X, (1 - x) * a.Y + x * b.Y);
+            return new PointF(lerp(a.X, b.X, x), lerp(a.Y, b.Y, x));
         }
 
         static RectangleF RectFromPoints(PointF a, PointF b)
         {
-            return RectangleF.FromLTRB(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Max(a.X, b.X), Math.Max(a.Y, b.Y));
+            return new RectangleF(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Abs(a.X - b.X), Math.Abs(a.Y - b.Y));
         }
 
         RectangleF ViewRegionWorld

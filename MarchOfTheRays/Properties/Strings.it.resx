@@ -363,4 +363,7 @@
   <data name="Swizzle" xml:space="preserve">
     <value>Swizzle</value>
   </data>
+  <data name="Float3" xml:space="preserve">
+    <value>Vettore 3D</value>
+  </data>
 </root>

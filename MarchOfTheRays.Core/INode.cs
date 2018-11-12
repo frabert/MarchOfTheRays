@@ -9,6 +9,9 @@ using System.Reflection;
 
 namespace MarchOfTheRays.Core
 {
+    /// <summary>
+    /// Displays a property's name according to its localized equivalent found in <see cref="MarchOfTheRays.Core.Properties.Strings"/>
+    /// </summary>
     public class LocalizedDisplayNameAttribute : DisplayNameAttribute
     {
         public LocalizedDisplayNameAttribute(string resourceId)
@@ -24,6 +27,9 @@ namespace MarchOfTheRays.Core
         }
     }
 
+    /// <summary>
+    /// Displays an enum's value according to its localized equivalent found in <see cref="MarchOfTheRays.Core.Properties.Strings"/>
+    /// </summary>
     public class LocalizedEnumConverter : EnumConverter
     {
         public LocalizedEnumConverter(Type type) : base(type) { }
@@ -71,18 +77,51 @@ namespace MarchOfTheRays.Core
         }
     }
 
+    /// <summary>
+    /// The type of a node's output
+    /// </summary>
     [TypeConverter(typeof(LocalizedEnumConverter))]
     public enum NodeType
     {
+        /// <summary>
+        /// A floating point value
+        /// </summary>
         Float,
+
+        /// <summary>
+        /// A 2-tuple of float values
+        /// </summary>
         Float2,
+
+        /// <summary>
+        /// A 3-tuple of float values
+        /// </summary>
         Float3,
+
+        /// <summary>
+        /// A 4-tuple of float values
+        /// </summary>
         Float4,
+
+        /// <summary>
+        /// The type cannot be determined
+        /// </summary>
         Indeterminate,
+
+        /// <summary>
+        /// The type is not valid
+        /// </summary>
         Invalid,
+
+        /// <summary>
+        /// No output type
+        /// </summary>
         None
     }
 
+    /// <summary>
+    /// This exception is thrown during compilation, when a node contains invalid inputs or parameters
+    /// </summary>
     public class InvalidNodeException : Exception
     {
         public INode Node { get; private set; }
@@ -96,12 +135,34 @@ namespace MarchOfTheRays.Core
 
     public interface INode : ICloneable
     {
+        /// <summary>
+        /// The output type of the node
+        /// </summary>
         NodeType OutputType { get; }
+
+        /// <summary>
+        /// Called whenever <see cref="OutputType"/> changes
+        /// </summary>
         event EventHandler OutputTypeChanged;
+
+        /// <summary>
+        /// Compiles the node into a Linq expression
+        /// </summary>
+        /// <param name="nodeDictionary">A cache of already compiled nodes</param>
+        /// <param name="parameters">A list of input parameters as expressions</param>
+        /// <returns>The compiled node</returns>
+        /// <exception cref="InvalidNodeException">Thrown if the graph contains invalid nodes</exception>
         Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters);
+
+        /// <summary>
+        /// Called after deserialization to restore the events
+        /// </summary>
         void InitializeEvents();
     }
 
+    /// <summary>
+    /// Provides some helper properties and events to <see cref="INode"/>
+    /// </summary>
     [Serializable]
     public abstract class Node : INode
     {
@@ -135,12 +196,18 @@ namespace MarchOfTheRays.Core
         }
     }
 
+    /// <summary>
+    /// A node with a single input value
+    /// </summary>
     public interface IUnaryNode : INode
     {
         [Browsable(false)]
         INode Input { get; set; }
     }
 
+    /// <summary>
+    /// Provides some helper methods and properties to <see cref="IUnaryNode"/>
+    /// </summary>
     [Serializable]
     public abstract class UnaryNode : Node, IUnaryNode
     {
@@ -176,6 +243,9 @@ namespace MarchOfTheRays.Core
         protected abstract void OnInputChanged();
     }
 
+    /// <summary>
+    /// A node with two input values
+    /// </summary>
     public interface IBinaryNode : INode
     {
         [Browsable(false)]
@@ -183,7 +253,10 @@ namespace MarchOfTheRays.Core
         [Browsable(false)]
         INode Right { get; set; }
     }
-
+    
+    /// <summary>
+    /// Provides some helper methods and properties to <see cref="IBinaryNode"/>
+    /// </summary>
     [Serializable]
     public abstract class BinaryNode : Node, IBinaryNode
     {
@@ -234,6 +307,9 @@ namespace MarchOfTheRays.Core
         }
     }
 
+    /// <summary>
+    /// A node with an arbitrary number of input values
+    /// </summary>
     public interface INAryNode : INode
     {
         INode GetInput(int i);
@@ -526,12 +602,14 @@ namespace MarchOfTheRays.Core
                     || Input.OutputType == NodeType.Indeterminate
                     || Input.OutputType == NodeType.Invalid) return NodeType.Indeterminate;
 
+            // Normalization is not defined on scalars
             if ((m_Operation == UnaryOp.Normalize
                 || m_Operation == UnaryOp.X
                 || m_Operation == UnaryOp.Y
                 || m_Operation == UnaryOp.Z) && Input.OutputType == NodeType.Float) return NodeType.Invalid;
 
-
+            // All unary operations preserve the input type,
+            // except these.
             if (m_Operation == UnaryOp.Length
                 || m_Operation == UnaryOp.X
                 || m_Operation == UnaryOp.Y
@@ -673,6 +751,7 @@ namespace MarchOfTheRays.Core
                 || Right.OutputType == NodeType.Indeterminate
                 || Right.OutputType == NodeType.Invalid) return NodeType.Indeterminate;
 
+            // Cross is only defined on Float3 inputs
             if (m_Operation == BinaryOp.Cross)
             {
                 if (Left.OutputType != NodeType.Float3 || Right.OutputType != NodeType.Float3) return NodeType.Invalid;
@@ -680,6 +759,9 @@ namespace MarchOfTheRays.Core
             }
             else
             {
+                // In case one input is a vector and the other is scalar,
+                // the scalar is converted into a vector of the same size.
+                // All other combinations are not supported
                 if (Left.OutputType == NodeType.Float4)
                 {
                     if (Right.OutputType != NodeType.Float4 && Right.OutputType != NodeType.Float) return NodeType.Invalid;

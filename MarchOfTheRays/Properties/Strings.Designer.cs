@@ -295,6 +295,15 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 3D vector.
+        /// </summary>
+        internal static string Float3 {
+            get {
+                return ResourceManager.GetString("Float3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 3D vector constant.
         /// </summary>
         internal static string Float3Constant {

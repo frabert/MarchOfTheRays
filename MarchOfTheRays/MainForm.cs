@@ -15,7 +15,6 @@ namespace MarchOfTheRays
     {
         DockPanel dockPanel;
         Document document;
-        Dictionary<Graph, GraphEditorForm> graphForms = new Dictionary<Graph, GraphEditorForm>();
 
         public MainForm()
         {

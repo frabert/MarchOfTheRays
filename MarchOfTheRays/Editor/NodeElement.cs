@@ -390,7 +390,7 @@ namespace MarchOfTheRays.Editor
 
                 if (m_HasOutput)
                 {
-                    var rect = new RectangleF(m_Size.Width - m_HandleSize, m_Size.Height / 2.0f - m_HandleSize / 2.0f, m_HandleSize, m_HandleSize);
+                    var rect = new RectangleF(m_Size.Width - m_HandleSize, (m_Size.Height - m_HandleSize) / 2.0f, m_HandleSize, m_HandleSize);
                     g.FillRectangle(backBrush, rect);
                     g.DrawRectangle(borderPen, rect.X, rect.Y, rect.Width, rect.Height);
                 }

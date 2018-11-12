@@ -512,7 +512,7 @@ namespace MarchOfTheRays
 
             var elem = new Editor.NodeElement()
             {
-                Text = "3D Vector",
+                Text = Properties.Strings.Float3,
                 Location = location,
                 InputCount = node.InputCount,
                 HasOutput = true,
