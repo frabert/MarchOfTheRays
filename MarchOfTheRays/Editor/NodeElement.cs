@@ -1,41 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 
 using System.Drawing;
+using System.Windows.Forms;
 
 namespace MarchOfTheRays.Editor
 {
-    interface IClippable
+    abstract class LightweightControl
     {
-        RectangleF ClipRegion { get; }
-    }
-
-    class NodeElement : IClippable
-    {
-        public RectangleF ClipRegion => new RectangleF(Location, Size);
-
-        #region Location
-        PointF m_Location;
-        public PointF Location
-        {
-            get => m_Location;
-            set
-            {
-                m_Location = value;
-                OnLocationChanged();
-            }
-        }
-
-        public event EventHandler LocationChanged;
-
-        protected virtual void OnLocationChanged()
-        {
-            LocationChanged?.Invoke(this, new EventArgs());
-            OnNeedsRepaint();
-        }
-        #endregion
-
-        #region Size
         SizeF m_Size;
         public SizeF Size
         {
@@ -43,42 +14,73 @@ namespace MarchOfTheRays.Editor
             set
             {
                 m_Size = value;
-                OnSizeChanged();
+                OnResize();
             }
         }
 
-        public event EventHandler SizeChanged;
-
-        protected virtual void OnSizeChanged()
-        {
-            SizeChanged?.Invoke(this, new EventArgs());
-            OnNeedsRepaint();
-        }
-        #endregion
-
-        public object Tag { get; set; }
-
         public float Width
         {
-            get => Size.Width;
+            get => m_Size.Width;
             set
             {
-                Size = new SizeF(value, Size.Height);
+                m_Size = new SizeF(value, Height);
             }
         }
 
         public float Height
         {
-            get => Size.Height;
+            get => m_Size.Height;
             set
             {
-                Size = new SizeF(Size.Width, value);
+                m_Size = new SizeF(Width, value);
             }
         }
 
+        public event EventHandler Resize;
+
+        protected virtual void OnResize()
+        {
+            Resize?.Invoke(this, new EventArgs());
+        }
+
+        PointF m_Location;
+        public PointF Location
+        {
+            get => m_Location;
+            set
+            {
+                m_Location = value;
+                OnMove();
+            }
+        }
+
+        public event EventHandler Move;
+
+        protected virtual void OnMove()
+        {
+            Move?.Invoke(this, new EventArgs());
+        }
+
+        public event PaintEventHandler Paint;
+
+        protected virtual void OnPaint(PaintEventArgs e)
+        {
+            Paint?.Invoke(this, e);
+        }
+
+        public void Invalidate(PaintEventArgs e)
+        {
+            OnPaint(e);
+        }
+    }
+
+    class NodeElement : LightweightControl
+    {
+        public object Tag { get; set; }
+
         public int IsOverInputHandle(PointF p)
         {
-            float spacing = m_Size.Height / (m_InputCount + 1);
+            float spacing = Height / (m_InputCount + 1);
             for (int i = 0; i < m_InputCount; i++)
             {
                 var rect = new RectangleF(0, spacing * (i + 1) - m_HandleSize / 2.0f, m_HandleSize, m_HandleSize);
@@ -90,13 +92,13 @@ namespace MarchOfTheRays.Editor
         public bool IsOverOutputHandle(PointF p)
         {
             if (!m_HasOutput) return false;
-            var rect = new RectangleF(m_Size.Width - m_HandleSize, m_Size.Height / 2.0f - m_HandleSize / 2.0f, m_HandleSize, m_HandleSize);
+            var rect = new RectangleF(Width - m_HandleSize, Height / 2.0f - m_HandleSize / 2.0f, m_HandleSize, m_HandleSize);
             return rect.Contains(p);
         }
 
         void AutoResize()
         {
-            using(var g = Graphics.FromHwnd(IntPtr.Zero))
+            using (var g = Graphics.FromHwnd(IntPtr.Zero))
             {
                 var textSize = g.MeasureString(Text, Font);
                 textSize += new SizeF(m_HandleSize * 4 + 2, 2);
@@ -117,7 +119,7 @@ namespace MarchOfTheRays.Editor
             set
             {
                 m_AutoSize = value;
-                if(m_AutoSize)
+                if (m_AutoSize)
                 {
                     AutoResize();
                 }
@@ -369,9 +371,11 @@ namespace MarchOfTheRays.Editor
             NeedsRepaint?.Invoke(this, new EventArgs());
         }
 
-        public void Paint(Graphics g)
+        protected override void OnPaint(PaintEventArgs e)
         {
-            var backRect = new RectangleF(m_HandleSize / 2.0f, 0, m_Size.Width - m_HandleSize, m_Size.Height);
+            var g = e.Graphics;
+
+            var backRect = new RectangleF(m_HandleSize / 2.0f, 0, Width - m_HandleSize, Height);
 
             using (var backBrush = new SolidBrush(m_Errored ? ErrorColor : BackColor))
             using (var borderPen = new Pen(BorderColor))
@@ -380,7 +384,7 @@ namespace MarchOfTheRays.Editor
                 g.FillRectangle(backBrush, backRect);
                 g.DrawRectangle(borderPen, backRect.X, backRect.Y, backRect.Width, backRect.Height);
 
-                float spacing = m_Size.Height / (m_InputCount + 1);
+                float spacing = Height / (m_InputCount + 1);
                 for (int i = 0; i < m_InputCount; i++)
                 {
                     var rect = new RectangleF(0, spacing * (i + 1) - m_HandleSize / 2.0f, m_HandleSize, m_HandleSize);
@@ -390,7 +394,7 @@ namespace MarchOfTheRays.Editor
 
                 if (m_HasOutput)
                 {
-                    var rect = new RectangleF(m_Size.Width - m_HandleSize, (m_Size.Height - m_HandleSize) / 2.0f, m_HandleSize, m_HandleSize);
+                    var rect = new RectangleF(Width - m_HandleSize, (Height - m_HandleSize) / 2.0f, m_HandleSize, m_HandleSize);
                     g.FillRectangle(backBrush, rect);
                     g.DrawRectangle(borderPen, rect.X, rect.Y, rect.Width, rect.Height);
                 }

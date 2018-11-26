@@ -1,7 +1,6 @@
 ﻿using MarchOfTheRays.Properties;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Numerics;
 using System.Threading;
@@ -36,15 +35,15 @@ namespace MarchOfTheRays
                     GraphEditorForm form = null;
                     graphForms.TryGetValue(g, out form);
 
-                    if(form != null && !form.IsDisposed)
+                    if (form != null && !form.IsDisposed)
                     {
-                        foreach(var val in form.Elements.Values)
+                        foreach (var val in form.Elements.Values)
                         {
                             val.Errored = false;
                         }
                     }
 
-                    foreach(var onode in g.OutputNodes)
+                    foreach (var onode in g.OutputNodes)
                     {
                         var cycles = Core.Compiler.CheckForCycles(onode, g.Nodes);
                         if (cycles.Count > 0)
@@ -77,7 +76,7 @@ namespace MarchOfTheRays
                 PreviewForm.Loading = true;
                 PreviewForm.Progress = 0;
                 OnStatusChange(Strings.StatusSearchingCycles);
-                foreach(var g in document.Graphs)
+                foreach (var g in document.Graphs)
                 {
                     if (!CheckCycles(g))
                     {
@@ -122,7 +121,7 @@ namespace MarchOfTheRays
                 catch (Core.InvalidNodeException ex)
                 {
                     Graph g = null;
-                    foreach(var graph in document.Graphs)
+                    foreach (var graph in document.Graphs)
                     {
                         if (graph.Nodes.Contains(ex.Node)) g = graph;
                     }
@@ -131,6 +130,10 @@ namespace MarchOfTheRays
                     editor.Elements[ex.Node].Errored = true;
                     PreviewForm.Loading = false;
                     OnStatusChange(Strings.StatusInvalidNode);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine();
                 }
             }
 

@@ -9,10 +9,10 @@ using System.Drawing;
 
 namespace MarchOfTheRays.Editor
 {
-    class WorldViewMatrix
+    class WorldViewMatrix : IDisposable
     {
-        public Matrix WorldView { get; private set; }
-        public Matrix ViewWorld { get; private set; }
+        public Matrix WorldView { get; }
+        public Matrix ViewWorld { get; }
 
         public WorldViewMatrix()
         {
@@ -75,5 +75,29 @@ namespace MarchOfTheRays.Editor
             ViewWorld.TransformPoints(points);
             return RectangleF.FromLTRB(points[0].X, points[0].Y, points[1].X, points[1].Y);
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    WorldView.Dispose();
+                    ViewWorld.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+        }
+        #endregion
     }
 }

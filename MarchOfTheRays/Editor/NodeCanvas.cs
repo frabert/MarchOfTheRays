@@ -388,7 +388,7 @@ namespace MarchOfTheRays.Editor
                 OnEdgeRemoved(e);
             };
         }
-        
+
         static float lerp(float a, float b, float x)
         {
             return (1 - x) * a + x * b;
@@ -517,7 +517,8 @@ namespace MarchOfTheRays.Editor
                         }
                     }
 
-                    if (elem.ClipRegion.Contains(coords))
+                    var clipRegion = new RectangleF(elem.Location, elem.Size);
+                    if (clipRegion.Contains(coords))
                     {
                         if (!elem.Selected)
                         {
@@ -620,7 +621,9 @@ namespace MarchOfTheRays.Editor
                     var end = wvMatrix.TransformVW(mouseCoords);
 
                     var rect = RectFromPoints(origin, end);
-                    return x.ClipRegion.IntersectsWith(rect);
+
+                    var clipRegion = new RectangleF(x.Location, x.Size);
+                    return clipRegion.IntersectsWith(rect);
                 }).ToList();
                 var cmd = new SelectCommand(this, selection);
                 cmd.Execute();
@@ -664,20 +667,17 @@ namespace MarchOfTheRays.Editor
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            //if (!dragging)
+            foreach (var elem in elements)
             {
-                foreach (var elem in elements)
+                var wP = wvMatrix.TransformVW(e.Location);
+                wP -= new SizeF(elem.Location);
+                if (elem.IsOverInputHandle(wP) >= 0 || elem.IsOverOutputHandle(wP))
                 {
-                    var wP = wvMatrix.TransformVW(e.Location);
-                    wP -= new SizeF(elem.Location);
-                    if (elem.IsOverInputHandle(wP) >= 0 || elem.IsOverOutputHandle(wP))
-                    {
-                        Cursor = Cursors.Hand;
-                        goto skip;
-                    }
+                    Cursor = Cursors.Hand;
+                    goto skip;
                 }
-                Cursor = Cursors.Default;
             }
+            Cursor = Cursors.Default;
 
             skip:
             if (dragging)
@@ -704,8 +704,9 @@ namespace MarchOfTheRays.Editor
 
         void DrawCurve(Graphics g, NodeElement a, NodeElement b, int i)
         {
-            var ax = a.ClipRegion.Right - a.HandleSize / 2;
-            var ay = a.ClipRegion.Bottom - a.Size.Height / 2;
+            var clipRegion = new RectangleF(a.Location, a.Size);
+            var ax = clipRegion.Right - a.HandleSize / 2;
+            var ay = clipRegion.Bottom - a.Size.Height / 2;
 
             var bx = b.Location.X + a.HandleSize / 2;
             float spacing = b.Size.Height / (b.InputCount + 1);
@@ -732,7 +733,7 @@ namespace MarchOfTheRays.Editor
             {
                 if (elem.Selected)
                 {
-                    var rect = elem.ClipRegion;
+                    var rect = new RectangleF(elem.Location, elem.Size);
                     rect.Inflate(2, 2 + elem.HandleSize / 2.0f);
 
                     selectionRectangles.Add(rect);
@@ -768,11 +769,10 @@ namespace MarchOfTheRays.Editor
             // First draw the non-selected nodes and edges...
             foreach (var elem in elements.Where(x => !x.Selected))
             {
-
                 var ctx = g.BeginContainer();
                 g.TranslateTransform(elem.Location.X, elem.Location.Y);
 
-                elem.Paint(g);
+                elem.Invalidate(new PaintEventArgs(g, new Rectangle(Point.Empty, elem.Size.ToSize())));
                 g.EndContainer(ctx);
             }
 
@@ -784,9 +784,10 @@ namespace MarchOfTheRays.Editor
             // ...then the semi-transparent selection rectangles...
             foreach (var rect in selectionRectangles)
             {
-                var color = Color.FromArgb(80, SystemColors.Highlight);
+                var color = Color.FromArgb(80, Focused ? SystemColors.Highlight : SystemColors.InactiveCaption);
+                var original_pen = Focused ? SystemPens.Highlight : SystemPens.InactiveCaption;
                 using (var alphaBrush = new SolidBrush(color))
-                using (var pen = (Pen)(SystemPens.Highlight.Clone()))
+                using (var pen = (Pen)(original_pen.Clone()))
                 {
                     pen.Width = 1.0f / currentScale;
 
@@ -798,11 +799,10 @@ namespace MarchOfTheRays.Editor
             // ...then the selected nodes and edges.
             foreach (var elem in elements.Where(x => x.Selected))
             {
-
                 var ctx = g.BeginContainer();
                 g.TranslateTransform(elem.Location.X, elem.Location.Y);
 
-                elem.Paint(g);
+                elem.Invalidate(new PaintEventArgs(g, new Rectangle(Point.Empty, elem.Size.ToSize())));
                 g.EndContainer(ctx);
             }
 
@@ -813,8 +813,9 @@ namespace MarchOfTheRays.Editor
 
             if (draggingEdge)
             {
-                var ax = draggedElem.ClipRegion.Right - draggedElem.HandleSize / 2;
-                var ay = draggedElem.ClipRegion.Bottom - draggedElem.Size.Height / 2;
+                var clipRegion = new RectangleF(draggedElem.Location, draggedElem.Size);
+                var ax = clipRegion.Right - draggedElem.HandleSize / 2;
+                var ay = clipRegion.Bottom - draggedElem.Size.Height / 2;
 
                 var b = wvMatrix.TransformVW(mouseCoords);
 
@@ -847,6 +848,18 @@ namespace MarchOfTheRays.Editor
             base.OnPaint(e);
         }
 
+        protected override void OnGotFocus(EventArgs e)
+        {
+            Invalidate();
+            base.OnGotFocus(e);
+        }
+
+        protected override void OnLostFocus(EventArgs e)
+        {
+            Invalidate();
+            base.OnLostFocus(e);
+        }
+
         public PointF GetWorldCoordinates(PointF coords)
         {
             return wvMatrix.TransformVW(coords);
@@ -861,7 +874,8 @@ namespace MarchOfTheRays.Editor
         {
             foreach (var elem in elements)
             {
-                if (elem.ClipRegion.Contains(coords)) return elem;
+                var clipRegion = new RectangleF(elem.Location, elem.Size);
+                if (clipRegion.Contains(coords)) return elem;
             }
             return null;
         }
