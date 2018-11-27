@@ -767,19 +767,68 @@ namespace MarchOfTheRays.Editor
             g.Restore(ctx);
         }
 
+        void DrawShadows(Graphics g, Region backReg, int minLevel)
+        {
+            using (var shadowRegion = new Region())
+            {
+                shadowRegion.MakeEmpty();
+
+                int shadowLevel = 0;
+                var shadowSet = elements.OrderBy(x => x.ZIndex).Where(x => x.ZIndex > minLevel).ToList();
+
+                while (shadowSet.Count > 0)
+                {
+                    var levelRegion = new Region();
+                    levelRegion.MakeEmpty();
+                    foreach (var elem in shadowSet.ToArray())
+                    {
+                        using (var reg = elem.GetRegion())
+                        {
+                            reg.Translate(3 << shadowLevel, 3 << shadowLevel);
+
+                            using (var testReg = new Region())
+                            {
+                                testReg.MakeEmpty();
+                                testReg.Union(reg);
+                                testReg.Intersect(levelRegion);
+
+                                if (testReg.IsEmpty(g))
+                                {
+                                    levelRegion.Union(reg);
+                                    shadowSet.Remove(elem);
+                                }
+                            }
+                        }
+                    }
+                    shadowRegion.Union(levelRegion);
+                    shadowLevel++;
+                }
+
+                var ctx = g.BeginContainer();
+                g.Clip = backReg;
+                var shadowColor = Color.FromArgb(80, 0, 0, 0);
+                using (var shadowBrush = new SolidBrush(shadowColor))
+                {
+                    g.FillRegion(shadowBrush, shadowRegion);
+                }
+                g.EndContainer(ctx);
+            }
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.HighQuality;
             g.Transform = wvMatrix.WorldView;
 
-            var selectionRectangles = new List<RectangleF>();
+            DrawShadows(g, g.Clip, 0);
 
+            var selectionRectangles = new List<RectangleF>();
             foreach (var elem in elements)
             {
                 if (elem.Selected)
                 {
-                    var rect = new RectangleF(elem.Location, elem.Size);
+                    var rect = elem.ClientRectangle;
                     rect.Inflate(2, 2 + elem.HandleSize / 2.0f);
 
                     selectionRectangles.Add(rect);
@@ -829,6 +878,8 @@ namespace MarchOfTheRays.Editor
                 {
                     DrawCurve(g, edge.source, edge.destination, edge.index, false);
                 }
+
+                DrawShadows(g, elem.GetRegion(), elem.ZIndex);
             }
 
             // ...then the semi-transparent selection rectangles...
@@ -863,6 +914,8 @@ namespace MarchOfTheRays.Editor
                 {
                     DrawCurve(g, edge.source, edge.destination, edge.index, false);
                 }
+
+                DrawShadows(g, elem.GetRegion(), elem.ZIndex);
             }
 
             if (draggingEdge)

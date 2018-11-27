@@ -7,7 +7,12 @@ namespace MarchOfTheRays.Editor
 {
     abstract class LightweightControl : IComparable<LightweightControl>
     {
+        public RectangleF ClientRectangle => new RectangleF(m_Location, m_Size);
 
+        public virtual Region GetRegion()
+        {
+            return new Region(ClientRectangle);
+        }
 
         SizeF m_Size;
         public SizeF Size
@@ -394,6 +399,31 @@ namespace MarchOfTheRays.Editor
         protected virtual void OnNeedsRepaint()
         {
             NeedsRepaint?.Invoke(this, new EventArgs());
+        }
+
+        public override Region GetRegion()
+        {
+            var region = new Region();
+            region.MakeEmpty();
+            var backRect = new RectangleF(m_HandleSize / 2.0f, 0, Width - m_HandleSize, Height);
+            backRect.Offset(Location);
+            region.Union(backRect);
+
+            float spacing = Height / (m_InputCount + 1);
+            for (int i = 0; i < m_InputCount; i++)
+            {
+                var rect = new RectangleF(0, spacing * (i + 1) - m_HandleSize / 2.0f, m_HandleSize, m_HandleSize);
+                rect.Offset(Location);
+                region.Union(rect);
+            }
+
+            if (m_HasOutput)
+            {
+                var rect = new RectangleF(Width - m_HandleSize, (Height - m_HandleSize) / 2.0f, m_HandleSize, m_HandleSize);
+                rect.Offset(Location);
+                region.Union(rect);
+            }
+            return region;
         }
 
         protected override void OnPaint(PaintEventArgs e)
