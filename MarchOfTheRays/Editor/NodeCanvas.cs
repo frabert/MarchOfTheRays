@@ -221,8 +221,10 @@ namespace MarchOfTheRays.Editor
 
             public void Execute()
             {
+                var maxZindex = canvas.elements.Select(x => x.ZIndex).DefaultIfEmpty().Max();
                 foreach (var elem in elems)
                 {
+                    elem.ZIndex = ++maxZindex;
                     elem.NeedsRepaint += canvas.element_NeedsRepaint;
                     canvas.elements.Add(elem);
                     canvas.edges.AddElement(elem);
@@ -308,9 +310,11 @@ namespace MarchOfTheRays.Editor
                 {
                     elem.Selected = false;
                 }
+                var maxZind = canvas.elements.Select(x => x.ZIndex).DefaultIfEmpty().Max();
 
-                foreach (var elem in elems)
+                foreach (var elem in elems.OrderByDescending(x => x.ZIndex))
                 {
+                    elem.ZIndex = ++maxZind;
                     elem.Selected = true;
                 }
                 canvas.OnSelectionChanged();
@@ -358,7 +362,6 @@ namespace MarchOfTheRays.Editor
             }
         }
         #endregion
-
         HashSet<NodeElement> elements = new HashSet<NodeElement>();
         EdgeDictionary edges = new EdgeDictionary();
 
@@ -491,7 +494,7 @@ namespace MarchOfTheRays.Editor
                 selecting = true;
                 var coords = wvMatrix.TransformVW(mouseCoords);
 
-                foreach (var elem in elements.OrderBy(x => !x.Selected))
+                foreach (var elem in elements.OrderByDescending(x => x.ZIndex))
                 {
                     var localCoords = coords - new SizeF(elem.Location);
                     var inputHandle = elem.IsOverInputHandle(localCoords);
@@ -702,7 +705,7 @@ namespace MarchOfTheRays.Editor
             base.OnMouseMove(e);
         }
 
-        void DrawCurve(Graphics g, NodeElement a, NodeElement b, int i)
+        RectangleF GetCurveRect(NodeElement a, NodeElement b, int i)
         {
             var clipRegion = new RectangleF(a.Location, a.Size);
             var ax = clipRegion.Right - a.HandleSize / 2;
@@ -712,6 +715,48 @@ namespace MarchOfTheRays.Editor
             float spacing = b.Size.Height / (b.InputCount + 1);
             var by = b.Location.Y + (spacing * (i + 1));
 
+            return new RectangleF(Math.Min(ax, bx), Math.Min(ay, by), Math.Abs(ax - bx), Math.Abs(ay - by));
+        }
+
+        /// <summary>
+        /// Draws half of a bezier curve connecting two nodes
+        /// </summary>
+        /// <param name="g">Graphics context</param>
+        /// <param name="a">Source node</param>
+        /// <param name="b">Destination node</param>
+        /// <param name="i">Index of destination node's handle</param>
+        /// <param name="lowerHalf">Whether to draw lower or upper half of the curve</param>
+        void DrawCurve(Graphics g, NodeElement a, NodeElement b, int i, bool lowerHalf)
+        {
+            var clipRegion = new RectangleF(a.Location, a.Size);
+            var ax = clipRegion.Right - a.HandleSize / 2;
+            var ay = clipRegion.Bottom - a.Size.Height / 2;
+
+            var bx = b.Location.X + a.HandleSize / 2;
+            float spacing = b.Size.Height / (b.InputCount + 1);
+            var by = b.Location.Y + (spacing * (i + 1));
+
+            var w = Math.Abs(ax - bx);
+            var h = Math.Abs(ay - by);
+
+            var ctx = g.Save();
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            float sx, sy;
+            if (lowerHalf)
+            {
+                sx = ax < bx ? ax : ax - w / 2;
+                sy = ay < by ? ay : ay - h / 2;
+            }
+            else
+            {
+                sx = ax < bx ? ax + w / 2 : bx;
+                sy = ay < by ? ay + h / 2 : by;
+            }
+            var rect = new RectangleF(sx, sy, w / 2, h / 2);
+            rect.Inflate(5, 5);
+            g.Clip = new Region(rect);
+
             using (var p = new Pen(Brushes.Black))
             {
                 p.StartCap = LineCap.RoundAnchor;
@@ -719,6 +764,7 @@ namespace MarchOfTheRays.Editor
 
                 g.DrawBezier(p, ax, ay, lerp(ax, bx, 0.5f), ay, lerp(bx, ax, 0.5f), by, bx, by);
             }
+            g.Restore(ctx);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -767,18 +813,22 @@ namespace MarchOfTheRays.Editor
             }
 
             // First draw the non-selected nodes and edges...
-            foreach (var elem in elements.Where(x => !x.Selected))
+            foreach (var elem in elements.Where(x => !x.Selected).OrderBy(x => x.ZIndex))
             {
                 var ctx = g.BeginContainer();
                 g.TranslateTransform(elem.Location.X, elem.Location.Y);
 
                 elem.Invalidate(new PaintEventArgs(g, new Rectangle(Point.Empty, elem.Size.ToSize())));
                 g.EndContainer(ctx);
-            }
 
-            foreach (var edge in edges.Edges.Where(x => !x.destination.Selected && !x.source.Selected))
-            {
-                DrawCurve(g, edge.source, edge.destination, edge.index);
+                foreach (var edge in edges.Edges.Where(x => x.source == elem).OrderBy(x => x.destination.ZIndex))
+                {
+                    DrawCurve(g, edge.source, edge.destination, edge.index, true);
+                }
+                foreach (var edge in edges.Edges.Where(x => x.destination == elem).OrderBy(x => x.source.ZIndex))
+                {
+                    DrawCurve(g, edge.source, edge.destination, edge.index, false);
+                }
             }
 
             // ...then the semi-transparent selection rectangles...
@@ -797,18 +847,22 @@ namespace MarchOfTheRays.Editor
             }
 
             // ...then the selected nodes and edges.
-            foreach (var elem in elements.Where(x => x.Selected))
+            foreach (var elem in elements.Where(x => x.Selected).OrderBy(x => x.ZIndex))
             {
                 var ctx = g.BeginContainer();
                 g.TranslateTransform(elem.Location.X, elem.Location.Y);
 
                 elem.Invalidate(new PaintEventArgs(g, new Rectangle(Point.Empty, elem.Size.ToSize())));
                 g.EndContainer(ctx);
-            }
 
-            foreach (var edge in edges.Edges.Where(x => x.destination.Selected || x.source.Selected))
-            {
-                DrawCurve(g, edge.source, edge.destination, edge.index);
+                foreach (var edge in edges.Edges.Where(x => x.source == elem).OrderBy(x => x.destination.ZIndex))
+                {
+                    DrawCurve(g, edge.source, edge.destination, edge.index, true);
+                }
+                foreach (var edge in edges.Edges.Where(x => x.destination == elem).OrderBy(x => x.source.ZIndex))
+                {
+                    DrawCurve(g, edge.source, edge.destination, edge.index, false);
+                }
             }
 
             if (draggingEdge)
@@ -1018,6 +1072,42 @@ namespace MarchOfTheRays.Editor
         public void ResetHistory()
         {
             commands.Clear();
+        }
+
+        protected override void OnPreviewKeyDown(PreviewKeyDownEventArgs e)
+        {
+            switch (e.KeyData)
+            {
+                case Keys.Left:
+                case Keys.Right:
+                case Keys.Up:
+                case Keys.Down:
+                    e.IsInputKey = true;
+                    break;
+            }
+            base.OnPreviewKeyDown(e);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyData == (Keys.Left))
+            {
+                wvMatrix.TranslateV(-5, 0);
+            }
+            if (e.KeyData == (Keys.Right))
+            {
+                wvMatrix.TranslateV(5, 0);
+            }
+            if (e.KeyData == (Keys.Up))
+            {
+                wvMatrix.TranslateV(0, -5);
+            }
+            if (e.KeyData == (Keys.Down))
+            {
+                wvMatrix.TranslateV(0, 5);
+            }
+            Invalidate();
+            base.OnKeyDown(e);
         }
     }
 }

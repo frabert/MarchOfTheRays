@@ -5,8 +5,10 @@ using System.Windows.Forms;
 
 namespace MarchOfTheRays.Editor
 {
-    abstract class LightweightControl
+    abstract class LightweightControl : IComparable<LightweightControl>
     {
+
+
         SizeF m_Size;
         public SizeF Size
         {
@@ -71,6 +73,29 @@ namespace MarchOfTheRays.Editor
         public void Invalidate(PaintEventArgs e)
         {
             OnPaint(e);
+        }
+
+        int m_ZIndex = 0;
+        public int ZIndex
+        {
+            get => m_ZIndex;
+            set
+            {
+                m_ZIndex = value;
+                OnZIndexChanged();
+            }
+        }
+
+        public event EventHandler ZIndexChanged;
+
+        protected virtual void OnZIndexChanged()
+        {
+            ZIndexChanged?.Invoke(this, new EventArgs());
+        }
+
+        public int CompareTo(LightweightControl other)
+        {
+            return m_ZIndex.CompareTo(other.m_ZIndex);
         }
     }
 
