@@ -1120,18 +1120,21 @@ namespace MarchOfTheRays.Editor
             Invalidate();
         }
 
-        const float minScale = 0.001f;
+        const float minScale = 0.25f;
+        const float maxScale = 5;
 
         public void Zoom(float value)
         {
-            if (currentScale * value < minScale) return;
+            if (currentScale * value < minScale ||
+                currentScale * value > maxScale) return;
             wvMatrix.ScaleW(value, value);
             currentScale *= value;
         }
 
         public void ZoomCenter(float value)
         {
-            if (currentScale * value < minScale) return;
+            if (currentScale * value < minScale ||
+                currentScale * value > maxScale) return;
 
             var zero1 = wvMatrix.TransformVW(new PointF(Width / 2.0f, Height / 2.0f));
             wvMatrix.ScaleW(value, value);
