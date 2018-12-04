@@ -486,11 +486,30 @@ namespace MarchOfTheRays.Editor
             Invalidate();
         }
 
-        PointF SnapToGrid(PointF worldCoords, float gridSize = 5)
+        (float, float) CalcGridSize(float initialGridSize = 5)
         {
+            float gridSize = initialGridSize;
+            var a = wvMatrix.TransformWV(PointF.Empty);
+            var b = wvMatrix.TransformWV(new PointF(initialGridSize, 0));
+
+            var dist = Math.Abs(a.X - b.X);
+            
+            while(dist < initialGridSize)
+            {
+                dist *= 2;
+                gridSize *= 2;
+            }
+
+            return (dist, gridSize);
+        }
+
+        PointF SnapToGrid(PointF worldCoords)
+        {
+            (float dist, float gridSize) = CalcGridSize();
+
             return new PointF(
-                (float)Math.Floor(worldCoords.X / gridSize) * gridSize,
-                (float)Math.Floor(worldCoords.Y / gridSize) * gridSize
+                (float)Math.Round(worldCoords.X / gridSize) * gridSize,
+                (float)Math.Round(worldCoords.Y / gridSize) * gridSize
                 );
         }
 
@@ -839,25 +858,21 @@ namespace MarchOfTheRays.Editor
 
         void DrawGrid(Graphics g, float gridSize = 5)
         {
-            var a = wvMatrix.TransformWV(PointF.Empty);
-            var b = wvMatrix.TransformWV(new PointF(gridSize, 0));
-
-            var dist = Math.Abs(a.X - b.X);
-
-            while(dist < 5)
-            {
-                dist *= 2;
-            }
+            (var dist, var gSize) = CalcGridSize(gridSize);
 
             var p0 = wvMatrix.TransformWV(PointF.Empty);
             float x = p0.X;
             float y = p0.Y;
+
+            int xpos = 0;
+            int ypos = 0;
             
             if (x < 0)
             {
                 while (x < 0)
                 {
                     x += dist;
+                    xpos++;
                 }
             }
             else
@@ -865,6 +880,7 @@ namespace MarchOfTheRays.Editor
                 while (x > 0)
                 {
                     x -= dist;
+                    xpos--;
                 }
             }
 
@@ -873,6 +889,7 @@ namespace MarchOfTheRays.Editor
                 while (y < 0)
                 {
                     y += dist;
+                    ypos++;
                 }
             }
             else
@@ -880,20 +897,26 @@ namespace MarchOfTheRays.Editor
                 while (y > 0)
                 {
                     y -= dist;
+                    ypos--;
                 }
             }
 
             while (x < Width)
             {
-                g.DrawLine(Pens.LightGray, x, 0, x, Height);
+                var pen = xpos % 10 == 0 ? Pens.Gray : Pens.LightGray;
+                g.DrawLine(pen, x, 0, x, Height);
 
                 x += dist;
+                xpos++;
             }
 
             while (y < Height)
             {
-                g.DrawLine(Pens.LightGray, 0, y, Width, y);
+                var pen = ypos % 10 == 0 ? Pens.Gray : Pens.LightGray;
+                g.DrawLine(pen, 0, y, Width, y);
+
                 y += dist;
+                ypos++;
             }
         }
 
