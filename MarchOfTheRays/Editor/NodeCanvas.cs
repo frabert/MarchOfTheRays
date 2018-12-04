@@ -923,8 +923,9 @@ namespace MarchOfTheRays.Editor
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
-            g.SmoothingMode = SmoothingMode.HighQuality;
+            // Draw grid before enabling antialiasing to avoid blurry lines
             DrawGrid(g);
+            g.SmoothingMode = SmoothingMode.HighQuality;
             g.Transform = wvMatrix.WorldView;
 
             DrawShadows(g, g.Clip, 0);
@@ -967,28 +968,33 @@ namespace MarchOfTheRays.Editor
                 }
             }
 
-            // First draw the non-selected nodes and edges...
-            foreach (var elem in elements.Where(x => !x.Selected).OrderBy(x => x.ZIndex))
+            void DrawNodes(IEnumerable<NodeElement> elems)
             {
-                var ctx = g.BeginContainer();
-                g.TranslateTransform(elem.Location.X, elem.Location.Y);
-
-                elem.Invalidate(new PaintEventArgs(g, new Rectangle(Point.Empty, elem.Size.ToSize())));
-                g.EndContainer(ctx);
-
-                foreach (var edge in edges.Edges.Where(x => x.source == elem).OrderBy(x => x.destination.ZIndex))
+                foreach(var elem in elems)
                 {
-                    DrawCurve(g, edge.source, edge.destination, edge.index, false, 0.5f);
-                    DrawCurve(g, edge.source, edge.destination, edge.index, true);
-                }
-                foreach (var edge in edges.Edges.Where(x => x.destination == elem).OrderBy(x => x.source.ZIndex))
-                {
-                    DrawCurve(g, edge.source, edge.destination, edge.index, true, 0.5f);
-                    DrawCurve(g, edge.source, edge.destination, edge.index, false);
-                }
+                    var ctx = g.BeginContainer();
+                    g.TranslateTransform(elem.Location.X, elem.Location.Y);
 
-                DrawShadows(g, elem.GetRegion(), elem.ZIndex);
+                    elem.Invalidate(new PaintEventArgs(g, new Rectangle(Point.Empty, elem.Size.ToSize())));
+                    g.EndContainer(ctx);
+
+                    foreach (var edge in edges.Edges.Where(x => x.source == elem).OrderBy(x => x.destination.ZIndex))
+                    {
+                        DrawCurve(g, edge.source, edge.destination, edge.index, false, 0.5f);
+                        DrawCurve(g, edge.source, edge.destination, edge.index, true);
+                    }
+                    foreach (var edge in edges.Edges.Where(x => x.destination == elem).OrderBy(x => x.source.ZIndex))
+                    {
+                        DrawCurve(g, edge.source, edge.destination, edge.index, true, 0.5f);
+                        DrawCurve(g, edge.source, edge.destination, edge.index, false);
+                    }
+
+                    DrawShadows(g, elem.GetRegion(), elem.ZIndex);
+                }
             }
+
+            // First draw the non-selected nodes and edges...
+            DrawNodes(elements.Where(x => !x.Selected).OrderBy(x => x.ZIndex));
 
             // ...then the semi-transparent selection rectangles...
             foreach (var rect in selectionRectangles)
@@ -1006,27 +1012,7 @@ namespace MarchOfTheRays.Editor
             }
 
             // ...then the selected nodes and edges.
-            foreach (var elem in elements.Where(x => x.Selected).OrderBy(x => x.ZIndex))
-            {
-                var ctx = g.BeginContainer();
-                g.TranslateTransform(elem.Location.X, elem.Location.Y);
-
-                elem.Invalidate(new PaintEventArgs(g, new Rectangle(Point.Empty, elem.Size.ToSize())));
-                g.EndContainer(ctx);
-
-                foreach (var edge in edges.Edges.Where(x => x.source == elem).OrderBy(x => x.destination.ZIndex))
-                {
-                    DrawCurve(g, edge.source, edge.destination, edge.index, false, 0.5f);
-                    DrawCurve(g, edge.source, edge.destination, edge.index, true);
-                }
-                foreach (var edge in edges.Edges.Where(x => x.destination == elem).OrderBy(x => x.source.ZIndex))
-                {
-                    DrawCurve(g, edge.source, edge.destination, edge.index, true, 0.5f);
-                    DrawCurve(g, edge.source, edge.destination, edge.index, false);
-                }
-
-                DrawShadows(g, elem.GetRegion(), elem.ZIndex);
-            }
+            DrawNodes(elements.Where(x => x.Selected).OrderBy(x => x.ZIndex));
 
             if (draggingEdge)
             {
@@ -1134,14 +1120,19 @@ namespace MarchOfTheRays.Editor
             Invalidate();
         }
 
+        const float minScale = 0.001f;
+
         public void Zoom(float value)
         {
+            if (currentScale * value < minScale) return;
             wvMatrix.ScaleW(value, value);
             currentScale *= value;
         }
 
         public void ZoomCenter(float value)
         {
+            if (currentScale * value < minScale) return;
+
             var zero1 = wvMatrix.TransformVW(new PointF(Width / 2.0f, Height / 2.0f));
             wvMatrix.ScaleW(value, value);
             currentScale *= value;
