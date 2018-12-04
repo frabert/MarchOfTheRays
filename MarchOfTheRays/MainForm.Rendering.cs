@@ -171,9 +171,18 @@ namespace MarchOfTheRays
             {
                 Settings.Default.PreviewWindowVisible = false;
             };
+            var oldSize = PreviewForm.Size;
             PreviewForm.Resize += (s, e) =>
             {
                 Settings.Default.PreviewWindowSize = PreviewForm.Size;
+            };
+            PreviewForm.ResizeEnd += (s, e) =>
+            {
+                if (Settings.Default.LivePreview && oldSize != PreviewForm.Size)
+                {
+                    oldSize = PreviewForm.Size;
+                    OnRenderPreview();
+                }
             };
 
             Settings.Default.PreviewWindowVisible = true;

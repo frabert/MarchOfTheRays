@@ -377,6 +377,7 @@ namespace MarchOfTheRays.Editor
         NodeElement draggedElem;
         PointF mouseCoords;
         PointF startMouseCoords;
+        PointF lastSnap;
 
         public NodeCanvas()
         {
@@ -485,9 +486,18 @@ namespace MarchOfTheRays.Editor
             Invalidate();
         }
 
+        PointF SnapToGrid(PointF worldCoords, float gridSize = 5)
+        {
+            return new PointF(
+                (float)Math.Floor(worldCoords.X / gridSize) * gridSize,
+                (float)Math.Floor(worldCoords.Y / gridSize) * gridSize
+                );
+        }
+
         protected override void OnMouseDown(MouseEventArgs e)
         {
             startMouseCoords = e.Location;
+            lastSnap = SnapToGrid(wvMatrix.TransformVW(e.Location));
             if (e.Button == MouseButtons.Left)
             {
                 mouseCoords = e.Location;
@@ -677,12 +687,14 @@ namespace MarchOfTheRays.Editor
                 if (elem.IsOverInputHandle(wP) >= 0 || elem.IsOverOutputHandle(wP))
                 {
                     Cursor = Cursors.Hand;
-                    goto skip;
+                    break;
+                }
+                else
+                {
+                    Cursor = Cursors.Default;
                 }
             }
-            Cursor = Cursors.Default;
 
-            skip:
             if (dragging)
             {
                 var a = wvMatrix.TransformVW(mouseCoords);
@@ -693,11 +705,19 @@ namespace MarchOfTheRays.Editor
                 else if (!draggingEdge)
                 {
                     var delta = new SizeF(b.X - a.X, b.Y - a.Y);
+
+                    var newSnap = SnapToGrid(b);
+
+                    var snapDistance = new SizeF(newSnap.X - lastSnap.X, newSnap.Y - lastSnap.Y);
+
                     foreach (var elem in SelectedElements)
                     {
-                        elem.Location += delta;
+                        var oldLocation = SnapToGrid(elem.Location);
+
+                        elem.Location = oldLocation + snapDistance;
                     }
-                    moveDistance += delta;
+                    moveDistance += snapDistance;
+                    lastSnap = newSnap;
                 }
             }
             mouseCoords = e.Location;
@@ -726,15 +746,16 @@ namespace MarchOfTheRays.Editor
         /// <param name="b">Destination node</param>
         /// <param name="i">Index of destination node's handle</param>
         /// <param name="lowerHalf">Whether to draw lower or upper half of the curve</param>
-        void DrawCurve(Graphics g, NodeElement a, NodeElement b, int i, bool lowerHalf)
+        void DrawCurve(Graphics g, NodeElement a, NodeElement b, int i, bool lowerHalf, float opacity = 1.0f)
         {
             var clipRegion = new RectangleF(a.Location, a.Size);
             var ax = clipRegion.Right - a.HandleSize / 2;
             var ay = clipRegion.Bottom - a.Size.Height / 2;
 
-            var bx = b.Location.X + a.HandleSize / 2;
-            float spacing = b.Size.Height / (b.InputCount + 1);
-            var by = b.Location.Y + (spacing * (i + 1));
+            var targetRect = b.GetInputRectangle(i);
+
+            var bx = b.Location.X + targetRect.X + targetRect.Width / 2;
+            var by = b.Location.Y + targetRect.Y + targetRect.Height / 2;
 
             var w = Math.Abs(ax - bx);
             var h = Math.Abs(ay - by);
@@ -754,10 +775,11 @@ namespace MarchOfTheRays.Editor
                 sy = ay < by ? ay + h / 2 : by;
             }
             var rect = new RectangleF(sx, sy, w / 2, h / 2);
-            rect.Inflate(5, 5);
+            rect.Inflate(2, 2);
             g.Clip = new Region(rect);
 
-            using (var p = new Pen(Brushes.Black))
+            using (var brush = new SolidBrush(Color.FromArgb((byte)(opacity * 255), 0, 0, 0)))
+            using (var p = new Pen(brush))
             {
                 p.StartCap = LineCap.RoundAnchor;
                 p.EndCap = LineCap.ArrowAnchor;
@@ -815,10 +837,71 @@ namespace MarchOfTheRays.Editor
             }
         }
 
+        void DrawGrid(Graphics g, float gridSize = 5)
+        {
+            var a = wvMatrix.TransformWV(PointF.Empty);
+            var b = wvMatrix.TransformWV(new PointF(gridSize, 0));
+
+            var dist = Math.Abs(a.X - b.X);
+
+            while(dist < 5)
+            {
+                dist *= 2;
+            }
+
+            var p0 = wvMatrix.TransformWV(PointF.Empty);
+            float x = p0.X;
+            float y = p0.Y;
+            
+            if (x < 0)
+            {
+                while (x < 0)
+                {
+                    x += dist;
+                }
+            }
+            else
+            {
+                while (x > 0)
+                {
+                    x -= dist;
+                }
+            }
+
+            if (y < 0)
+            {
+                while (y < 0)
+                {
+                    y += dist;
+                }
+            }
+            else
+            {
+                while (y > 0)
+                {
+                    y -= dist;
+                }
+            }
+
+            while (x < Width)
+            {
+                g.DrawLine(Pens.LightGray, x, 0, x, Height);
+
+                x += dist;
+            }
+
+            while (y < Height)
+            {
+                g.DrawLine(Pens.LightGray, 0, y, Width, y);
+                y += dist;
+            }
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.HighQuality;
+            DrawGrid(g);
             g.Transform = wvMatrix.WorldView;
 
             DrawShadows(g, g.Clip, 0);
@@ -872,10 +955,12 @@ namespace MarchOfTheRays.Editor
 
                 foreach (var edge in edges.Edges.Where(x => x.source == elem).OrderBy(x => x.destination.ZIndex))
                 {
+                    DrawCurve(g, edge.source, edge.destination, edge.index, false, 0.5f);
                     DrawCurve(g, edge.source, edge.destination, edge.index, true);
                 }
                 foreach (var edge in edges.Edges.Where(x => x.destination == elem).OrderBy(x => x.source.ZIndex))
                 {
+                    DrawCurve(g, edge.source, edge.destination, edge.index, true, 0.5f);
                     DrawCurve(g, edge.source, edge.destination, edge.index, false);
                 }
 
@@ -908,10 +993,12 @@ namespace MarchOfTheRays.Editor
 
                 foreach (var edge in edges.Edges.Where(x => x.source == elem).OrderBy(x => x.destination.ZIndex))
                 {
+                    DrawCurve(g, edge.source, edge.destination, edge.index, false, 0.5f);
                     DrawCurve(g, edge.source, edge.destination, edge.index, true);
                 }
                 foreach (var edge in edges.Edges.Where(x => x.destination == elem).OrderBy(x => x.source.ZIndex))
                 {
+                    DrawCurve(g, edge.source, edge.destination, edge.index, true, 0.5f);
                     DrawCurve(g, edge.source, edge.destination, edge.index, false);
                 }
 
@@ -1073,7 +1160,7 @@ namespace MarchOfTheRays.Editor
                 var w = maxX - minX;
                 var h = maxY - minY;
                 var ratio = w / h;
-                var targetRatio = (float)Width / (float)Height;
+                var targetRatio = Width / Height;
                 if (ratio > targetRatio)
                 {
                     var scale = Width / (w * currentScale);

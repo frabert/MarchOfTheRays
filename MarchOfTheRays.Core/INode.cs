@@ -253,7 +253,7 @@ namespace MarchOfTheRays.Core
         [Browsable(false)]
         INode Right { get; set; }
     }
-    
+
     /// <summary>
     /// Provides some helper methods and properties to <see cref="IBinaryNode"/>
     /// </summary>
@@ -756,6 +756,11 @@ namespace MarchOfTheRays.Core
             {
                 if (Left.OutputType != NodeType.Float3 || Right.OutputType != NodeType.Float3) return NodeType.Invalid;
                 return NodeType.Float3;
+            }
+            else if(m_Operation == BinaryOp.Dot)
+            {
+                if (Left.OutputType != Right.OutputType) return NodeType.Invalid;
+                return NodeType.Float;
             }
             else
             {

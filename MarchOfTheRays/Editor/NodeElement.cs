@@ -108,12 +108,18 @@ namespace MarchOfTheRays.Editor
     {
         public object Tag { get; set; }
 
+        public RectangleF GetInputRectangle(int i)
+        {
+            var voff = HandleSize * (i * 2 + 1);
+            return new RectangleF(0, voff, HandleSize, HandleSize);
+        }
+
         public int IsOverInputHandle(PointF p)
         {
             float spacing = Height / (m_InputCount + 1);
             for (int i = 0; i < m_InputCount; i++)
             {
-                var rect = new RectangleF(0, spacing * (i + 1) - m_HandleSize / 2.0f, m_HandleSize, m_HandleSize);
+                var rect = GetInputRectangle(i);
                 if (rect.Contains(p)) return i;
             }
             return -1;
@@ -131,13 +137,14 @@ namespace MarchOfTheRays.Editor
             using (var g = Graphics.FromHwnd(IntPtr.Zero))
             {
                 var textSize = g.MeasureString(Text, Font);
+                var halfHandleSize = HandleSize / 2;
                 textSize += new SizeF(m_HandleSize * 4 + 2, 2);
 
                 var n_inputs = Math.Max(m_HasOutput ? 1 : 0, m_InputCount);
-                var min_height = Math.Max(textSize.Height, (n_inputs + 2) * m_HandleSize);
+                var min_height = Math.Max(textSize.Height, HandleSize * (n_inputs * 2 + 1));
                 var min_width = textSize.Width;
 
-                Size = new SizeF((float)Math.Ceiling(min_width / 10.0f) * 10.0f, (float)Math.Ceiling(min_height / 10.0f) * 10.0f);
+                Size = new SizeF((float)Math.Ceiling(min_width / halfHandleSize) * halfHandleSize, (float)Math.Ceiling(min_height / halfHandleSize) * halfHandleSize);
             }
         }
 
@@ -442,7 +449,7 @@ namespace MarchOfTheRays.Editor
                 float spacing = Height / (m_InputCount + 1);
                 for (int i = 0; i < m_InputCount; i++)
                 {
-                    var rect = new RectangleF(0, spacing * (i + 1) - m_HandleSize / 2.0f, m_HandleSize, m_HandleSize);
+                    var rect = GetInputRectangle(i);
                     g.FillRectangle(backBrush, rect);
                     g.DrawRectangle(borderPen, rect.X, rect.Y, rect.Width, rect.Height);
                 }
