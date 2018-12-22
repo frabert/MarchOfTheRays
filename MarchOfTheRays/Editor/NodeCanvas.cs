@@ -699,20 +699,18 @@ namespace MarchOfTheRays.Editor
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
+            var cursor = Cursors.Default;
             foreach (var elem in elements)
             {
                 var wP = wvMatrix.TransformVW(e.Location);
                 wP -= new SizeF(elem.Location);
                 if (elem.IsOverInputHandle(wP) >= 0 || elem.IsOverOutputHandle(wP))
                 {
-                    Cursor = Cursors.Hand;
+                    cursor = Cursors.Hand;
                     break;
                 }
-                else
-                {
-                    Cursor = Cursors.Default;
-                }
             }
+            Cursor = cursor;
 
             if (dragging)
             {
