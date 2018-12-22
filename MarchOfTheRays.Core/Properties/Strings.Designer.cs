@@ -421,6 +421,15 @@ namespace MarchOfTheRays.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to W component.
+        /// </summary>
+        internal static string W {
+            get {
+                return ResourceManager.GetString("W", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to X component.
         /// </summary>
         internal static string X {

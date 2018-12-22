@@ -590,7 +590,8 @@ namespace MarchOfTheRays.Core
         Ceil,
         X,
         Y,
-        Z
+        Z,
+        W
     }
 
     [Serializable]
@@ -606,14 +607,16 @@ namespace MarchOfTheRays.Core
             if ((m_Operation == UnaryOp.Normalize
                 || m_Operation == UnaryOp.X
                 || m_Operation == UnaryOp.Y
-                || m_Operation == UnaryOp.Z) && Input.OutputType == NodeType.Float) return NodeType.Invalid;
+                || m_Operation == UnaryOp.Z
+                || m_Operation == UnaryOp.W) && Input.OutputType == NodeType.Float) return NodeType.Invalid;
 
             // All unary operations preserve the input type,
             // except these.
             if (m_Operation == UnaryOp.Length
                 || m_Operation == UnaryOp.X
                 || m_Operation == UnaryOp.Y
-                || m_Operation == UnaryOp.Z)
+                || m_Operation == UnaryOp.Z
+                || m_Operation == UnaryOp.W)
             {
                 return NodeType.Float;
             }
@@ -714,6 +717,7 @@ namespace MarchOfTheRays.Core
                 case UnaryOp.X: res = FieldExpr("X"); break;
                 case UnaryOp.Y: res = FieldExpr("Y"); break;
                 case UnaryOp.Z: res = FieldExpr("Z"); break;
+                case UnaryOp.W: res = FieldExpr("W"); break;
                 default: throw new NotImplementedException();
             }
 

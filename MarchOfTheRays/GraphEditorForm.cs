@@ -151,6 +151,7 @@ namespace MarchOfTheRays
                 case Core.UnaryOp.X: return "X";
                 case Core.UnaryOp.Y: return "Y";
                 case Core.UnaryOp.Z: return "Z";
+                case Core.UnaryOp.W: return "W";
                 default: throw new NotImplementedException();
             }
         }
@@ -293,7 +294,9 @@ namespace MarchOfTheRays
             {
                 case Core.UnaryOperationNode n: elem = CreateNode(location, n); break;
                 case Core.BinaryOperationNode n: elem = CreateNode(location, n); break;
+                case Core.Float2ConstantNode n: elem = CreateNode(location, n); break;
                 case Core.Float3ConstantNode n: elem = CreateNode(location, n); break;
+                case Core.Float4ConstantNode n: elem = CreateNode(location, n); break;
                 case Core.FloatConstantNode n: elem = CreateNode(location, n); break;
                 case Core.InputNode n: elem = CreateNode(location, n); break;
                 case Core.OutputNode n: elem = CreateNode(location, n); break;

@@ -59,12 +59,28 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.FloatConstantNode());
             });
 
+            expressions.DropDownItems.Add(Strings.Float2Constant, null, (s, e) =>
+            {
+                var controlCoords = Canvas.PointToClient(Cursor.Position);
+                var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
+
+                AddNode(worldCoords, new Core.Float2ConstantNode());
+            });
+
             expressions.DropDownItems.Add(Strings.Float3Constant, null, (s, e) =>
             {
                 var controlCoords = Canvas.PointToClient(Cursor.Position);
                 var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
 
                 AddNode(worldCoords, new Core.Float3ConstantNode());
+            });
+
+            expressions.DropDownItems.Add(Strings.Float4Constant, null, (s, e) =>
+            {
+                var controlCoords = Canvas.PointToClient(Cursor.Position);
+                var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
+
+                AddNode(worldCoords, new Core.Float4ConstantNode());
             });
 
             expressions.DropDownItems.Add(Strings.Float3Constructor, null, (s, e) =>

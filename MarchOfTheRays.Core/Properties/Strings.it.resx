@@ -237,6 +237,9 @@
   <data name="Value" xml:space="preserve">
     <value>Valore</value>
   </data>
+  <data name="W" xml:space="preserve">
+    <value>Componente W</value>
+  </data>
   <data name="X" xml:space="preserve">
     <value>Componente X</value>
   </data>
