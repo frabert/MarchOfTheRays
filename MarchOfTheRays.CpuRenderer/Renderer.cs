@@ -4,6 +4,7 @@ using System.Drawing.Imaging;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace MarchOfTheRays.CpuRenderer
 {
@@ -13,10 +14,11 @@ namespace MarchOfTheRays.CpuRenderer
         Vector3 cameraTarget = Vector3.Zero;
         Vector3 upDirection = Vector3.UnitY;
         Vector3 lightDirection = Vector3.Normalize(new Vector3(0.3f, 1, 0));
+        Vector3 skyColor = Vector3.Zero;
 
         float ambient_f = 0.1f;
 
-        Vector3 ambient_color = new Vector3(0.9f, 0.9f, 1.0f);
+        Vector3 light_color = new Vector3(0.9f, 0.9f, 1.0f);
 
         float diffuse_f = 0.4f;
         float specular_f = 0.1f;
@@ -92,9 +94,75 @@ namespace MarchOfTheRays.CpuRenderer
             return 1.0f - clamp(r, 0.0f, 1.0f);
         }
 
-        Vector3 reflect(Vector3 I, Vector3 N)
+        float logistic(float x, float L, float x0, float k)
         {
-            return I - 2.0f * Vector3.Dot(N, I) * N;
+            return L / (1 + (float)Math.Exp(-k * (x - x0)));
+        }
+
+        Vector3 rayMarch(Vector3 start, Vector3 rayDir, Func<Vector3, float> distFunc, int iteration = 0)
+        {
+            if (iteration > 4) return Vector3.Zero;
+
+            float totalDist = 0.0f;
+            var pos = start;
+            float dist = EPSILON;
+
+            for (int i = 0; i < MAX_ITER; i++)
+            {
+                // Either we've hit the object or hit nothing at all, either way we should break out of the loop
+                if (dist < EPSILON || totalDist > MAX_DIST)
+                    break;
+
+                dist = distFunc(pos); // Evaluate the distance at the current point
+                totalDist += (dist * STEP_SIZE) * STEP_SIZE;
+                pos += (dist * STEP_SIZE) * rayDir; // Advance the point forwards in the ray direction by the distance
+
+            }
+
+            if (dist < EPSILON)
+            {
+                var eps_x = Vector3.UnitX * EPSILON;
+                var eps_y = Vector3.UnitY * EPSILON;
+                var eps_z = Vector3.UnitZ * EPSILON;
+
+                var normal = Vector3.Normalize(new Vector3(
+                    distFunc(pos + eps_x) - distFunc(pos - eps_x),
+                    distFunc(pos + eps_y) - distFunc(pos - eps_y),
+                    distFunc(pos + eps_z) - distFunc(pos - eps_z)));
+
+
+                float diffuse_value = Math.Max(0.0f, Vector3.Dot(lightDirection, normal));
+
+                var specularDir = Vector3.Reflect(-lightDirection, rayDir);
+                var reflectionDir = Vector3.Reflect(rayDir, normal);
+
+                float specular_value = (float)Math.Pow(Math.Max(0.0f, Vector3.Dot(rayDir, specularDir)), 32);
+                float ao = calculateAmbientOcclusion(pos, normal, distFunc);
+                float shade = softShadow(pos, lightDirection, EPSILON * 2, MAX_DIST, 8, distFunc);
+                var reflection_color = rayMarch(pos + reflectionDir * EPSILON * 2, reflectionDir, distFunc, iteration + 1);
+
+                var diffuseColor = Core.MathExtensions.Mod(pos, Vector3.One);
+                var vx = diffuseColor.X > 0.5f;
+                var vy = diffuseColor.Y > 0.5f;
+                var vz = diffuseColor.Z > 0.5f;
+
+                diffuseColor = new Vector3(vx ^ vy ^ vz ? 1.0f : 0.0f);
+
+                var reflectivity = vx ^ vy ^ vz ? 0.025f : 0.1f;
+
+                var ambient = light_color * ambient_f;
+                var diffuse = light_color * ((diffuse_value * shade + 0.1f) * diffuseColor);
+                var specular = light_color * (specular_value * specular_f);
+                var reflection = reflection_color * reflectivity;
+
+                var distance_rolloff = logistic(-totalDist, 1.0f, -MAX_DIST / 2, 1.0f);
+
+                return (ambient + diffuse + specular + reflection) * ao * distance_rolloff + skyColor * (1 - distance_rolloff);
+            }
+            else
+            {
+                return skyColor;
+            }
         }
 
         void MainRender(float x, float y, float width, float height, out Vector3 outColor, Func<Vector3, float> distFunc)
@@ -104,53 +172,33 @@ namespace MarchOfTheRays.CpuRenderer
             var cameraRight = Vector3.Normalize(Vector3.Cross(upDirection, cameraOrigin));
             var cameraUp = Vector3.Cross(cameraDir, cameraRight);
 
-            var screenPos = new Vector2(-1.0f + 2.0f * x / width, -1.0f + 2.0f * y / height);
-            screenPos.X *= width / height; // Correct aspect ratio
+            outColor = Vector3.Zero;
 
-            var rayDir = Vector3.Normalize(cameraRight * screenPos.X + cameraUp * screenPos.Y + cameraDir);
-
-            float totalDist = 0.0f;
-            var pos = cameraOrigin;
-            float dist = EPSILON;
-
-            for (int i = 0; i < MAX_ITER; i++)
+            var offsets = new (Vector2 offset, int weight)[]
             {
-                // Either we've hit the object or hit nothing at all, either way we should break out of the loop
-                if (dist < EPSILON || totalDist > MAX_DIST)
-                    break; // If you use windows and the shader isn't working properly, change this to continue;
+                (new Vector2(EPSILON, EPSILON), 1),
+                (new Vector2(-EPSILON, EPSILON), 1),
+                (new Vector2(-EPSILON, -EPSILON), 1),
+                (new Vector2(EPSILON, -EPSILON), 1),
+                (new Vector2(EPSILON, 0), 2),
+                (new Vector2(0, EPSILON), 2),
+                (new Vector2(-EPSILON, 0), 2),
+                (new Vector2(0, -EPSILON), 2),
+                (Vector2.Zero, 4)
+            };
 
-                dist = distFunc(pos); // Evalulate the distance at the current point
-                totalDist += (dist * STEP_SIZE) * STEP_SIZE;
-                pos += (dist * STEP_SIZE) * rayDir; // Advance the point forwards in the ray direction by the distance
+            foreach(var offs in offsets)
+            {
+                var screenPos = new Vector2(-1.0f + 2.0f * x / width, -1.0f + 2.0f * y / height);
+                screenPos += offs.offset;
+                screenPos.X *= width / height; // Correct aspect ratio
 
+                var rayDir = Vector3.Normalize(cameraRight * screenPos.X + cameraUp * screenPos.Y + cameraDir);
+
+                outColor += rayMarch(cameraOrigin, rayDir, distFunc) * offs.weight;
             }
 
-            if (dist < EPSILON)
-            {
-                var eps = new Vector2(0.0f, EPSILON);
-                var yxx = new Vector3(eps.Y, eps.X, eps.X);
-                var xyx = new Vector3(eps.X, eps.Y, eps.X);
-                var xxy = new Vector3(eps.X, eps.X, eps.Y);
-
-                var normal = Vector3.Normalize(new Vector3(
-                    distFunc(pos + yxx) - distFunc(pos - yxx),
-                    distFunc(pos + xyx) - distFunc(pos - xyx),
-                    distFunc(pos + xxy) - distFunc(pos - xxy)));
-
-                
-                float diffuse = Math.Max(0.0f, Vector3.Dot(lightDirection, normal));
-
-                var reflectDir = reflect(-lightDirection, rayDir);
-
-                float specular = (float)Math.Pow(Math.Max(0.0f, Vector3.Dot(rayDir, reflectDir)), 32.0f) * specular_f;
-                float ao = calculateAmbientOcclusion(pos, normal, distFunc);
-                float shade = softShadow(pos, lightDirection, EPSILON * 2, MAX_DIST, 8, distFunc);
-                outColor = (new Vector3(diffuse * shade + specular) + ambient_color * ambient_f) * ao;
-            }
-            else
-            {
-                outColor = Vector3.Zero;
-            }
+            outColor /= offsets.Sum(a => a.weight);
         }
 
         bool RenderChunk(IntPtr scan0, int totalWidth, int totalHeight, int height, int stride, int yoff, Func<Vector3, float> func, CancellationToken token, IProgress<int> progress)
