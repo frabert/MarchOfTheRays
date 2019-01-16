@@ -511,6 +511,15 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Plane.
+        /// </summary>
+        internal static string Plane {
+            get {
+                return ResourceManager.GetString("Plane", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to PNG.
         /// </summary>
         internal static string PngImage {

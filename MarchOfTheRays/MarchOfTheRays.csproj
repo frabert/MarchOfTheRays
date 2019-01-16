@@ -188,6 +188,7 @@
     <None Include="Resources\Paste_16x.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\Plane.mtrn" />
     <None Include="Resources\Sphere.mtrn" />
     <None Include="Resources\Subtraction.mtrn" />
     <None Include="Resources\Torus.mtrn" />

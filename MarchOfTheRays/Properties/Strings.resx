@@ -378,4 +378,7 @@
   <data name="Torus" xml:space="preserve">
     <value>Torus</value>
   </data>
+  <data name="Plane" xml:space="preserve">
+    <value>Plane</value>
+  </data>
 </root>
