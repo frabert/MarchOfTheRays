@@ -375,4 +375,7 @@
   <data name="Float4Constructor" xml:space="preserve">
     <value>4D vector constructor</value>
   </data>
+  <data name="Torus" xml:space="preserve">
+    <value>Torus</value>
+  </data>
 </root>

@@ -36,6 +36,11 @@ namespace MarchOfTheRays
                 OnNodeImported(Resources.Box, Strings.Box);
             });
 
+            primitives.DropDownItems.Add(Strings.Torus, null, (s, e) =>
+            {
+                OnNodeImported(Resources.Torus, Strings.Torus);
+            });
+
             solidOps.DropDownItems.Add(Strings.Union, null, (s, e) =>
             {
                 OnNodeImported(Resources.Union, Strings.Union);

@@ -781,6 +781,15 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Torus.
+        /// </summary>
+        internal static string Torus {
+            get {
+                return ResourceManager.GetString("Torus", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Unary operation.
         /// </summary>
         internal static string UnaryOperation {

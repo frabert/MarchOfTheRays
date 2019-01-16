@@ -190,6 +190,7 @@
   <ItemGroup>
     <None Include="Resources\Sphere.mtrn" />
     <None Include="Resources\Subtraction.mtrn" />
+    <None Include="Resources\Torus.mtrn" />
     <None Include="Resources\Undo_16x.png" />
   </ItemGroup>
   <ItemGroup>
