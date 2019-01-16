@@ -83,6 +83,14 @@ namespace MarchOfTheRays
                 AddNode(worldCoords, new Core.Float4ConstantNode());
             });
 
+            expressions.DropDownItems.Add(Strings.Float2Constructor, null, (s, e) =>
+            {
+                var controlCoords = Canvas.PointToClient(Cursor.Position);
+                var worldCoords = Canvas.GetWorldCoordinates(controlCoords);
+
+                AddNode(worldCoords, new Core.Float2Constructor());
+            });
+
             expressions.DropDownItems.Add(Strings.Float3Constructor, null, (s, e) =>
             {
                 var controlCoords = Canvas.PointToClient(Cursor.Position);

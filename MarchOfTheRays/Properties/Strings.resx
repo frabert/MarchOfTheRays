@@ -366,4 +366,13 @@
   <data name="Float3" xml:space="preserve">
     <value>3D vector</value>
   </data>
+  <data name="Float2" xml:space="preserve">
+    <value>2D vector</value>
+  </data>
+  <data name="Float2Constructor" xml:space="preserve">
+    <value>2D vector constructor</value>
+  </data>
+  <data name="Float4Constructor" xml:space="preserve">
+    <value>4D vector constructor</value>
+  </data>
 </root>

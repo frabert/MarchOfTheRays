@@ -301,6 +301,7 @@ namespace MarchOfTheRays
                 case Core.InputNode n: elem = CreateNode(location, n); break;
                 case Core.OutputNode n: elem = CreateNode(location, n); break;
                 case Core.ICompositeNode n: elem = CreateNode(location, n); break;
+                case Core.Float2Constructor n: elem = CreateNode(location, n); break;
                 case Core.Float3Constructor n: elem = CreateNode(location, n); break;
                 case Core.SwizzleNode n: elem = CreateNode(location, n); break;
                 default: throw new NotImplementedException();
@@ -505,6 +506,24 @@ namespace MarchOfTheRays
 
             Elements.Add(node, elem);
 
+            return elem;
+        }
+
+        Editor.NodeElement CreateNode(PointF location, Core.Float2Constructor node)
+        {
+            if (node == null) throw new ArgumentNullException();
+            if (Elements.TryGetValue(node, out var e)) return e;
+
+            var elem = new Editor.NodeElement()
+            {
+                Text = Properties.Strings.Float2,
+                Location = location,
+                InputCount = 2,
+                HasOutput = true,
+                Tag = node
+            };
+
+            Elements.Add(node, elem);
             return elem;
         }
 

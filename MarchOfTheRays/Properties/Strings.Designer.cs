@@ -286,11 +286,29 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to 2D vector.
+        /// </summary>
+        internal static string Float2 {
+            get {
+                return ResourceManager.GetString("Float2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to 2D vector constant.
         /// </summary>
         internal static string Float2Constant {
             get {
                 return ResourceManager.GetString("Float2Constant", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 2D vector constructor.
+        /// </summary>
+        internal static string Float2Constructor {
+            get {
+                return ResourceManager.GetString("Float2Constructor", resourceCulture);
             }
         }
         
@@ -327,6 +345,15 @@ namespace MarchOfTheRays.Properties {
         internal static string Float4Constant {
             get {
                 return ResourceManager.GetString("Float4Constant", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 4D vector constructor.
+        /// </summary>
+        internal static string Float4Constructor {
+            get {
+                return ResourceManager.GetString("Float4Constructor", resourceCulture);
             }
         }
         
