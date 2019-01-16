@@ -62,6 +62,28 @@ namespace MarchOfTheRays.CpuRenderer
             // too brutal to me.
             return Math.Min(Math.Max(shade, 0) + 0.3f, 1.0f);
         }
+        
+        struct Material
+        {
+            public Vector3 diffuse_color;
+            public float specular_strength;
+            public float reflection_strength;
+        }
+
+        Material GetMaterial(Vector3 pos)
+        {
+            var diffuseColor = Core.MathExtensions.Mod(pos, Vector3.One);
+            var vx = diffuseColor.X > 0.5f;
+            var vy = diffuseColor.Y > 0.5f;
+            var vz = diffuseColor.Z > 0.5f;
+            var diffuseValue = vx ^ vy ^ vz;
+
+            diffuseColor = diffuseValue ? Vector3.One : Vector3.Zero;
+            var reflectivity = diffuseValue ? 0.01f : 0.025f;
+            var specular = diffuseValue ? 0 : 0.3f;
+
+            return new Material { diffuse_color = diffuseColor, specular_strength = specular, reflection_strength = reflectivity };
+        }
 
         public Renderer(Vector3 cameraOrigin, Vector3 cameraTarget, Vector3 upDirection, int maxIter, float maxDist, float Epsilon, float stepSize)
         {
@@ -141,19 +163,12 @@ namespace MarchOfTheRays.CpuRenderer
                 float shade = softShadow(pos, lightDirection, EPSILON * 2, MAX_DIST, 8, distFunc);
                 var reflection_color = rayMarch(pos + reflectionDir * EPSILON * 2, reflectionDir, distFunc, iteration + 1);
 
-                var diffuseColor = Core.MathExtensions.Mod(pos, Vector3.One);
-                var vx = diffuseColor.X > 0.5f;
-                var vy = diffuseColor.Y > 0.5f;
-                var vz = diffuseColor.Z > 0.5f;
-
-                diffuseColor = new Vector3(vx ^ vy ^ vz ? 1.0f : 0.0f);
-
-                var reflectivity = vx ^ vy ^ vz ? 0.025f : 0.1f;
+                var mat = GetMaterial(pos);
 
                 var ambient = light_color * ambient_f;
-                var diffuse = light_color * ((diffuse_value * shade + 0.1f) * diffuseColor);
-                var specular = light_color * (specular_value * specular_f);
-                var reflection = reflection_color * reflectivity;
+                var diffuse = light_color * ((diffuse_value * shade + 0.1f) * mat.diffuse_color);
+                var specular = light_color * (specular_value * mat.specular_strength);
+                var reflection = reflection_color * mat.reflection_strength;
 
                 var distance_rolloff = logistic(-totalDist, 1.0f, -MAX_DIST / 2, 1.0f);
 
