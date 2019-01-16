@@ -1050,7 +1050,7 @@ namespace MarchOfTheRays.Core
 
         void CalcType()
         {
-            if (Input == null)
+            if (Input == null || Body == null)
             {
                 InputNode.OutputType = NodeType.Indeterminate;
                 OutputType = NodeType.Indeterminate;

@@ -918,11 +918,15 @@ namespace MarchOfTheRays.Editor
             }
         }
 
+        protected override void OnPaintBackground(PaintEventArgs e)
+        {
+            base.OnPaintBackground(e);
+            DrawGrid(e.Graphics);
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
-            // Draw grid before enabling antialiasing to avoid blurry lines
-            DrawGrid(g);
             g.SmoothingMode = SmoothingMode.HighQuality;
             g.Transform = wvMatrix.WorldView;
 
