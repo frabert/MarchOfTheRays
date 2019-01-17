@@ -1,14 +1,5 @@
 ﻿using MarchOfTheRays.Properties;
-using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Numerics;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using WeifenLuo.WinFormsUI.Docking;
 

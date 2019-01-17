@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Linq;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
 
 namespace MarchOfTheRays.CpuRenderer
 {
@@ -20,13 +21,10 @@ namespace MarchOfTheRays.CpuRenderer
 
         Vector3 light_color = new Vector3(0.9f, 0.9f, 1.0f);
 
-        float diffuse_f = 0.4f;
-        float specular_f = 0.1f;
-
-        int MAX_ITER = 100; // 100 is a safe number to use, it won't produce too many artifacts and still be quite fast
+        int MAX_ITER = 100;
         int MAX_SHADOW_ITER = 200;
-        float MAX_DIST = 20.0f; // Make sure you change this if you have objects farther than 20 units away from the camera
-        float EPSILON = 0.001f; // At this distance we are close enough to the object that we have essentially hit it
+        float MAX_DIST = 20.0f;
+        float EPSILON = 0.001f;
         float STEP_SIZE = 1.0f;
 
         float softShadow(Vector3 ro, Vector3 rd, float start, float end, float k, Func<Vector3, float> distFunc)
@@ -34,35 +32,26 @@ namespace MarchOfTheRays.CpuRenderer
             float shade = 1.0f;
 
             // The "start" value, or minimum, should be set to something more than the stop-threshold, so as to avoid a collision with 
-            // the surface the ray is setting out from. It doesn't matter how many times I write shadow code, I always seem to forget this.
-            // If adding shadows seems to make everything look dark, that tends to be the problem.
+            // the surface the ray is setting out from.
             float dist = start;
             float stepDist = end / MAX_SHADOW_ITER;
 
-            // Max shadow iterations - More iterations make nicer shadows, but slow things down. Obviously, the lowest 
-            // number to give a decent shadow is the best one to choose. 
+            // Max shadow iterations - More iterations make nicer shadows, but slow things down.
             for (int i = 0; i < MAX_SHADOW_ITER; i++)
             {
-                // End, or maximum, should be set to the distance from the light to surface point. If you go beyond that
-                // you may hit a surface not between the surface and the light.
+                // End, or maximum, should be set to the distance from the light to surface point.
                 float h = distFunc(ro + rd * dist);
                 shade = Math.Min(shade, k * h / dist);
-
-                // What h combination you add to the distance depends on speed, accuracy, etc. To be honest, I find it impossible to find 
-                // the perfect balance. Faster GPUs give you more options, because more shadow iterations always produce better results.
-                // Anyway, here's some posibilities. Which one you use, depends on the situation:
-                // +=h, +=clamp( h, 0.01, 0.25 ), +=min( h, 0.1 ), +=stepDist, +=min(h, stepDist*2.), etc.
+                
                 dist += Math.Min(h * STEP_SIZE, stepDist * 2.0f); // The best of both worlds... I think. 
 
                 // Early exits from accumulative distance function calls tend to be a good thing.
                 if (h < 0.001f || dist > end) break;
             }
 
-            // I've added 0.3 to the final shade value, which lightens the shadow a bit. It's a preference thing. Really dark shadows look 
-            // too brutal to me.
-            return Math.Min(Math.Max(shade, 0) + 0.3f, 1.0f);
+            return Math.Min(Math.Max(shade, 0), 1.0f);
         }
-        
+
         struct Material
         {
             public Vector3 diffuse_color;
@@ -78,9 +67,9 @@ namespace MarchOfTheRays.CpuRenderer
             var vz = diffuseColor.Z > 0.5f;
             var diffuseValue = vx ^ vy ^ vz;
 
-            diffuseColor = diffuseValue ? Vector3.One : Vector3.Zero;
-            var reflectivity = diffuseValue ? 0.01f : 0.025f;
-            var specular = diffuseValue ? 0 : 0.3f;
+            diffuseColor = diffuseValue ? Vector3.One : new Vector3(0.75f, 0, 0.05f);
+            var reflectivity = diffuseValue ? 0.01f : 0.05f;
+            var specular = diffuseValue ? 0 : 0.6f;
 
             return new Material { diffuse_color = diffuseColor, specular_strength = specular, reflection_strength = reflectivity };
         }
@@ -202,7 +191,7 @@ namespace MarchOfTheRays.CpuRenderer
                 (Vector2.Zero, 4)
             };
 
-            foreach(var offs in offsets)
+            foreach (var offs in offsets)
             {
                 var screenPos = new Vector2(-1.0f + 2.0f * x / width, -1.0f + 2.0f * y / height);
                 screenPos += offs.offset;
@@ -216,30 +205,16 @@ namespace MarchOfTheRays.CpuRenderer
             outColor /= offsets.Sum(a => a.weight);
         }
 
-        bool RenderChunk(IntPtr scan0, int totalWidth, int totalHeight, int height, int stride, int yoff, Func<Vector3, float> func, CancellationToken token, IProgress<int> progress)
+        unsafe void RenderLine(byte* line, int y, int width, int height, Func<Vector3, float> func)
         {
-            unsafe
+            for (int x = 0; x < width; x++)
             {
-                byte* rawBytes = (byte*)scan0;
-                int strideDiff = stride - totalWidth * 3;
-                for(int i = 0; i < totalWidth * height; i++)
-                {
-                    if (token.IsCancellationRequested)
-                        return false;
-                    int x = i % totalWidth;
-                    int y = (i - x) / totalWidth;
-
-                    int idx = (stride * (y + yoff)) + x * 3;
-
-                    Vector3 color;
-                    MainRender(x, y + yoff, totalWidth, totalHeight, out color, func);
-                    rawBytes[idx + 0] = (byte)(Math.Min(color.Z, 1.0f) * 255);
-                    rawBytes[idx + 1] = (byte)(Math.Min(color.Y, 1.0f) * 255);
-                    rawBytes[idx + 2] = (byte)(Math.Min(color.X, 1.0f) * 255);
-                    if(i % 100 == 99) progress?.Report(100);
-                }
+                Vector3 color;
+                MainRender(x, y, width, height, out color, func);
+                line[x * 3 + 0] = (byte)(Math.Min(color.Z, 1.0f) * 255);
+                line[x * 3 + 1] = (byte)(Math.Min(color.Y, 1.0f) * 255);
+                line[x * 3 + 2] = (byte)(Math.Min(color.X, 1.0f) * 255);
             }
-            return true;
         }
 
         public async Task<Image> RenderImageAsync(int width, int height, Func<Vector3, float> func, int nthreads, CancellationToken token, IProgress<int> progress)
@@ -249,18 +224,31 @@ namespace MarchOfTheRays.CpuRenderer
             var data = img.LockBits(new Rectangle(Point.Empty, new Size(width, height)), ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
 
             Task<bool>[] tasks = new Task<bool>[nthreads];
+            var lines = new ConcurrentQueue<int>();
 
-            var stripeHeight = height / (float)nthreads;
-            for(int i = 0; i < nthreads; i++)
+            for (int i = 0; i < height; i++) lines.Enqueue(i);
+
+            for (int i = 0; i < nthreads; i++)
             {
-                int start = (int)stripeHeight * i;
-                int end = (int)(stripeHeight * (i + 1));
-                tasks[i] = Task.Factory.StartNew(() => RenderChunk(data.Scan0, width, height, end - start, data.Stride, start, func, token, progress));
+                tasks[i] = Task.Factory.StartNew(() =>
+                {
+                    while(lines.TryDequeue(out int line))
+                    {
+                        if (token.IsCancellationRequested) return false;
+                        unsafe
+                        {
+                            byte* scan0 = (byte*)data.Scan0;
+                            RenderLine(scan0 + data.Stride * line, line, width, height, func);
+                            progress.Report(1);
+                        }
+                    }
+                    return true;
+                });
             }
 
             bool imageComplete = true;
 
-            foreach(var task in tasks)
+            foreach (var task in tasks)
             {
                 imageComplete &= await task;
             }

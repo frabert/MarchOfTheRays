@@ -94,7 +94,7 @@ namespace MarchOfTheRays
                     var func = lambda.Compile();
 
                     float totalProgress = 0;
-                    float total = PreviewForm.ClientSize.Width * PreviewForm.ClientSize.Height;
+                    float total = PreviewForm.ClientSize.Height;
 
                     var prog = new Progress<int>();
                     prog.ProgressChanged += (s1, e1) =>
@@ -144,7 +144,7 @@ namespace MarchOfTheRays
                 if (previousPreviewTask != null)
                 {
                     tokenSource.Cancel();
-                    await previousPreviewTask;
+                    if (!previousPreviewTask.IsFaulted) await previousPreviewTask;
                 }
 
                 previousPreviewTask = Render();
