@@ -15,19 +15,6 @@ namespace MarchOfTheRays
             public Dictionary<Core.INode, PointF> Locations = new Dictionary<Core.INode, PointF>();
             public HashSet<Graph> Graphs = new HashSet<Graph>();
             public Dictionary<Core.INode, Graph> Subgraphs = new Dictionary<Core.INode, Graph>();
-
-            public void InitializeEvents()
-            {
-                foreach(var node in Nodes)
-                {
-                    node.InitializeEvents();
-                }
-
-                foreach(var graph in Graphs)
-                {
-                    graph.InitializeEvents();
-                }
-            }
         }
 
         void Copy()

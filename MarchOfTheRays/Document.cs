@@ -68,14 +68,6 @@ namespace MarchOfTheRays
         public Dictionary<INode, PointF> NodePositions = new Dictionary<INode, PointF>();
         public List<OutputNode> OutputNodes = new List<OutputNode>();
         public string Name;
-
-        public void InitializeEvents()
-        {
-            foreach(var node in Nodes)
-            {
-                node.InitializeEvents();
-            }
-        }
     }
 
     [Serializable]
@@ -117,14 +109,6 @@ namespace MarchOfTheRays
                     Graphs.Remove(kvp.Value);
                     Subgraphs.Remove(kvp.Key);
                 }
-            }
-        }
-
-        public void InitializeEvents()
-        {
-            foreach(var graph in Graphs)
-            {
-                graph.InitializeEvents();
             }
         }
     }
