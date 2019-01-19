@@ -397,9 +397,6 @@ namespace MarchOfTheRays.Core
     [Serializable]
     public class Float4ConstantNode : INode
     {
-        [field: NonSerialized]
-        public event EventHandler OutputTypeChanged;
-
         float m_X, m_Y, m_Z, m_W;
 
         public float X
@@ -465,16 +462,6 @@ namespace MarchOfTheRays.Core
             var expr = Expression.Constant(new Vector4(m_X, m_Y, m_Z, m_W));
             nodeDictionary[this] = expr;
             return expr;
-        }
-
-        public void InitializeEvents()
-        {
-
-        }
-
-        public void CalcType()
-        {
-
         }
     }
 
@@ -993,7 +980,7 @@ namespace MarchOfTheRays.Core
         public OutputNode Body { get; set; }
 
         [Browsable(false)]
-        public InputNode InputNode { get; private set; }
+        public InputNode InputNode { get; set; }
 
         string m_Name;
 
@@ -1017,6 +1004,7 @@ namespace MarchOfTheRays.Core
             {
                 Input = Input,
                 Body = Body,
+                InputNode = InputNode,
                 Name = Name
             };
         }
@@ -1072,10 +1060,10 @@ namespace MarchOfTheRays.Core
         public OutputNode Body { get; set; }
 
         [Browsable(false)]
-        public InputNode LeftNode { get; private set; }
+        public InputNode LeftNode { get; set; }
 
         [Browsable(false)]
-        public InputNode RightNode { get; private set; }
+        public InputNode RightNode { get; set; }
 
         string m_Name;
 
@@ -1100,6 +1088,8 @@ namespace MarchOfTheRays.Core
                 Body = Body,
                 Left = Left,
                 Right = Right,
+                LeftNode = LeftNode,
+                RightNode = RightNode,
                 Name = Name
             };
         }

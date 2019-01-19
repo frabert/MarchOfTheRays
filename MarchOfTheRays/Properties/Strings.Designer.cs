@@ -70,6 +70,33 @@ namespace MarchOfTheRays.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Rot. around x.
+        /// </summary>
+        internal static string AroundX {
+            get {
+                return ResourceManager.GetString("AroundX", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rot. around y.
+        /// </summary>
+        internal static string AroundY {
+            get {
+                return ResourceManager.GetString("AroundY", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rot. around z.
+        /// </summary>
+        internal static string AroundZ {
+            get {
+                return ResourceManager.GetString("AroundZ", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Save changes to the file?.
         /// </summary>
         internal static string AskSaveChanges {
@@ -624,6 +651,15 @@ namespace MarchOfTheRays.Properties {
         internal static string ResetZoom {
             get {
                 return ResourceManager.GetString("ResetZoom", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rotations.
+        /// </summary>
+        internal static string Rotations {
+            get {
+                return ResourceManager.GetString("Rotations", resourceCulture);
             }
         }
         

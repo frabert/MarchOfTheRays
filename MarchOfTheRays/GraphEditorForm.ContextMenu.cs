@@ -13,9 +13,12 @@ namespace MarchOfTheRays
             var expressions = new ToolStripMenuItem(Strings.Expressions);
             var primitives = new ToolStripMenuItem(Strings.Primitives);
             var solidOps = new ToolStripMenuItem(Strings.SolidOperations);
+            var rotations = new ToolStripMenuItem(Strings.Rotations);
+
             canvasContextMenu.Items.Add(expressions);
             canvasContextMenu.Items.Add(primitives);
             canvasContextMenu.Items.Add(solidOps);
+            canvasContextMenu.Items.Add(rotations);
 
             primitives.DropDownItems.Add(Strings.Sphere, null, (s, e) =>
             {
@@ -50,6 +53,18 @@ namespace MarchOfTheRays
             solidOps.DropDownItems.Add(Strings.Subtraction, null, (s, e) =>
             {
                 OnNodeImported(Resources.Subtraction, Strings.Subtraction);
+            });
+
+            rotations.DropDownItems.Add(Strings.AroundX, null, (s, e) => {
+                OnNodeImported(Resources.x_rotation, Strings.AroundX);
+            });
+
+            rotations.DropDownItems.Add(Strings.AroundY, null, (s, e) => {
+                OnNodeImported(Resources.y_rotation, Strings.AroundY);
+            });
+
+            rotations.DropDownItems.Add(Strings.AroundZ, null, (s, e) => {
+                OnNodeImported(Resources.z_rotation, Strings.AroundZ);
             });
 
             expressions.DropDownItems.Add(Strings.FloatConstant, null, (s, e) =>

@@ -154,6 +154,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="Resources\x_rotation.mtrn" />
+    <None Include="Resources\z_rotation.mtrn" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -217,6 +219,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\Union.mtrn" />
+    <None Include="Resources\y_rotation.mtrn" />
     <None Include="Resources\ZoomIn_16x.png" />
   </ItemGroup>
   <ItemGroup>

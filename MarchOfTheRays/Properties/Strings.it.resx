@@ -381,4 +381,16 @@
   <data name="Plane" xml:space="preserve">
     <value>Piano</value>
   </data>
+  <data name="AroundX" xml:space="preserve">
+    <value>Rot. attorno x</value>
+  </data>
+  <data name="AroundY" xml:space="preserve">
+    <value>Rot. attorno y</value>
+  </data>
+  <data name="AroundZ" xml:space="preserve">
+    <value>Rot. attorno z</value>
+  </data>
+  <data name="Rotations" xml:space="preserve">
+    <value>Rotazioni</value>
+  </data>
 </root>
