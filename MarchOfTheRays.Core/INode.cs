@@ -180,6 +180,15 @@ namespace MarchOfTheRays.Core
         {
             return Clone();
         }
+
+        protected static NodeType TypeToNode(Type t)
+        {
+            if (t == typeof(float)) return NodeType.Float;
+            else if (t == typeof(Vector2)) return NodeType.Float2;
+            else if (t == typeof(Vector3)) return NodeType.Float3;
+            else if (t == typeof(Vector4)) return NodeType.Float4;
+            else throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -575,16 +584,7 @@ namespace MarchOfTheRays.Core
 
             var arg = Input.Compile(nodeDictionary, parameters);
 
-            var inputType = Input.OutputType;
-            Type t;
-            switch (inputType)
-            {
-                case NodeType.Float: t = typeof(float); break;
-                case NodeType.Float2: t = typeof(Vector2); break;
-                case NodeType.Float3: t = typeof(Vector3); break;
-                case NodeType.Float4: t = typeof(Vector4); break;
-                default: throw new InvalidNodeException(this);
-            }
+            Type t = arg.Type;
 
             Expression MathExpr(string name, Type c = null)
             {
@@ -745,56 +745,55 @@ namespace MarchOfTheRays.Core
         {
             if (Left == null || Right == null) throw new InvalidNodeException(this);
             if (nodeDictionary.TryGetValue(this, out var result)) return result;
-
-            var leftType = Left.OutputType;
-            var rightType = Right.OutputType;
+            
             var left = Left.Compile(nodeDictionary, parameters);
             var right = Right.Compile(nodeDictionary, parameters);
+
             if (m_Operation == BinaryOp.Cross)
             {
-                if (leftType != NodeType.Float3) throw new InvalidNodeException(Left);
-                if (rightType != NodeType.Float3) throw new InvalidNodeException(Right);
+                if (left.Type != typeof(Vector3)) throw new InvalidNodeException(Left);
+                if (right.Type != typeof(Vector3)) throw new InvalidNodeException(Right);
                 var cross = typeof(Vector3).GetMethod("Cross");
                 return Expression.Call(null, cross, left, right);
             }
 
             NodeType opType = NodeType.Float;
 
-            if (leftType == NodeType.Float4)
+            if (left.Type == typeof(Vector4))
             {
                 opType = NodeType.Float4;
-                if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat4(right);
-                else if (rightType != NodeType.Float4) throw new InvalidNodeException(Right);
+                if (right.Type == typeof(float)) right = CompilerTools.FloatToFloat4(right);
+                else if (right.Type != typeof(Vector4)) throw new InvalidNodeException(Right);
             }
-            else if (leftType == NodeType.Float3)
+            else if (left.Type == typeof(Vector3))
             {
                 opType = NodeType.Float3;
-                if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat3(right);
-                else if (rightType != NodeType.Float3) throw new InvalidNodeException(Right);
+                if (right.Type == typeof(float)) right = CompilerTools.FloatToFloat3(right);
+                else if (right.Type != typeof(Vector3)) throw new InvalidNodeException(Right);
             }
-            else if (leftType == NodeType.Float2)
+            else if (left.Type == typeof(Vector2))
             {
                 opType = NodeType.Float2;
-                if (rightType == NodeType.Float) right = CompilerTools.FloatToFloat2(right);
-                else if (rightType != NodeType.Float2) throw new InvalidNodeException(Right);
+                if (right.Type == typeof(float)) right = CompilerTools.FloatToFloat2(right);
+                else if (right.Type != typeof(Vector2)) throw new InvalidNodeException(Right);
             }
-            else if (rightType == NodeType.Float4)
+            else if (right.Type == typeof(Vector4))
             {
                 opType = NodeType.Float4;
-                if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat4(left);
-                else if (leftType != NodeType.Float4) throw new InvalidNodeException(Left);
+                if (left.Type == typeof(float)) left = CompilerTools.FloatToFloat4(left);
+                else if (left.Type != typeof(Vector4)) throw new InvalidNodeException(Left);
             }
-            else if (rightType == NodeType.Float3)
+            else if (right.Type == typeof(Vector3))
             {
                 opType = NodeType.Float3;
-                if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat3(left);
-                else if (leftType != NodeType.Float3) throw new InvalidNodeException(Left);
+                if (left.Type == typeof(float)) left = CompilerTools.FloatToFloat3(left);
+                else if (left.Type != typeof(Vector3)) throw new InvalidNodeException(Left);
             }
-            else if (rightType == NodeType.Float2)
+            else if (right.Type == typeof(Vector2))
             {
                 opType = NodeType.Float2;
-                if (leftType == NodeType.Float) left = CompilerTools.FloatToFloat2(left);
-                else if (leftType != NodeType.Float2) throw new InvalidNodeException(Left);
+                if (left.Type == typeof(float)) left = CompilerTools.FloatToFloat2(left);
+                else if (left.Type != typeof(Vector2)) throw new InvalidNodeException(Left);
             }
 
             Type t;
@@ -903,22 +902,14 @@ namespace MarchOfTheRays.Core
             if (Input == null) throw new InvalidNodeException(this);
             if (nodeDictionary.TryGetValue(this, out var res)) return res;
 
+            var arg = Input.Compile(nodeDictionary, parameters);
+
             var tswizzle = typeof(Swizzle);
-            Type inputType;
-            switch (Input.OutputType)
-            {
-                case NodeType.Float2: inputType = typeof(Vector2); break;
-                case NodeType.Float3: inputType = typeof(Vector3); break;
-                case NodeType.Float4: inputType = typeof(Vector4); break;
-                default: throw new InvalidNodeException(Input);
-            }
             var name = Enum.GetName(typeof(SwizzleType), SwizzleType);
 
-            var method = tswizzle.GetMethod(name, new Type[] { inputType });
+            var method = tswizzle.GetMethod(name, new Type[] { arg.Type });
 
             if (method == null) throw new InvalidNodeException(Input);
-
-            var arg = Input.Compile(nodeDictionary, parameters);
 
             res = Expression.Call(method, arg);
             nodeDictionary[this] = res;
@@ -1143,11 +1134,12 @@ namespace MarchOfTheRays.Core
 
         public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            if (OutputType == NodeType.Invalid) throw new InvalidNodeException(this);
+            if (inputs[0] == null || inputs[1] == null || inputs[2] == null) throw new InvalidNodeException(this);
             if (nodeDictionary.TryGetValue(this, out var result)) return result;
             var arg1 = inputs[0].Compile(nodeDictionary, parameters);
             var arg2 = inputs[1].Compile(nodeDictionary, parameters);
             var arg3 = inputs[2].Compile(nodeDictionary, parameters);
+            if (arg1.Type != typeof(float) || arg2.Type != typeof(float) || arg3.Type != typeof(float)) throw new InvalidNodeException(this);
 
             if (arg1 is ConstantExpression c1 && arg2 is ConstantExpression c2 && arg3 is ConstantExpression c3)
             {
@@ -1190,10 +1182,11 @@ namespace MarchOfTheRays.Core
 
         public override Expression Compile(Dictionary<INode, Expression> nodeDictionary, params Expression[] parameters)
         {
-            if (Left == null || Right == null || OutputType != NodeType.Float2) throw new InvalidNodeException(this);
+            if (Left == null || Right == null) throw new InvalidNodeException(this);
             if (nodeDictionary.TryGetValue(this, out var result)) return result;
             var left = Left.Compile(nodeDictionary, parameters);
             var right = Right.Compile(nodeDictionary, parameters);
+            if (left.Type != typeof(float) || right.Type != typeof(float)) throw new InvalidNodeException(this);
 
             if (left is ConstantExpression c1 && right is ConstantExpression c2)
             {
