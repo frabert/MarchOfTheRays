@@ -19,6 +19,7 @@ namespace MarchOfTheRays
         public MainForm()
         {
             Text = "March of the Rays";
+            Icon = Resources.MOTRIcon;
             Width = 800;
             Height = 600;
             WindowState = FormWindowState.Maximized;
